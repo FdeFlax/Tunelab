@@ -1,0 +1,545 @@
+.page--docente {
+  display: grid;
+  gap: 14px;
+}
+
+.doccabecera,
+.docpanel {
+  border: 1px solid rgba(132, 150, 170, 0.24);
+  background: #111c2d;
+}
+
+.docdato {
+  display: grid;
+  gap: 7px;
+  min-height: 86px;
+  padding: 14px;
+  background: #0c1726;
+}
+
+.docdato span,
+.docpanelcabecera span,
+.doccampo span,
+.docdescripcion span {
+  color: #58c3ff;
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+
+.docdato strong {
+  overflow: hidden;
+  color: #ffffff;
+  font-size: clamp(18px, 1.7vw, 28px);
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.docdato small {
+  overflow: hidden;
+  color: #aebdd2;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.docgrid {
+  display: grid;
+  grid-template-columns: minmax(390px, 0.9fr) minmax(560px, 1.1fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.docpanel {
+  display: grid;
+  gap: 16px;
+  min-height: 520px;
+  padding: 18px;
+}
+
+.docpanelcabecera {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: start;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(132, 150, 170, 0.16);
+}
+
+.docpanelcabeceracompacta {
+  padding-bottom: 8px;
+}
+
+.docpanelcabecera h3 {
+  margin: 4px 0 0;
+  color: #ffffff;
+  font-size: clamp(20px, 1.7vw, 28px);
+  letter-spacing: -0.03em;
+}
+
+.docpanelcabecera > strong {
+  padding: 7px 10px;
+  border: 1px solid rgba(132, 150, 170, 0.26);
+  color: #cbd8eb;
+  background: #0c1726;
+  font-size: 11px;
+  font-weight: 850;
+  letter-spacing: 0.9px;
+  text-transform: uppercase;
+}
+
+.doclista {
+  display: grid;
+  gap: 8px;
+  grid-auto-rows: max-content;
+  align-content: start;
+  max-height: clamp(300px, 44vh, 480px);
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+.docvacio {
+  display: grid;
+  place-items: center;
+  min-height: 120px;
+  padding: 22px;
+  border: 1px dashed rgba(132, 150, 170, 0.22);
+  background: #0c1726;
+  color: #aebdd2;
+  text-align: center;
+}
+
+.docvacio p {
+  margin: 0;
+}
+
+.docmediciones {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+
+.docmedicioneslista {
+  display: grid;
+  gap: 10px;
+  max-height: clamp(260px, 34vh, 320px);
+  overflow-y: auto;
+  padding-right: 6px;
+  align-content: start;
+}
+
+.docmedicion {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: center;
+  padding: 13px 14px;
+  border: 1px solid rgba(132, 150, 170, 0.16);
+  background: #0c1726;
+}
+
+.docmedicion div {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.docmedicion strong {
+  color: #ffffff;
+}
+
+.docmedicion span {
+  color: #aebdd2;
+  font-size: 12px;
+}
+
+@media (max-width: 1180px) {
+  .doccabecera,
+  .docgrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .docmetricas,
+  .docficha,
+  .docmedicion {
+    grid-template-columns: 1fr;
+  }
+}
+.docacciones {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.docbtn {
+  min-height: 34px;
+  padding: 8px 12px;
+  border: 1px solid rgba(132, 150, 170, 0.28);
+  background: #0c1726;
+  color: #edf3fb;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.docbtn:hover {
+  border-color: rgba(63, 180, 232, 0.65);
+}
+
+.docbtnpeligro {
+  border-color: rgba(255, 105, 120, 0.45);
+  background: rgba(122, 37, 55, 0.72);
+}
+
+.docaviso {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid rgba(63, 180, 232, 0.35);
+  background: #102842;
+  color: #edf3fb;
+  font-weight: 800;
+}
+
+.docusotunelactivo {
+  border-color: rgba(90, 200, 118, 0.42);
+}
+
+.docusotuneldatos {
+  display: grid;
+  justify-items: end;
+  gap: 5px;
+  min-width: 230px;
+  color: #cbd8eb;
+  text-align: right;
+}
+
+.docusotuneldatos strong {
+  color: #ffffff;
+  font-size: 20px;
+}
+
+.docusotuneldatos span {
+  color: #aebdd2;
+  font-size: 13px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+
+.docusotunelderecha {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 14px;
+}
+
+.docdesconectar {
+  min-height: 42px;
+  padding: 10px 18px;
+  border-color: rgba(132, 150, 170, 0.36);
+  background: #18263d;
+  color: #ffffff;
+  font-size: 13px;
+}
+@media (max-width: 720px) {
+
+  .docusotunelderecha {
+    align-items: flex-start;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .docusotuneldatos {
+    justify-items: start;
+    min-width: 0;
+    text-align: left;
+  }
+}
+
+/* Ficha unica del detalle docente: datos agrupados en una sola tarjeta. */
+
+/* Docente como bloque continuo: filtros, lista y detalle sin huecos entre paneles. */
+.page--docente {
+  gap: 0;
+}
+
+
+.page--docente .docgrid {
+  gap: 0;
+}
+
+.page--docente .docpaneldetalle {
+  border-left: 0;
+}
+
+@media (max-width: 1180px) {
+  .page--docente .docpaneldetalle {
+    border-left: 1px solid rgba(132, 150, 170, 0.24);
+    border-top: 0;
+  }
+}
+
+
+/* En escritorio, el detalle decide la altura de la fila. La lista de ensayos
+   se ajusta a esa altura y conserva su desplazamiento interno. */
+@media (min-width: 1181px) {
+  .docgrid {
+    align-items: stretch;
+  }
+
+  .docgrid > .docpanel {
+    min-height: 0;
+    height: 100%;
+  }
+
+  .docgrid > .docpanel:first-child {
+    /* Su contenido no puede hacer crecer la fila: solo se adapta al detalle. */
+    contain: size;
+    overflow: hidden;
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  .docgrid > .docpanel:first-child .doclista {
+    min-height: 0;
+    max-height: none;
+    height: 100%;
+  }
+}
+/* En pantallas medianas, los cinco datos se distribuyen en dos columnas. */
+/* Ficha del ensayo en formato tabla: lectura directa, sin bloques dispersos. */
+.docdetalletabla {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  border: 1px solid rgba(132, 150, 170, 0.24);
+  background: #0c1726;
+  color: #edf3fb;
+}
+
+.docdetalletabla th,
+.docdetalletabla td {
+  padding: 13px 14px;
+  border: 1px solid rgba(132, 150, 170, 0.16);
+  text-align: left;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+
+.docdetalletabla th {
+  width: 13%;
+  background: #111c2d;
+  color: #aebdd2;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.docdetalletabla td {
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 650;
+  line-height: 1.45;
+}
+
+.docdetalletabla td small {
+  display: block;
+  margin-top: 3px;
+  color: #aebdd2;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+@media (max-width: 720px) {
+  .docdetalletabla,
+  .docdetalletabla tbody,
+  .docdetalletabla tr,
+  .docdetalletabla th,
+  .docdetalletabla td {
+    display: block;
+    width: 100%;
+  }
+
+  .docdetalletabla tr {
+    border-bottom: 1px solid rgba(132, 150, 170, 0.24);
+  }
+
+  .docdetalletabla tr:last-child {
+    border-bottom: 0;
+  }
+
+  .docdetalletabla th,
+  .docdetalletabla td {
+    border: 0;
+  }
+
+  .docdetalletabla th {
+    padding-bottom: 2px;
+  }
+
+  .docdetalletabla td {
+    padding-top: 2px;
+  }
+}
+/* Dos fichas separadas: autor del registro y datos del ensayo. */
+.docdetalletablas {
+  display: grid;
+  gap: 14px;
+}
+
+.docdetalletabla caption {
+  padding: 0 0 7px;
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 800;
+  text-align: left;
+}
+
+.docdetalletabla th {
+  width: 190px;
+}
+/* Separador visual bajo las cabeceras principales. */
+.docpanel > .docpanelcabecera {
+  margin-bottom: 0;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(132, 150, 170, 0.16);
+}
+
+
+/* Buscador docente: elemento suelto, centrado y sin panel exterior. */
+.page--docente > .docbuscadorarriba {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 28px 0 18px;
+  border: 0;
+  background: transparent;
+}
+
+.page--docente > .docbuscadorarriba .docbuscarcentral {
+  width: min(560px, 70vw);
+}
+
+.page--docente > .docbuscadorarriba .docbuscarcentral input {
+  width: 100%;
+  min-height: 42px;
+  padding: 9px 18px;
+  border: 1px solid rgba(132, 150, 170, 0.34);
+  border-radius: 999px;
+  background: #081321;
+  color: #edf3fb;
+  font: inherit;
+}
+
+.page--docente > .docbuscadorarriba .docbuscarcentral input:focus {
+  outline: 1px solid rgba(63, 180, 232, 0.7);
+}
+/* Tarjeta visible para el usuario que tiene conectado el tunel. */
+
+.docusotunelactivo {
+  border-color: rgba(88, 195, 255, 0.38);
+  background: #102842;
+}
+/* Tarjeta de uso del tunel mas estrecha. */
+
+.docusotuneldatos {
+  gap: 2px;
+}
+
+
+
+/* Informe de medicion integrado en la pagina docente. */
+.docinforme {
+  display: grid;
+  gap: 16px;
+  margin-top: 18px;
+  padding: 18px;
+  border: 1px solid rgba(132, 150, 170, 0.24);
+  background: #111c2d;
+}
+
+
+
+
+
+
+
+
+/* Historial docente: aparece siempre debajo del informe, si lo hay. */
+.dochistorial {
+  margin-top: 18px;
+  padding: 18px;
+  border: 1px solid rgba(132, 150, 170, 0.24);
+  background: #111c2d;
+}
+
+.dochistorialcabecera {
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(132, 150, 170, 0.18);
+}
+
+.dochistorialcabecera h3 {
+  margin: 0;
+  color: #ffffff;
+  font-size: 24px;
+}
+
+.dochistoriallista {
+  display: grid;
+  gap: 8px;
+  max-height: 260px;
+  margin-top: 12px;
+  overflow-y: auto;
+}
+
+.dochistorialevento {
+  display: grid;
+  gap: 6px;
+  padding: 12px 14px;
+  border: 1px solid rgba(132, 150, 170, 0.24);
+  background: #081321;
+}
+
+.dochistorialevento span {
+  color: #aebdd2;
+  font-size: 12px;
+}
+
+.dochistorialevento p {
+  margin: 0;
+  color: #edf3fb;
+}
+
+
+/* Boton docente para liberar el tunel */
+.docusotunelderecha {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 16px;
+}
+
+.docdesconectar {
+  min-height: 42px;
+  padding: 0 18px;
+  border: 1px solid #9f3343;
+  background: #8f2638;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.docdesconectar:hover {
+  background: #a73845;
+}
+
+

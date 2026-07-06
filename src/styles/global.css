@@ -1,0 +1,44 @@
+:root {
+  --bg-main: #0b1321;
+  --bg-sidebar: #101a2b;
+  --bg-card: #172235;
+  --bg-soft: #21314a;
+  --bg-elevated: #1d2b41;
+
+  --text-main: #edf4ff;
+  --text-soft: #8da0bc;
+  --text-light: #ffffff;
+
+  --primary: #4dc6ff;
+  --success: #8fe36a;
+  --danger: #ff7b72;
+  --warning: #f0b35a;
+
+  --radius-lg: 24px;
+  --radius-md: 16px;
+  --radius-sm: 12px;
+
+  --shadow: 0 24px 48px rgba(3, 8, 17, 0.35);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+  background: #09101b;
+  color: var(--text-main);
+}
+
+button,
+input {
+  font: inherit;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+
