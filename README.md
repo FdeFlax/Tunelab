@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 ﻿# Tunelab
 
 Aplicacion React para preparar ensayos, operar el tunel de viento, inspeccionar el
@@ -181,3 +182,6 @@ se puede recuperar el enfoque con backend y base de datos desde la copia:
 C:\app\copiabd_tunelviento_app
 ```
 
+=======
+# TFG_TunelViento
+>>>>>>> e3961f54d1364e0f03a2ad995671b2af97c06358
