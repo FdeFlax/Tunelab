@@ -143,15 +143,6 @@ function PanelEventos({ eventos, tipo }) {
   );
 }
 
-function TarjetaTecnica({ titulo, valor }) {
-  return (
-    <article className="dash2tecnicaitem">
-      <span>{titulo}</span>
-      <strong>{valor}</strong>
-    </article>
-  );
-}
-
 function PaginaDashboard2({ onAbrirControl, onAbrirRegistro }) {
   const [mostrarVisor3d, setMostrarVisor3d] = useState(false);
   const [pestanaSupervision, setPestanaSupervision] = useState("resumen");
@@ -258,28 +249,6 @@ function PaginaDashboard2({ onAbrirControl, onAbrirRegistro }) {
     },
   ];
 
-  const parametrosTecnicos = [
-    {
-      titulo: "Frecuencia",
-      valor: `${estadoTunel.frecHz} Hz`,
-    },
-    {
-      titulo: "Corriente",
-      valor: `${estadoTunel.corrA} A`,
-    },
-    {
-      titulo: "Potencia motor",
-      valor: `${estadoTunel.motorKw} kW`,
-    },
-    {
-      titulo: "RPM",
-      valor: `${estadoTunel.rpm}`,
-    },
-    {
-      titulo: "Tiempo de funcionamiento",
-      valor: formatearTiempoFuncionamiento(estadoTunel.tiempoSeg),
-    },
-  ];
 
   return (
     <div className="page page--dashboard2">
@@ -299,7 +268,7 @@ function PaginaDashboard2({ onAbrirControl, onAbrirRegistro }) {
             </div>
 
             {mostrarVisor3d ? (
-              <VisorTunel className="dash2visorcanvas" modoRendimiento="ligero" />
+              <VisorTunel className="dash2visorcanvas" modoRendimiento="ligero" escalaModelo={1.28} />
             ) : (
               <div className="dash2visorcanvas dash2visorcanvasplaceholder" />
             )}
@@ -356,14 +325,6 @@ function PaginaDashboard2({ onAbrirControl, onAbrirRegistro }) {
             </button>
           </div>
         </aside>
-      </section>
-
-      <section className="dash2card dash2tecnica">
-        <div className="dash2tecnicagrid">
-          {parametrosTecnicos.map((dato) => (
-            <TarjetaTecnica key={dato.titulo} {...dato} />
-          ))}
-        </div>
       </section>
     </div>
   );

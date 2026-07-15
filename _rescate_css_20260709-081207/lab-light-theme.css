@@ -1,0 +1,1557 @@
+.appblanca {
+  --bg-main: #e9eef3;
+  --bg-sidebar: #f8fafc;
+  --bg-card: #ffffff;
+  --bg-soft: #eef3f7;
+  --bg-elevated: #f6f9fb;
+  --text-main: #162235;
+  --text-soft: #5b6b7e;
+  --text-light: #162235;
+  --primary: #1479a8;
+  --success: #2f8b57;
+  --danger: #b5444d;
+  --warning: #a96f18;
+  --claro-fondo: #ffffff;
+  --claro-pagina: #e9eef3;
+  --claro-suave: #f6f9fb;
+  --claro-relleno: #eef3f7;
+  --claro-borde: #c8d3df;
+  --claro-borde-suave: #d3dde7;
+  --claro-linea: #d9e1e9;
+  --claro-activo: #e7eef3;
+  background: var(--claro-suave);
+  color: var(--text-main);
+}
+
+.appblanca .app-main {
+  background: var(--claro-pagina);
+}
+
+.appblanca .sidebar {
+  background: #f8fafc;
+  border-right-color: #cfd8e3;
+  color: var(--text-main);
+}
+
+.appblanca .sideusericon {
+  background: #e9f2f7;
+  border-color: #b7c9d8;
+  color: #13354d;
+}
+
+.appblanca .sidelink,
+.appblanca .sideuser,
+.appblanca .sidebrandname,
+.appblanca .sideusername {
+  color: var(--text-main);
+}
+
+.appblanca .sidebar-caption,
+.appblanca .sideuserrole {
+  color: #6b7a8b;
+}
+
+.appblanca .sideuser:hover {
+  background: #eef4f8;
+}
+
+.appblanca .sidelink:hover {
+  background: transparent;
+}
+
+.appblanca .sidelinkactive {
+  background: transparent;
+  border-color: transparent;
+}
+
+.appblanca .sidelinkicon--ensayo {
+  background: transparent;
+  border: 0;
+  color: #276d3c;
+}
+
+.appblanca .barsup {
+  background: #f8fafc;
+  border-bottom-color: #cfd8e3;
+}
+
+.appblanca .barsupiconbtn {
+  background: transparent;
+  border: 0;
+  color: #243246;
+}
+
+.appblanca .dash2card,
+.appblanca .ens2panel,
+.appblanca .reg2panel,
+.appblanca .docpanel,
+.appblanca .doccabecera,
+.appblanca .docfiltros,
+.appblanca .cont2panel,
+.appblanca .cont2card,
+.appblanca .inspeccion-panel,
+.appblanca .inspeccion2-panel {
+  background: var(--claro-fondo);
+  border-color: var(--claro-borde);
+  color: var(--text-main);
+}
+
+.appblanca .page--dashboard2,
+.appblanca .page--ensayo2,
+.appblanca .page--registro2,
+.appblanca .page--docente {
+  --v2bg-panel: var(--claro-fondo);
+  --v2bg-profundo: var(--claro-relleno);
+  --v2bg-control: #e6f2f8;
+  --v2bg-control-secundario: #f4f7fa;
+  --v2borde: var(--claro-borde);
+  --v2borde-suave: var(--claro-linea);
+  --v2borde-control: #bdd0dc;
+  --v2cian: var(--primary);
+  --v2texto: var(--text-main);
+  --v2texto-suave: var(--text-soft);
+}
+
+.appblanca .ens2cabecera,
+.appblanca .reg2cabecera,
+.appblanca .cont2cabecera {
+  background: var(--claro-fondo);
+  border-color: var(--claro-borde);
+}
+
+.appblanca .cont2cabecerapanel,
+.appblanca .ens2metricas,
+.appblanca .reg2metricas,
+.appblanca .docmetricas {
+  background: #d8e3eb;
+}
+
+.appblanca .cont2indicador,
+.appblanca .dash2parametro,
+.appblanca .dash2tabla,
+.appblanca .ens2metrica,
+.appblanca .reg2metrica,
+.appblanca .docdato,
+.appblanca .reg2item,
+.appblanca .docitem,
+.appblanca .docmedicion,
+.appblanca .docdescripcion,
+.appblanca .cont2lectura,
+.appblanca .cont2campoestado,
+.appblanca .cont2recaptarjeta,
+.appblanca .cont2recapgrafica,
+.appblanca .reg2resumentarjeta,
+.appblanca .reg2grafica,
+.appblanca .reg2vacio,
+.appblanca .ens2vacio,
+.appblanca .docvacio {
+  background: var(--claro-suave);
+  border-color: #d4dde6;
+  color: var(--text-main);
+}
+
+.appblanca .cont2potencia {
+  background: #eef5f9;
+  border-color: #b7ccd9;
+}
+
+.appblanca .reg2itemseleccionado,
+.appblanca .ens2itemseleccionado,
+.appblanca .docitemactivo,
+.appblanca .dash2tabactivo {
+  background: #e0f0f8;
+  border-color: #5ca7c8;
+}
+
+.appblanca h1,
+.appblanca h2,
+.appblanca h3,
+.appblanca strong,
+.appblanca .cont2indicadorvalor,
+.appblanca .reg2resumenvalor,
+.appblanca .reg2graficavalor,
+.appblanca .docdato strong,
+.appblanca .docpanelcabecera h3,
+.appblanca .docitem strong,
+.appblanca .dash2card strong,
+.appblanca .ens2cabecera h2,
+.appblanca .reg2cabecera h2,
+.appblanca .cont2cabecera h2 {
+  color: var(--text-main);
+}
+
+.appblanca p,
+.appblanca small,
+.appblanca span,
+.appblanca .cont2cabecera p,
+.appblanca .reg2resumenapoyo,
+.appblanca .reg2graficapie,
+.appblanca .doccabecera p,
+.appblanca .docitem span,
+.appblanca .docitem small,
+.appblanca .docmedicion span,
+.appblanca .docdescripcion p {
+  color: var(--text-soft);
+}
+
+.appblanca .cont2sobretitulo,
+.appblanca .reg2sobretitulo,
+.appblanca .docdato span,
+.appblanca .docpanelcabecera span,
+.appblanca .doccampo span,
+.appblanca .docdescripcion span,
+.appblanca .ens2chip,
+.appblanca .reg2chip,
+.appblanca .dash2badge {
+  color: var(--primary);
+}
+
+.appblanca input,
+.appblanca textarea,
+.appblanca select,
+.appblanca .ens2campo input,
+.appblanca .ens2campo textarea,
+.appblanca .reg2campo input,
+.appblanca .cont2campo input,
+.appblanca .doccampo input,
+.appblanca .doccampo select {
+  background: var(--claro-fondo);
+  border-color: #bdc9d5;
+  color: var(--text-main);
+}
+
+.appblanca input::placeholder,
+.appblanca textarea::placeholder {
+  color: #7c8a99;
+}
+
+.appblanca .dash2botonprimario,
+.appblanca .ens2botonprimario,
+.appblanca .reg2botonprimario,
+.appblanca .cont2botonprimario {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--claro-fondo);
+}
+
+.appblanca .cont2botonmarcha,
+.appblanca .ens2botonexito {
+  background: var(--success);
+  border-color: var(--success);
+  color: var(--claro-fondo);
+}
+
+.appblanca .cont2botonparada,
+.appblanca .ens2botonpeligro,
+.appblanca .reg2botonpeligro {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: var(--claro-fondo);
+}
+
+.appblanca .ens2botonsecundario,
+.appblanca .reg2botonsecundario,
+.appblanca .cont2botonsecundario {
+  background: var(--claro-fondo);
+  border-color: #bdc9d5;
+  color: var(--text-main);
+}
+
+.appblanca .tunnel-viewer,
+.appblanca .dash2modelopanel {
+  background: #dce5ed;
+}/* Cobertura amplia del modo claro para bloques con fondos propios por pagina. */
+.appblanca .dash2visor,
+.appblanca .dash2panelprincipal,
+.appblanca .dash2tecnica,
+.appblanca .dash2tabs,
+.appblanca .dash2tarjeta,
+.appblanca .dash2evento,
+.appblanca .dash2vacio,
+.appblanca .dash2tecnicaitem,
+.appblanca .ens2activo,
+.appblanca .ens2flujointro,
+.appblanca .ens2pasos li,
+.appblanca .ens2item,
+.appblanca .ens2activoresumen span,
+.appblanca .ens2activoaccion,
+.appblanca .reg2ensayoresumen span,
+.appblanca .reg2evento,
+.appblanca .reg2tablamuestras,
+.appblanca .reg2tablamuestras th,
+.appblanca .reg2tablamuestras td,
+.appblanca .reg2alerta,
+.appblanca .cont2indicador,
+.appblanca .cont2chip,
+.appblanca .cont2botonsecundario,
+.appblanca .cont2alerta,
+.appblanca .cont2objetivos,
+.appblanca .cont2modal,
+.appblanca .inspselector,
+.appblanca .inspselectorcontrol,
+.appblanca .inspselectorlista,
+.appblanca .inspselectoritem,
+.appblanca .inspreset,
+.appblanca .inspescenazoom,
+.appblanca .inspactivo,
+.appblanca .insppuntos,
+.appblanca .inspactivoetiqueta,
+.appblanca .inspitem {
+  background: var(--claro-fondo);
+  border-color: var(--claro-borde);
+  box-shadow: none;
+  color: var(--text-main);
+}
+
+.appblanca .dash2visor,
+.appblanca .dash2visorcanvasplaceholder {
+  background: #eaf3f8;
+}
+
+.appblanca .inspescena {
+  background: #07101b;
+}
+
+.appblanca .dash2estadoflotante,
+.appblanca .visorpuntoboton {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: #b8c8d5;
+  box-shadow: 0 10px 26px rgba(58, 76, 96, 0.16);
+  color: var(--text-main);
+}
+
+.appblanca .dash2tabs button {
+  color: #52667b;
+  border-left-color: #d3dde6;
+}
+
+.appblanca .dash2tabs .dash2tabactivo,
+.appblanca .inspselectoritemactivo,
+.appblanca .inspitemactivo,
+.appblanca .ens2itemactivo {
+  background: #e0f0f8;
+  border-color: #5ca7c8;
+  color: var(--text-main);
+}
+
+.appblanca .dash2medidorfondo,
+.appblanca .cont2recapgraficabase,
+.appblanca .reg2graficabase {
+  stroke: #c2cfda;
+}
+
+.appblanca .inspescenafondo::after {
+  background: transparent;
+}
+
+.appblanca .inspescenainferior {
+  background: #07101b;
+}
+
+.appblanca .inspescena .tunnel-viewer {
+  background: transparent;
+}
+
+.appblanca .ens2modalfondo,
+.appblanca .cont2modalfondo {
+  background: rgba(60, 76, 94, 0.28);
+  backdrop-filter: blur(5px);
+}
+
+.appblanca .ens2modal,
+.appblanca .cont2modal {
+  background: var(--claro-fondo);
+  border-color: #b8c8d5;
+  box-shadow: 0 22px 54px rgba(58, 76, 96, 0.2);
+}
+
+.appblanca .cont2botonarranque,
+.appblanca .cont2botonmarcha {
+  background: var(--success);
+  border-color: var(--success);
+  color: var(--claro-fondo);
+}
+
+.appblanca .cont2botonparada {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: var(--claro-fondo);
+}
+
+.appblanca .cont2botonprimario,
+.appblanca .cont2botonmedicion {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--claro-fondo);
+}
+
+.appblanca .visorpuntobotonactivo,
+.appblanca .cont2indicadorcorrecto {
+  background: #e4f2e9;
+  border-color: #8fc7a3;
+}
+
+.appblanca .visorpuntoicono,
+.appblanca .visorpuntobotonactivo .visorpuntoicono {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+.appblanca .insplista::-webkit-scrollbar-thumb,
+.appblanca .doclista::-webkit-scrollbar-thumb,
+.appblanca .reg2lista::-webkit-scrollbar-thumb,
+.appblanca .cont2alertas::-webkit-scrollbar-thumb {
+  background: #aebdca;
+}
+
+.appblanca .sideuser,
+.appblanca .sidelink:hover,
+.appblanca .sideuser:hover,
+.appblanca .sideuseractive,
+.appblanca .dash2paneleventos,
+.appblanca .dash2paneleventoscabecera,
+.appblanca .dash2vacio,
+.appblanca .cont2cabeceratexto,
+.appblanca .cont2cabecerapanel,
+.appblanca .cont2lecturas,
+.appblanca .cont2lectura,
+.appblanca .cont2campoestado,
+.appblanca .cont2recaptarjeta,
+.appblanca .cont2recapgrafica,
+.appblanca .reg2navegador,
+.appblanca .reg2detalle,
+.appblanca .reg2resumentarjeta,
+.appblanca .reg2grafica,
+.appblanca .reg2vacio,
+.appblanca .reg2importadorayuda,
+.appblanca .ens2activocuerpo,
+.appblanca .ens2activointro,
+.appblanca .ens2item,
+.appblanca .ens2itemcontenido,
+.appblanca .ens2vacio,
+.appblanca .doccabeceratexto,
+.appblanca .docpanelcabecera,
+.appblanca .docficha,
+.appblanca .docvacio {
+  background: var(--claro-fondo);
+  border-color: var(--claro-borde);
+  box-shadow: none;
+  color: var(--text-main);
+}
+
+.appblanca .dash2tarjeta,
+.appblanca .dash2evento,
+.appblanca .dash2tecnicaitem,
+.appblanca .cont2indicador,
+.appblanca .cont2potencia,
+.appblanca .cont2alerta,
+.appblanca .cont2tablasistema > *,
+.appblanca .cont2lineasestado > *,
+.appblanca .cont2seguridadresumen > *,
+.appblanca .reg2item,
+.appblanca .reg2evento,
+.appblanca .reg2tablamuestras,
+.appblanca .reg2tablamuestras th,
+.appblanca .reg2tablamuestras td,
+.appblanca .ens2activoresumen span,
+.appblanca .ens2pasos li,
+.appblanca .docdato,
+.appblanca .docitem,
+.appblanca .docdescripcion,
+.appblanca .docmedicion {
+  background: var(--claro-suave);
+  border-color: var(--claro-borde-suave);
+  box-shadow: none;
+  color: var(--text-main);
+}
+
+.appblanca .dash2card,
+.appblanca .dash2panelprincipal,
+.appblanca .dash2tecnica,
+.appblanca .cont2panel,
+.appblanca .ens2panel,
+.appblanca .reg2panel,
+.appblanca .docpanel,
+.appblanca .doccabecera,
+.appblanca .docfiltros {
+  background: var(--claro-fondo);
+  border-color: var(--claro-borde);
+}
+
+.appblanca .dash2visorcard,
+.appblanca .dash2visor,
+.appblanca .dash2visorcanvasplaceholder,
+.appblanca .dash2modelopanel,
+.appblanca .tunnel-viewer {
+  background: #eaf3f8;
+  border-color: var(--claro-borde);
+}
+
+.appblanca .dash2tabs,
+.appblanca .cont2lecturas,
+.appblanca .ens2metricas,
+.appblanca .reg2metricas,
+.appblanca .docmetricas {
+  background: #d8e3eb;
+  border-color: var(--claro-borde);
+}
+
+.appblanca .dash2tabs button {
+  background: transparent;
+  color: #4f6377;
+}
+
+.appblanca .dash2tabs .dash2tabactivo,
+.appblanca .reg2itemseleccionado,
+.appblanca .ens2itemactivo,
+.appblanca .ens2itemseleccionado,
+.appblanca .docitemactivo {
+  background: #e0f0f8;
+  border-color: #5ca7c8;
+  color: var(--text-main);
+}
+
+.appblanca .cont2indicadorcorrecto,
+.appblanca .cont2chipactivo,
+.appblanca .reg2item em {
+  background: #e4f2e9;
+  border-color: #8fc7a3;
+  color: #276d3c;
+}
+
+.appblanca .cont2potencia {
+  background: #edf5f9;
+}
+
+.appblanca .cont2botonsecundario,
+.appblanca .ens2botonsecundario,
+.appblanca .reg2botonsecundario {
+  background: var(--claro-fondo);
+  border-color: #bdc9d5;
+  color: var(--text-main);
+}
+
+.appblanca .reg2eventoerror {
+  background: #f8e7e8;
+  border-color: #d8a0a5;
+}
+
+.appblanca .ens2activo,
+.appblanca .ens2flujointro,
+.appblanca .ens2itemactivo {
+  background: #eaf3f8;
+}
+
+.appblanca .ens2activoaccion {
+  background: var(--claro-suave);
+  border-color: var(--claro-borde-suave);
+}
+
+.appblanca .ens2pasos li > span {
+  background: var(--primary);
+  color: var(--claro-fondo);
+}
+
+.appblanca .ens2pasos li:not(:last-child)::after {
+  background: #9db8c9;
+}
+
+.appblanca .doccabeceratexto,
+.appblanca .cont2cabeceratexto {
+  border-right-color: var(--claro-borde);
+}
+
+.appblanca .reg2panelmediciones,
+.appblanca .reg2panelensayos {
+  border-color: var(--claro-borde);
+}
+
+.appblanca .inspescena {
+  background: #eaf3f8;
+}
+
+.appblanca .inspescena::before,
+.appblanca .inspescenafondo::after {
+  background: var(--claro-suave);
+}
+
+.appblanca .inspactivo,
+.appblanca .insppuntos,
+.appblanca .inspselector,
+.appblanca .inspselectorlista,
+.appblanca .inspselectorcontrol,
+.appblanca .inspescenazoom {
+  background: rgba(255, 255, 255, 0.94);
+  border-color: var(--claro-borde);
+  color: var(--text-main);
+}
+
+.appblanca .inspescenazoom {
+  border-radius: 4px;
+  background: var(--claro-fondo);
+}
+
+.appblanca .inspitem,
+.appblanca .inspselectoritem {
+  background: var(--claro-suave);
+  border-color: var(--claro-borde-suave);
+  color: var(--text-main);
+}
+
+.appblanca .inspitemactivo,
+.appblanca .inspselectoritemactivo {
+  background: #e0f0f8;
+  border-color: #5ca7c8;
+}
+
+.appblanca .inspreset {
+  background: rgba(255, 255, 255, 0.92);
+  border-color: #bdc9d5;
+  color: var(--text-main);
+}
+
+.appblanca .visorpuntoboton {
+  background: rgba(255, 255, 255, 0.92);
+  border-color: #b8c8d5;
+  color: var(--text-main);
+}
+
+.appblanca .visorpuntobotonactivo {
+  background: #e4f2e9;
+  border-color: #8fc7a3;
+}
+
+.appblanca .dash2alertamini {
+  color: var(--claro-fondo);
+}/* Chips superiores: estado,
+fuente,
+totales,
+codigos e identificadores. */
+.appblanca .dash2badge,
+.appblanca .reg2chip,
+.appblanca .cont2chip,
+.appblanca .ens2chip,
+.appblanca .inspeccion-chip,
+.appblanca .docpanelcabecera > strong,
+.appblanca .ens2codigodestacado {
+  display: inline-flex;
+  min-height: 30px;
+  align-items: center;
+  justify-content: center;
+  padding: 7px 11px;
+  background: var(--claro-fondo);
+  border: 1px solid #b8c8d5;
+  box-shadow: none;
+  color: var(--primary);
+  font-size: 11px;
+  font-weight: 850;
+  letter-spacing: 0.9px;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.appblanca .dash2badge,
+.appblanca .reg2chip,
+.appblanca .cont2chip,
+.appblanca .docpanelcabecera > strong {
+  color: #243246;
+}
+
+.appblanca .cont2chipactivo {
+  background: #e4f2e9;
+  border-color: #8fc7a3;
+  color: #276d3c;
+}
+
+.appblanca .dash2badgeambar {
+  background: #fff3df;
+  border-color: #dfb36d;
+  color: #8a5b12;
+}
+
+.appblanca .cont2potenciainputfila {
+  background: var(--claro-fondo);
+  border-color: #b9c8d5;
+}
+
+.appblanca .cont2potenciainputfila input {
+  color: #142033;
+}
+
+.appblanca .cont2barrapotencia {
+  background: #d4dde6;
+  border-color: #b9c8d5;
+}
+
+.appblanca .cont2barrarelleno {
+  background: var(--primary);
+}
+
+.appblanca .cont2barraescala,
+.appblanca .cont2potenciainputfila small {
+  color: #587087;
+}
+
+.appblanca .cont2barraescala span:nth-child(2) {
+  color: #24374b;
+}/* Ajuste especifico de las tarjetas de ensayos en Registro. */
+.appblanca .reg2itemensayo {
+  background: #dcecf5;
+  border-color: #5ca7c8;
+  color: var(--text-main);
+  gap: 7px;
+}
+
+.appblanca .reg2itemensayo.reg2itemseleccionado {
+  background: #d7edf8;
+  border-color: #39bdf8;
+}
+
+.appblanca .reg2itemensayo .reg2itemfecha,
+.appblanca .reg2itemensayo span {
+  color: #31506a;
+}
+
+.appblanca .reg2itemensayo strong {
+  color: #102033;
+}/* Control claro: misma maniobra,
+menos cajas interiores. */
+.appblanca .cont2panelmaniobra .cont2lecturas {
+  gap: 0;
+  background: transparent;
+  border: 0;
+  border-top: 1px solid var(--claro-borde-suave);
+  border-bottom: 1px solid var(--claro-borde-suave);
+}
+
+.appblanca .cont2panelmaniobra .cont2lectura {
+  min-height: 92px;
+  padding: 14px 18px;
+  background: transparent;
+  border: 0;
+  border-right: 1px solid var(--claro-borde-suave);
+}
+
+.appblanca .cont2panelmaniobra .cont2lectura:last-child {
+  border-right: 0;
+}
+
+.appblanca .cont2panelmaniobra .cont2potencia {
+  padding: 10px 0 0;
+  background: transparent;
+  border: 0;
+  border-top: 1px solid var(--claro-borde-suave);
+}
+
+.appblanca .cont2panelmaniobra .cont2barrapotencia {
+  height: 14px;
+  background: #dbe5ed;
+  border-color: var(--claro-borde);
+}/* Control claro: separadores verticales mas visibles entre lecturas. */
+.appblanca .cont2panelmaniobra .cont2lectura {
+  position: relative;
+  border-right: 0;
+}
+
+.appblanca .cont2panelmaniobra .cont2lectura:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  top: 16px;
+  right: 0;
+  bottom: 16px;
+  width: 2px;
+  background: #b8c8d7;
+}/* Control claro: contorno exterior de las zonas de maniobra,
+sin barras internas extra. */
+.appblanca .cont2panelmaniobra .cont2lectura::after {
+  display: none;
+}
+
+.appblanca .cont2panelmaniobra .cont2lecturas {
+  border: 1px solid var(--claro-borde-suave);
+}
+
+.appblanca .cont2panelmaniobra .cont2lectura:not(:last-child) {
+  border-right: 1px solid #c1d0dc;
+}
+
+.appblanca .cont2panelmaniobra .cont2potencia {
+  padding: 18px;
+  border: 1px solid var(--claro-borde-suave);
+  background: transparent;
+}/* Informe de medicion claro: aspecto mas tecnico y cientifico. */
+.appblanca .cont2recapresumen,
+.appblanca .reg2resumengrid,
+.appblanca .docinformeresumen {
+  gap: 1px;
+  background: var(--claro-borde);
+  border: 1px solid var(--claro-borde);
+}
+
+.appblanca .cont2recaptarjeta,
+.appblanca .reg2resumentarjeta {
+  gap: 7px;
+  padding: 12px 14px;
+  background: var(--claro-fondo);
+  border: 0;
+  border-top: 0;
+}
+
+.appblanca .cont2recapgrafica,
+.appblanca .reg2grafica {
+  gap: 10px;
+  padding: 14px;
+  background: var(--claro-fondo);
+  border: 1px solid var(--claro-borde);
+}
+
+.appblanca .grafmedsvg {
+  min-height: 230px;
+  background: var(--claro-suave);
+  background-size: 28px 28px;
+}
+
+.appblanca .grafmedrejilla line {
+  stroke: rgba(82, 101, 123, 0.18);
+  stroke-width: 1;
+}
+
+.appblanca .grafmedejes line {
+  stroke: rgba(31, 45, 63, 0.62);
+  stroke-width: 1.2;
+}
+
+.appblanca .grafmedticks text,
+.appblanca .grafmedreferencia text {
+  fill: #52657b;
+  font-size: 10px;
+  font-weight: 650;
+}
+
+.appblanca .grafmedreferencia line {
+  stroke: rgba(146, 104, 14, 0.55);
+  stroke-width: 1;
+  stroke-dasharray: 4 4;
+}
+
+.appblanca .grafmedlinea {
+  opacity: 0.86;
+}
+
+.appblanca .grafmedpuntos circle {
+  stroke: var(--claro-fondo);
+  stroke-width: 1.5;
+}/* Informe claro: la cuadricula solo queda dentro del area de ejes. */
+.appblanca .grafmedsvg {
+  background: transparent;
+}/* Informe claro: graficas solo con puntos medidos. */
+.appblanca .grafmedlinea {
+  display: none;
+}
+
+.appblanca .grafmedpuntos circle {
+  cursor: default;
+}
+
+.appblanca .inspselector {
+  border-radius: 10px;
+}
+
+.appblanca .inspselectorcontrol {
+  border-radius: 7px;
+}
+
+.appblanca .inspselectorlista {
+  border-radius: 8px;
+}
+
+.appblanca .inspselectoritem {
+  border-radius: 6px;
+}
+
+
+
+/* Ajustes finales modo claro sin important */
+.appblanca,
+body.body--tema-claro {
+  background: var(--claro-relleno);
+  color: var(--text-main);
+}
+
+.appblanca .app-main,
+.appblanca .page,
+.appblanca .page--dashboard2,
+.appblanca .page--control2,
+.appblanca .page--ensayo2,
+.appblanca .page--registro2,
+.appblanca .page--docente,
+.appblanca .page--inspeccion {
+  background: var(--claro-relleno);
+  color: var(--text-main);
+}
+
+.appblanca .sidebar,
+.appblanca .barsup,
+.appblanca .dash2card,
+.appblanca .dash2panelprincipal,
+.appblanca .dash2tecnica,
+.appblanca .cont2panel,
+.appblanca .cont2card,
+.appblanca .cont2cabecera,
+.appblanca .ens2panel,
+.appblanca .ens2cabecera,
+.appblanca .reg2panel,
+.appblanca .reg2cabecera,
+.appblanca .docpanel,
+.appblanca .doccabecera,
+.appblanca .docfiltros,
+.appblanca .inspactivo,
+.appblanca .insppuntos,
+.appblanca .inspselector,
+.appblanca .inspeccion-panel {
+  background: var(--claro-fondo);
+  border-color: var(--claro-borde);
+  box-shadow: none;
+  color: var(--text-main);
+}
+
+.appblanca .cont2lectura,
+.appblanca .cont2campoestado,
+.appblanca .cont2potencia,
+.appblanca .cont2recaptarjeta,
+.appblanca .cont2recapgrafica,
+.appblanca .cont2estadofila,
+.appblanca .dash2parametro,
+.appblanca .dash2tabla,
+.appblanca .dash2evento,
+.appblanca .ens2metrica,
+.appblanca .ens2item,
+.appblanca .ens2activo,
+.appblanca .ens2vacio,
+.appblanca .reg2item,
+.appblanca .reg2itemensayo,
+.appblanca .reg2medicion,
+.appblanca .reg2vacio,
+.appblanca .reg2resumentarjeta,
+.appblanca .reg2grafica,
+.appblanca .reg2tablamuestras,
+.appblanca .reg2evento,
+.appblanca .docitem,
+.appblanca .docdato,
+.appblanca .docmedicion,
+.appblanca .docdescripcion,
+.appblanca .docvacio,
+.appblanca .docinformeresumen,
+.appblanca .docinformetabla,
+.appblanca .inspitem,
+.appblanca .inspselectoritem,
+.appblanca .inspescenazoom {
+  background: #f8fafc;
+  border-color: var(--claro-borde-suave);
+  box-shadow: none;
+  color: var(--text-main);
+}
+
+.appblanca .reg2itemseleccionado,
+.appblanca .reg2itemensayo.reg2itemseleccionado,
+.appblanca .ens2itemseleccionado,
+.appblanca .ens2itemactivo,
+.appblanca .docitemactivo,
+.appblanca .inspitemactivo,
+.appblanca .inspselectoritemactivo,
+.appblanca .dash2tabactivo {
+  background: #e3f1f8;
+  border-color: #5ca7c8;
+  color: var(--text-main);
+}
+
+.appblanca input,
+.appblanca textarea,
+.appblanca select,
+.appblanca .cont2potenciainputfila,
+.appblanca .inspselectorcontrol {
+  background: var(--claro-fondo);
+  border-color: #bdc9d5;
+  color: var(--text-main);
+  box-shadow: none;
+}
+
+.appblanca button,
+.appblanca .cont2botonsecundario,
+.appblanca .ens2botonsecundario,
+.appblanca .reg2botonsecundario,
+.appblanca .docbotonsecundario,
+.appblanca .barsupiconbtn {
+  box-shadow: none;
+}
+
+.appblanca .cont2botonprimario,
+.appblanca .ens2botonprimario,
+.appblanca .reg2botonprimario,
+.appblanca .docbotonprimario {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--claro-fondo);
+}
+
+.appblanca .cont2botonpeligro,
+.appblanca .ens2botonpeligro,
+.appblanca .reg2botonpeligro,
+.appblanca .docbotonpeligro {
+  background: #a73845;
+  border-color: #a73845;
+  color: var(--claro-fondo);
+}
+
+.appblanca h1,
+.appblanca h2,
+.appblanca h3,
+.appblanca h4,
+.appblanca strong,
+.appblanca .cont2indicadorvalor,
+.appblanca .reg2resumenvalor,
+.appblanca .reg2graficavalor,
+.appblanca .docdato strong,
+.appblanca .docitem strong,
+.appblanca .dash2card strong {
+  color: var(--text-main);
+}
+
+.appblanca p,
+.appblanca small,
+.appblanca span,
+.appblanca td,
+.appblanca th,
+.appblanca label,
+.appblanca .reg2itemfecha,
+.appblanca .reg2graficapie,
+.appblanca .cont2barraescala,
+.appblanca .docitem small,
+.appblanca .docmedicion span {
+  color: #53677c;
+}
+
+.appblanca .cont2sobretitulo,
+.appblanca .reg2sobretitulo,
+.appblanca .docpanelcabecera span,
+.appblanca .dash2card span,
+.appblanca .grafmedtitulo,
+.appblanca .reg2graficaetiqueta,
+.appblanca .cont2recapgraficaetiqueta,
+.appblanca .reg2resumenetiqueta,
+.appblanca .cont2recaptarjetaetiqueta {
+  color: #5f7184;
+}
+
+.appblanca table,
+.appblanca .reg2tablamuestras,
+.appblanca .docdetalletabla,
+.appblanca .docinformetabla {
+  background: var(--claro-fondo);
+  border-color: var(--claro-borde);
+  color: var(--text-main);
+}
+
+.appblanca th,
+.appblanca td,
+.appblanca .reg2tablamuestras th,
+.appblanca .reg2tablamuestras td,
+.appblanca .docdetalletabla th,
+.appblanca .docdetalletabla td {
+  border-color: var(--claro-borde-suave);
+}
+
+.appblanca .grafmedsvg {
+  background: var(--claro-fondo);
+}
+
+.appblanca .grafmedejes line {
+  stroke: #66798d;
+}
+
+.appblanca .grafmedticks text,
+.appblanca .grafmedreferencia text {
+  fill: #52657b;
+}
+
+.appblanca .grafmedrejilla line {
+  stroke: rgba(82, 101, 123, 0.16);
+}
+
+.appblanca .inspescena,
+.appblanca .inspescenafondo {
+  background: #dce6ef;
+}
+
+.appblanca .inspescena::before,
+.appblanca .inspescenafondo::after {
+  background: transparent;
+}
+
+/* Cobertura amplia de modo claro por pantallas */
+.appblanca [class^="cont2"],
+.appblanca [class*=" cont2"],
+.appblanca [class^="ens2"],
+.appblanca [class*=" ens2"],
+.appblanca [class^="reg2"],
+.appblanca [class*=" reg2"],
+.appblanca [class^="doc"],
+.appblanca [class*=" doc"],
+.appblanca [class^="dash2"],
+.appblanca [class*=" dash2"],
+.appblanca [class^="insp"],
+.appblanca [class*=" insp"] {
+  color: var(--text-main);
+  box-shadow: none;
+}
+
+.appblanca div[class^="cont2"],
+.appblanca section[class^="cont2"],
+.appblanca article[class^="cont2"],
+.appblanca div[class^="ens2"],
+.appblanca section[class^="ens2"],
+.appblanca article[class^="ens2"],
+.appblanca div[class^="reg2"],
+.appblanca section[class^="reg2"],
+.appblanca article[class^="reg2"],
+.appblanca div[class^="doc"],
+.appblanca section[class^="doc"],
+.appblanca article[class^="doc"],
+.appblanca div[class^="dash2"],
+.appblanca section[class^="dash2"],
+.appblanca article[class^="dash2"] {
+  background-color: var(--claro-fondo);
+  border-color: var(--claro-borde);
+}
+
+.appblanca .cont2panel *,
+.appblanca .ens2panel *,
+.appblanca .reg2panel *,
+.appblanca .docpanel *,
+.appblanca .dash2card *,
+.appblanca .dash2panelprincipal *,
+.appblanca .dash2tecnica * {
+  border-color: var(--claro-borde);
+}
+
+.appblanca .cont2lectura,
+.appblanca .cont2campoestado,
+.appblanca .cont2estadofila,
+.appblanca .cont2recaptarjeta,
+.appblanca .cont2recapgrafica,
+.appblanca .ens2item,
+.appblanca .ens2activo,
+.appblanca .ens2vacio,
+.appblanca .reg2item,
+.appblanca .reg2itemensayo,
+.appblanca .reg2medicion,
+.appblanca .reg2evento,
+.appblanca .reg2vacio,
+.appblanca .reg2grafica,
+.appblanca .reg2resumentarjeta,
+.appblanca .docitem,
+.appblanca .docdato,
+.appblanca .docmedicion,
+.appblanca .docdescripcion,
+.appblanca .docvacio,
+.appblanca .dococupacion,
+.appblanca .dash2parametro,
+.appblanca .dash2tabla,
+.appblanca .dash2evento {
+  background-color: #f8fafc;
+}
+
+.appblanca .cont2panelmaniobra,
+.appblanca .cont2panelregistro,
+.appblanca .cont2panelseguridad,
+.appblanca .cont2paneldiagnostico,
+.appblanca .ens2panel,
+.appblanca .reg2panel,
+.appblanca .docpanel,
+.appblanca .dash2card,
+.appblanca .dash2panelprincipal,
+.appblanca .dash2tecnica {
+  background-color: var(--claro-fondo);
+}
+
+.appblanca .reg2itemseleccionado,
+.appblanca .reg2itemensayo.reg2itemseleccionado,
+.appblanca .docitemactivo,
+.appblanca .ens2itemactivo,
+.appblanca .ens2itemseleccionado,
+.appblanca .dash2tabactivo {
+  background-color: #e3f1f8;
+}
+
+.appblanca .cont2botonsecundario,
+.appblanca .ens2botonsecundario,
+.appblanca .reg2botonsecundario,
+.appblanca .docbotonsecundario {
+  background-color: var(--claro-fondo);
+  color: var(--text-main);
+  border-color: #bdc9d5;
+}
+
+.appblanca .cont2botonprimario,
+.appblanca .ens2botonprimario,
+.appblanca .reg2botonprimario,
+.appblanca .docbotonprimario,
+.appblanca .dash2accionprimaria {
+  background-color: var(--primary);
+  border-color: var(--primary);
+  color: var(--claro-fondo);
+}
+
+.appblanca .cont2botonpeligro,
+.appblanca .ens2botonpeligro,
+.appblanca .reg2botonpeligro,
+.appblanca .docbotonpeligro {
+  background-color: #a73845;
+  border-color: #a73845;
+  color: var(--claro-fondo);
+}
+
+.appblanca .cont2sobretitulo,
+.appblanca .ens2sobretitulo,
+.appblanca .reg2sobretitulo,
+.appblanca .docpanelcabecera span,
+.appblanca .docdato span,
+.appblanca .dash2card span,
+.appblanca .grafmedtitulo,
+.appblanca .reg2graficaetiqueta,
+.appblanca .cont2recapgraficaetiqueta,
+.appblanca .reg2resumenetiqueta,
+.appblanca .cont2recaptarjetaetiqueta {
+  color: #65778a;
+}
+
+.appblanca .inspescenafondo,
+.appblanca .inspescena {
+  background-color: #dce6ef;
+}
+
+.appblanca .inspactivo,
+.appblanca .insppuntos,
+.appblanca .inspselector,
+.appblanca .inspselectorlista,
+.appblanca .inspselectorcontrol,
+.appblanca .inspescenazoom {
+  background-color: rgba(255, 255, 255, 0.94);
+  border-color: var(--claro-borde);
+  color: var(--text-main);
+}
+
+.appblanca .inspitem,
+.appblanca .inspselectoritem {
+  background-color: #f8fafc;
+  border-color: var(--claro-borde-suave);
+  color: var(--text-main);
+}
+
+.appblanca .inspitemactivo,
+.appblanca .inspselectoritemactivo {
+  background-color: #e3f1f8;
+  border-color: #5ca7c8;
+}
+
+/* Remates concretos modo claro */
+.appblanca .inspescenainferior {
+  background: var(--claro-relleno);
+}
+
+.appblanca .inspactivocabecera,
+.appblanca .insppuntoscabecera {
+  border-bottom-color: var(--claro-borde-suave);
+}
+
+.appblanca .inspactivotitulo,
+.appblanca .inspactivoresumen,
+.appblanca .inspitem strong,
+.appblanca .inspselectoritem strong {
+  color: var(--text-main);
+}
+
+.appblanca .inspactivotexto,
+.appblanca .inspitem p,
+.appblanca .inspselectoritem p {
+  color: #41566c;
+}
+
+.appblanca .page--docente > .docbuscadorarriba {
+  background: transparent;
+  border-color: transparent;
+}
+
+.appblanca .page--docente > .docbuscadorarriba .docbuscarcentral input {
+  background: var(--claro-fondo);
+  border: 1px solid #bdc9d5;
+  color: var(--text-main);
+}
+
+.appblanca .page--docente > .docbuscadorarriba .docbuscarcentral input::placeholder {
+  color: #6c7f93;
+}
+
+.appblanca .docdetalletabla,
+.appblanca .informemedresumentabla {
+  background: var(--claro-fondo);
+  border-color: var(--claro-borde);
+  color: var(--text-main);
+}
+
+.appblanca .docdetalletabla th,
+.appblanca .informemedresumentabla th {
+  background: #edf3f7;
+  border-color: var(--claro-borde);
+  color: #5f7184;
+}
+
+.appblanca .docdetalletabla td,
+.appblanca .informemedresumentabla td {
+  background: var(--claro-fondo);
+  border-color: var(--claro-borde-suave);
+  color: var(--text-main);
+}
+
+.appblanca .docdetalletabla td small {
+  color: #6c7f93;
+}
+
+.appblanca .reg2panelcontador,
+.appblanca .ens2contadorlista,
+.appblanca .docpanelcontador,
+.appblanca .dash2contador,
+.appblanca .reg2chip,
+.appblanca .ens2chip,
+.appblanca .docchip,
+.appblanca .dash2badge {
+  background: var(--claro-fondo);
+  border-color: #bdc9d5;
+  color: #243246;
+}
+
+.appblanca .informemed .reg2tablamuestras th,
+.appblanca .informemed .reg2tablamuestras td {
+  background: var(--claro-fondo);
+  color: var(--text-main);
+  border-color: var(--claro-borde-suave);
+}
+
+.appblanca .informemed .reg2tablamuestras th {
+  background: #edf3f7;
+  color: #5f7184;
+}
+
+/* Boton desconectar docente en modo claro */
+.appblanca .docdesconectar {
+  background: #a73845;
+  border-color: #a73845;
+  color: var(--claro-fondo);
+}
+
+.appblanca .docdesconectar:hover {
+  background: #8f2638;
+}
+
+/* Barra lateral: icono activo en modo claro */
+.appblanca .sidelinkactive .sidelinklabel,
+.appblanca .sidelinkactive .sidelinkicon,
+.appblanca .sidelinkactive .sidelinkicon svg {
+  color: var(--primary);
+  stroke: currentColor;
+}
+
+/* Modo claro con la misma jerarquia visual que el modo oscuro */
+.appblanca .app-main,
+.appblanca .page,
+.appblanca .page--control2,
+.appblanca .page--ensayo2,
+.appblanca .page--registro2,
+.appblanca .page--docente,
+.appblanca .page--dashboard2 {
+  background: #edf3f7;
+}
+
+.appblanca .cont2grid,
+.appblanca .ens2gridprincipal,
+.appblanca .reg2navegador,
+.appblanca .docgrid,
+.appblanca .dash2layout {
+  background: transparent;
+}
+
+.appblanca .cont2panel,
+.appblanca .ens2panel,
+.appblanca .reg2panel,
+.appblanca .docpanel,
+.appblanca .dash2card,
+.appblanca .inspeccion-panel,
+.appblanca .inspactivo,
+.appblanca .insppuntos {
+  background: var(--claro-fondo);
+  border-color: #c5d2de;
+}
+
+.appblanca .cont2potencia,
+.appblanca .cont2lectura,
+.appblanca .cont2campoestado,
+.appblanca .cont2alerta,
+.appblanca .ens2item,
+.appblanca .reg2item,
+.appblanca .docitem,
+.appblanca .docmedicion,
+.appblanca .docdetalletabla,
+.appblanca .reg2grafica,
+.appblanca .reg2tablamuestras,
+.appblanca .informemedresumentabla,
+.appblanca .inspitem,
+.appblanca .inspselectoritem {
+  background: #f8fafc;
+  border-color: #d0dbe5;
+}
+
+.appblanca .reg2itemseleccionado,
+.appblanca .ens2itemseleccionado,
+.appblanca .docitemactivo,
+.appblanca .inspitemactivo,
+.appblanca .inspselectoritemactivo {
+  background: #eaf5fb;
+  border-color: #58aeda;
+}
+
+.appblanca .botondescargar,
+.appblanca .botonborrar,
+.appblanca .reg2itemacciones .reg2boton,
+.appblanca .docacciones .docbtn {
+  box-shadow: none;
+}
+
+
+/* Fondo de separacion del control en modo claro */
+.appblanca .page--control2 .cont2grid {
+  background: #edf3f7;
+}
+
+/* Conexion ocupada en modo claro */
+.appblanca .cont2conexionocupada {
+  background: #fff4df;
+  border: 1px solid #c7832f;
+}
+
+.appblanca .cont2conexionocupada strong {
+  color: #9a5a13;
+}
+
+.appblanca .cont2conexionocupada span,
+.appblanca .cont2conexionocupada small {
+  color: #73502a;
+}
+/* Fondos internos de control en modo claro */
+.appblanca .page--control2 .cont2lineasestado,
+.appblanca .page--control2 .cont2tablasistema {
+  gap: 8px;
+}
+
+.appblanca .page--control2 .cont2lineasestado .cont2campoestado,
+.appblanca .page--control2 .cont2tablasistema .cont2campoestado {
+  background: #edf3f7;
+  border: 0;
+}
+.appblanca .page--control2 .cont2seguridadresumen > * {
+  background: #edf3f7;
+  border: 0;
+}
+/* Seleccion de ensayos en Registro, modo claro */
+.appblanca .page--registro2 .reg2itemensayo.reg2itemseleccionado {
+  background: #e9eff4;
+  border-color: #b8c6d2;
+}
+
+.appblanca .page--registro2 .reg2itemensayo.reg2itemseleccionado .reg2itemacciones {
+  background: #e9eff4;
+}
+/* Botones de Docente en modo claro */
+.appblanca .page--docente .docbtn {
+  background: #eef4f8;
+  border-color: #c6d3df;
+  color: #0f2338;
+}
+
+.appblanca .page--docente .docbtn svg {
+  color: currentColor;
+  stroke: currentColor;
+}
+
+.appblanca .page--docente .docbtnpeligro,
+.appblanca .page--docente .botonborrar {
+  background: #a8485d;
+  border-color: #a8485d;
+  color: var(--claro-fondo);
+}
+
+.appblanca .page--docente .docbtnpeligro svg,
+.appblanca .page--docente .botonborrar svg {
+  color: var(--claro-fondo);
+  stroke: var(--claro-fondo);
+}
+.appblanca .page--registro2 .reg2itemmedicion.reg2itemseleccionado {
+  background: #e9eff4;
+  border-color: #b8c6d2;
+}
+.appblanca .page--registro2 .reg2itemmedicion {
+  background: var(--claro-fondo);
+  border-color: var(--claro-borde);
+}
+
+/* Titulos de panel sin linea inferior, manteniendo el aire visual. */
+.cont2panelcabecera,
+.ens2panelcabecera,
+.reg2panelcabecera,
+.docpanelcabecera,
+.inspactivocabecera,
+.insppuntoscabecera,
+.informemedcabecera,
+.docinformecabecera,
+.dochistorialcabecera,
+.dash2seccioncabecera,
+.dash2paneleventoscabecera,
+.reg2graficacabecera,
+.reg2bloquetitulo,
+.cont2bloquetitulo,
+.cont2recapgraficacabecera {
+  border-bottom: 0;
+}
+
+.cont2panelcabecera,
+.ens2panelcabecera,
+.reg2panelcabecera,
+.docpanelcabecera,
+.inspactivocabecera,
+.insppuntoscabecera,
+.informemedcabecera,
+.docinformecabecera,
+.dochistorialcabecera {
+  padding-bottom: 14px;
+}
+
+/* Tamano unico para titulos de bloques y paneles. */
+.cont2panelcabecera h3,
+.ens2panelcabecera h3,
+.reg2panelcabecera h3,
+.docpanelcabecera h3,
+.informemedcabecera h3,
+.docinformecabecera h3,
+.dochistorialcabecera h3,
+.dash2seccioncabecera h2,
+.dash2seccioncabecera h3,
+.dash2paneleventoscabecera h4,
+.inspactivotitulo,
+.insppuntoscabecera h3,
+.reg2panel h3,
+.ens2panel h3 {
+  font-size: 27px;
+  line-height: 1.1;
+  letter-spacing: -0.035em;
+}
+
+

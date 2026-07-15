@@ -109,6 +109,7 @@ export function PanelManiobraControl2({
   lecturasMed,
   puedeOperar = false,
   onApagarTunel,
+  onSolicitarEncendido,
 }) {
   const [valorPot, setValorPot] = useState(consigna.valor);
 
@@ -134,6 +135,7 @@ export function PanelManiobraControl2({
   const bloqueoEncender = !puedeOperar || tunel.estadoTunel === "RUNNING";
   const bloqueoApagar = !puedeOperar || tunel.estadoTunel !== "RUNNING";
   const accionApagar = onApagarTunel || acciones.apagarTunel;
+  const accionEncender = onSolicitarEncendido || acciones.encenderTunel;
   let textoControl = "Bloqueado";
   if (puedeOperar) {
     textoControl = "Habilitado";
@@ -173,6 +175,10 @@ export function PanelManiobraControl2({
   }
 
   function aplicarPotencia() {
+    if (!puedeOperar) {
+      return;
+    }
+
     const potenciaFinal = limitarPotencia(valorPot);
     setValorPot(potenciaFinal);
 
@@ -188,6 +194,10 @@ export function PanelManiobraControl2({
     }
   }
 
+  function solicitarEncendido() {
+    accionEncender?.(limitarPotencia(valorPot));
+  }
+
   return (
     <section className="cont2panel cont2panelmaniobra">
       <CabeceraPanel
@@ -197,7 +207,7 @@ export function PanelManiobraControl2({
           <button
             type="button"
             className={"cont2botonpower " + (tunel.estadoTunel === "RUNNING" ? "cont2botonpowerapagado" : "cont2botonpowerencendido")}
-            onClick={tunel.estadoTunel === "RUNNING" ? accionApagar : acciones.encenderTunel}
+            onClick={tunel.estadoTunel === "RUNNING" ? accionApagar : solicitarEncendido}
             disabled={tunel.estadoTunel === "RUNNING" ? bloqueoApagar : bloqueoEncender}
             aria-label={tunel.estadoTunel === "RUNNING" ? "Apagar tunel" : "Encender tunel"}
             title={tunel.estadoTunel === "RUNNING" ? "Apagar tunel" : "Encender tunel"}
@@ -227,6 +237,7 @@ export function PanelManiobraControl2({
                 onChange={cambiarPotencia}
                 onKeyDown={comprobarTecla}
                 onBlur={aplicarPotencia}
+                disabled={!puedeOperar}
               />
               <small>{consigna.unidad}</small>
             </div>
@@ -413,6 +424,8 @@ export function RecapMedicionControl2({ resumenUlt: resumen, tarjetas, onDescarg
     </section>
   );
 }
+
+
 
 
 

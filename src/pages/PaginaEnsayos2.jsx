@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { obtenerEnsayoActivo } from "../servicios/tunel/estadoTunel";
 import { useTunel } from "../servicios/tunel/useTunel";
 import {
@@ -21,7 +21,7 @@ const FORMULARIO_VACIO = {
   descripcion: "",
 };
 
-function CampoEnsayo2({ etiqueta, nombre, valor, placeholder, onChange, area = false, limite }) {
+function CampoEnsayo2({ etiqueta, nombre, valor, placeholder, onChange, area = false, limite, disabled = false }) {
   const contador = limite ? (
     <small className="ens2campocontador">
       {valor.length}/{limite}
@@ -38,6 +38,7 @@ function CampoEnsayo2({ etiqueta, nombre, valor, placeholder, onChange, area = f
           placeholder={placeholder}
           onChange={onChange}
           maxLength={limite}
+          disabled={disabled}
         />
         {contador}
       </label>
@@ -54,6 +55,7 @@ function CampoEnsayo2({ etiqueta, nombre, valor, placeholder, onChange, area = f
         placeholder={placeholder}
         onChange={onChange}
         maxLength={limite}
+        disabled={disabled}
       />
       {contador}
     </label>
@@ -82,9 +84,6 @@ function FormularioCrearEnsayo({ formulario, onChange, onSubmit, guardando, erro
       <header className="ens2panelcabecera">
         <h3>Crear nuevo ensayo</h3>
       </header>
-
-      {error ? <p className="ens2error">{error}</p> : null}
-
       <div className="ens2formulario">
         <CampoEnsayo2
           etiqueta="Nombre del ensayo"
@@ -113,13 +112,16 @@ function FormularioCrearEnsayo({ formulario, onChange, onSubmit, guardando, erro
         />
       </div>
 
-      <button
-        type="submit"
-        className="ens2boton ens2botonprimario"
-        disabled={guardando || !formularioCompleto(formulario)}
-      >
-        {guardando ? "Creando ensayo..." : "Crear ensayo"}
-      </button>
+      <div className="ens2accionescrear">
+        <button
+          type="submit"
+          className="ens2boton ens2botonprimario"
+          disabled={guardando || !formularioCompleto(formulario)}
+        >
+          {guardando ? "Creando ensayo..." : "Crear ensayo"}
+        </button>
+        {error ? <span className="ens2errorlinea">{error}</span> : null}
+      </div>
     </form>
   );
 }
@@ -128,6 +130,7 @@ function PaginaEnsayos2({ usuarioActual, onAbrirControl, onCrearEnsayo }) {
   const { estadoTunel, accionesTunel } = useTunel();
   const ensayoActivo = obtenerEnsayoActivo(estadoTunel);
   const ensayos = estadoTunel.ensayos || [];
+  const edicionBloqueada = Boolean(estadoTunel.medActiva);
 
   const [formCrear, setFormCrear] = useState({ ...FORMULARIO_VACIO });
   const [formEditar, setFormEditar] = useState(() => crearFormularioDesdeEnsayo(ensayoActivo));
@@ -212,6 +215,11 @@ function PaginaEnsayos2({ usuarioActual, onAbrirControl, onCrearEnsayo }) {
       return;
     }
 
+    if (edicionBloqueada) {
+      setErrorEditar("No se puede editar el ensayo mientras hay una medicion activa.");
+      return;
+    }
+
     setGuardandoEditar(true);
     setErrorEditar("");
 
@@ -259,7 +267,7 @@ function PaginaEnsayos2({ usuarioActual, onAbrirControl, onCrearEnsayo }) {
 
         <section className="ens2panel ens2panelfichaunica">
           <header className="ens2panelcabecera">
-            <h3>Editar ensayo</h3>
+            <h3>Editar ensayo activo</h3>
           </header>
 
           {ensayoActivo ? (
@@ -280,7 +288,8 @@ function PaginaEnsayos2({ usuarioActual, onAbrirControl, onCrearEnsayo }) {
               </div>
 
               <form className="ens2editarform" onSubmit={guardarCambiosEnsayo}>
-                {errorEditar ? <p className="ens2error">{errorEditar}</p> : null}
+                {edicionBloqueada ? <p className="ens2error">No se puede editar el ensayo mientras hay una medicion activa.</p> : null}
+                {!edicionBloqueada && errorEditar ? <p className="ens2error">{errorEditar}</p> : null}
                 <div className="ens2formulario">
                   <CampoEnsayo2
                     etiqueta="Nombre del ensayo"
@@ -289,6 +298,7 @@ function PaginaEnsayos2({ usuarioActual, onAbrirControl, onCrearEnsayo }) {
                     placeholder="Nombre del ensayo"
                     onChange={cambiarFormularioEditar}
                     limite={LIMITES_CAMPOS_ENSAYO.nombre}
+                    disabled={edicionBloqueada}
                   />
                   <CampoEnsayo2
                     etiqueta="Objetivo"
@@ -297,6 +307,7 @@ function PaginaEnsayos2({ usuarioActual, onAbrirControl, onCrearEnsayo }) {
                     placeholder="Objetivo del ensayo"
                     onChange={cambiarFormularioEditar}
                     limite={LIMITES_CAMPOS_ENSAYO.objetivo}
+                    disabled={edicionBloqueada}
                   />
                   <CampoEnsayo2
                     etiqueta="Descripcion"
@@ -306,6 +317,7 @@ function PaginaEnsayos2({ usuarioActual, onAbrirControl, onCrearEnsayo }) {
                     onChange={cambiarFormularioEditar}
                     limite={LIMITES_CAMPOS_ENSAYO.descripcion}
                     area
+                    disabled={edicionBloqueada}
                   />
                 </div>
 
@@ -313,7 +325,7 @@ function PaginaEnsayos2({ usuarioActual, onAbrirControl, onCrearEnsayo }) {
                   <button
                     type="submit"
                     className="ens2boton ens2botonprimario"
-                    disabled={guardandoEditar || !formularioCompleto(formEditar)}
+                    disabled={edicionBloqueada || guardandoEditar || !formularioCompleto(formEditar)}
                   >
                     {guardandoEditar ? "Guardando..." : "Guardar cambios"}
                   </button>
@@ -385,6 +397,9 @@ function PaginaEnsayos2({ usuarioActual, onAbrirControl, onCrearEnsayo }) {
 }
 
 export default PaginaEnsayos2;
+
+
+
 
 
 

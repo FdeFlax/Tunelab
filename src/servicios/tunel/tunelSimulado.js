@@ -1,4 +1,4 @@
-﻿import {
+import {
   actualizarEnsayoEnLista,
   aproximarValor,
   calcularResumenMedicion,
@@ -138,7 +138,9 @@ function crearTunelSimulado() {
       potenciaObjetivo = potenciaObjetivoAutomatico;
     }
 
-    const nuevaPotencia = Math.round(aproximarValor(estado.potPct, potenciaObjetivo, 2.4));
+    const nuevaPotencia = tunelEncendido
+      ? Math.round(aproximarValor(estado.potPct, potenciaObjetivo, 2.4))
+      : 0;
     const factorPotencia = nuevaPotencia / 100;
     const velocidadObjetivo = tunelEncendido
       ? modoAutomatico

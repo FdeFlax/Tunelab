@@ -27,6 +27,7 @@
 
 body {
   margin: 0;
+  font-size: 14px;
   font-family: "Trebuchet MS", "Segoe UI", sans-serif;
   background: #09101b;
   color: var(--text-main);
@@ -40,5 +41,4 @@ input {
 #root {
   min-height: 100vh;
 }
-
 

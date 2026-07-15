@@ -1,0 +1,284 @@
+.dash2operacion {
+  display: grid;
+  grid-template-columns: minmax(0, 1.22fr) minmax(420px, 1fr);
+  gap: 0;
+  align-items: stretch;
+}
+
+.dash2visorcard {
+  grid-template-rows: auto minmax(0, 1fr);
+  min-height: clamp(500px, 44vw, 650px);
+}
+
+.dash2visor {
+  position: relative;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+  border: 1px solid rgba(133, 154, 184, 0.16);
+  background: #101b2d;
+}
+
+.dash2visorcanvas {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  border-radius: 0;
+}
+
+.dash2visorcanvasplaceholder {
+  background: #101b2d;
+}
+
+.dash2estadoflotante span,
+.dash2tarjeta span,
+.dash2tecnicaitem span {
+  color: #aebcd0;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+}
+
+.dash2estadoflotante small,
+.dash2tarjeta small,
+.dash2tecnicaitem small {
+  color: #c3cedd;
+  line-height: 1.35;
+}
+
+.dash2panelprincipal {
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  min-height: clamp(500px, 44vw, 650px);
+  background: #101b2d;
+}
+
+.dash2tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border: 1px solid rgba(133, 154, 184, 0.16);
+}
+
+.dash2tabs button {
+  border: 0;
+  border-left: 1px solid rgba(133, 154, 184, 0.16);
+  background: transparent;
+  color: #aebcd0;
+  padding: 12px 10px;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.dash2tabs button:first-child {
+  border-left: 0;
+}
+
+.dash2tabs .dash2tabactivo {
+  background: rgba(77, 198, 255, 0.12);
+  color: #ffffff;
+  box-shadow: inset 0 -3px 0 #58c3ff;
+}
+
+.dash2alertamini {
+  display: inline-grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  margin-left: 6px;
+  border-radius: 999px;
+  background: #e44d5e;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.dash2rejillapanel {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-auto-rows: minmax(142px, 1fr);
+  gap: 10px;
+  align-content: start;
+}
+
+.dash2tarjeta > .dash2alertamini {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  margin-left: 0;
+}
+
+.dash2medidor {
+  position: relative;
+  width: min(142px, 100%);
+  aspect-ratio: 1.65;
+  display: grid;
+  place-items: end center;
+}
+
+.dash2medidor svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.dash2medidorfondo,
+.dash2medidorrelleno {
+  fill: none;
+  stroke-width: 24;
+  stroke-linecap: butt;
+}
+
+.dash2medidorfondo {
+  stroke: rgba(137, 157, 186, 0.2);
+}
+
+.dash2medidorrelleno {
+  stroke: #58c3ff;
+  stroke-dasharray: var(--dash2medidor) 100;
+}
+
+.dash2tarjetaambar .dash2medidorrelleno {
+  stroke: #f0b35a;
+}
+
+.dash2tarjetacian .dash2medidorrelleno {
+  stroke: #58c3ff;
+}
+
+.dash2medidor strong {
+  z-index: 1;
+  font-size: clamp(25px, 2vw, 34px);
+}
+
+.dash2medidor strong small {
+  margin-left: 4px;
+  color: #d7e3f2;
+  font-size: 13px;
+}
+
+.dash2paneleventos {
+  display: grid;
+  gap: 14px;
+  min-height: 0;
+  align-content: start;
+  grid-auto-rows: max-content;
+}
+
+.dash2paneleventoscabecera {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.dash2paneleventoscabecera > div {
+  display: grid;
+  gap: 6px;
+}
+
+.dash2paneleventoscabecera h4 {
+  font-size: 19px;
+}
+
+.dash2eventoslista {
+  display: grid;
+  gap: 10px;
+  max-height: 340px;
+  overflow-y: auto;
+  padding-right: 4px;
+  align-content: start;
+}
+
+.dash2vacio {
+  display: grid;
+  gap: 7px;
+  min-height: 96px;
+  align-content: center;
+  padding: 18px;
+  border: 1px solid rgba(133, 154, 184, 0.24);
+  color: #c3cedd;
+}
+
+.dash2vacio strong {
+  color: #ffffff;
+}
+
+.dash2panelacciones {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.dash2tecnica {
+  background: #101b2d;
+}
+
+.dash2tecnicagrid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.dash2tecnicaitem {
+  display: grid;
+  gap: 5px;
+  min-height: 82px;
+  align-content: center;
+  padding: 12px 14px;
+  border: 1px solid rgba(133, 154, 184, 0.14);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.dash2tecnicaitem strong {
+  color: #ffffff;
+  font-size: 27px;
+  line-height: 1;
+}
+
+@media (max-width: 1280px) {
+  .dash2operacion {
+    grid-template-columns: 1fr;
+  }
+
+  .dash2visorcard,
+  .dash2panelprincipal {
+    min-height: auto;
+  }
+
+  .dash2visor {
+    height: clamp(360px, 48vw, 520px);
+  }
+}
+
+@media (max-width: 980px) {
+  .dash2tecnicagrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .dash2rejillapanel,
+  .dash2tecnicagrid,
+  .dash2panelacciones {
+    grid-template-columns: 1fr;
+  }
+
+  .dash2visor {
+    height: 360px;
+  }
+}
+
+
+
+
+
+
+
+
+
+

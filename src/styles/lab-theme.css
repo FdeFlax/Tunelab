@@ -49,10 +49,6 @@
   border-color: transparent;
 }
 
-.barsup {
-  border-bottom-color: rgba(132, 150, 170, 0.2);
-  background: #08111d;
-}
 
 .aviso-global {
   border-radius: 2px;
@@ -500,7 +496,6 @@ sin barras internas extra. */
 .grafmedpuntos circle {
   cursor: default;
 }
-
 
 
 

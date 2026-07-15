@@ -1,4 +1,4 @@
-.page--docente {
+﻿.page--docente {
   display: grid;
   gap: 14px;
 }
@@ -21,7 +21,7 @@
 .docpanelcabecera span,
 .doccampo span,
 .docdescripcion span {
-  color: #58c3ff;
+  color: var(--primary);
   font-size: 10px;
   font-weight: 850;
   letter-spacing: 1.5px;
@@ -123,7 +123,7 @@
 
 .docmedicioneslista {
   display: grid;
-  gap: 10px;
+  gap: 6px;
   max-height: clamp(260px, 34vh, 320px);
   overflow-y: auto;
   padding-right: 6px;
@@ -133,16 +133,16 @@
 .docmedicion {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: 16px;
+  gap: 10px;
   align-items: center;
-  padding: 13px 14px;
+  padding: 9px 10px;
   border: 1px solid rgba(132, 150, 170, 0.16);
   background: #0c1726;
 }
 
 .docmedicion div {
   display: flex;
-  gap: 10px;
+  gap: 7px;
   align-items: center;
   flex-wrap: wrap;
 }
@@ -153,7 +153,7 @@
 
 .docmedicion span {
   color: #aebdd2;
-  font-size: 12px;
+  font-size: 11px;
 }
 
 @media (max-width: 1180px) {
@@ -445,7 +445,7 @@
 /* Tarjeta visible para el usuario que tiene conectado el tunel. */
 
 .docusotunelactivo {
-  border-color: rgba(88, 195, 255, 0.38);
+  border-color: color-mix(in srgb, var(--primary) 38%, transparent);
   background: #102842;
 }
 /* Tarjeta de uso del tunel mas estrecha. */
@@ -543,3 +543,177 @@
 }
 
 
+/* Tarjeta superior de uso actual del tunel en docente. */
+.docusotunel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 18px 20px;
+  margin-bottom: 18px;
+  border: 1px solid color-mix(in srgb, var(--primary) 28%, transparent);
+  background: #10263d;
+  color: #edf3fb;
+}
+
+.docusotunel > div:first-child {
+  display: grid;
+  gap: 5px;
+}
+
+.docusotunel > div:first-child > span {
+  color: #aebdd2;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.docusotunel h3 {
+  margin: 0;
+  color: #ffffff;
+  font-size: 22px;
+  line-height: 1.1;
+}
+
+.docusotunel span {
+  color: #c9d5e5;
+  font-size: 13px;
+}
+
+.docusotuneldatos {
+  display: grid;
+  gap: 4px;
+  justify-items: end;
+  text-align: right;
+}
+
+.docusotuneldatos strong {
+  color: #ffffff;
+  font-size: 18px;
+  line-height: 1.1;
+}
+
+.docusotuneldatos span {
+  color: #c9d5e5;
+}
+
+.docusotunelactivo {
+  border-color: rgba(247, 181, 86, 0.52);
+  background: #152c3c;
+}
+/* Ajuste compacto de Docente: misma estructura, escala visual mas contenida. */
+.page--docente {
+  font-size: 12px;
+}
+
+.page--docente .docpanel {
+  gap: 12px;
+  padding: 14px;
+}
+
+.page--docente .docpanelcabecera {
+  gap: 10px;
+  padding-bottom: 10px;
+}
+
+.page--docente .docpanelcabecera h3,
+.page--docente .dochistorialcabecera h3,
+.page--docente .docinforme h3 {
+  font-size: clamp(18px, 1.35vw, 22px);
+  line-height: 1.15;
+}
+
+.page--docente .docpanelcabecera span,
+.page--docente .docdato span,
+.page--docente .doccampo span,
+.page--docente .docdescripcion span,
+.page--docente .docusotunel > div:first-child > span {
+  font-size: 9px;
+  letter-spacing: 1.1px;
+  font-weight: 400;
+}
+
+.page--docente .docpanelcabecera > strong {
+  padding: 5px 8px;
+  font-size: 10px;
+  font-weight: 400;
+}
+
+.page--docente .docdato {
+  gap: 5px;
+  min-height: 68px;
+  padding: 10px;
+}
+
+.page--docente .docdato strong {
+  font-size: clamp(15px, 1.25vw, 21px);
+  font-weight: 500;
+}
+
+.page--docente .docdato small,
+.page--docente .dochistorialevento span,
+.page--docente .docusotunel span,
+.page--docente .docusotuneldatos span {
+  font-size: 10.5px;
+  font-weight: 400;
+}
+
+
+
+.page--docente .docdetalletabla th,
+.page--docente .docdetalletabla td {
+  padding: 9px 10px;
+}
+
+.page--docente .docdetalletabla th {
+  font-size: 9.5px;
+  font-weight: 400;
+}
+
+.page--docente .docdetalletabla td {
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.35;
+}
+
+.page--docente .docdetalletabla caption {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.page--docente .docbtn,
+.page--docente .docdesconectar {
+  min-height: 30px;
+  padding: 0 10px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.page--docente .docusotunel {
+  gap: 12px;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+}
+
+.page--docente .docusotunel h3 {
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.page--docente .docusotuneldatos strong {
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.page--docente .docinforme,
+.page--docente .dochistorial {
+  gap: 12px;
+  margin-top: 12px;
+  padding: 14px;
+}
+
+.page--docente .dochistorialevento {
+  gap: 4px;
+  padding: 9px 10px;
+}

@@ -1,4 +1,4 @@
-﻿from functools import lru_cache
+from functools import lru_cache
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -11,8 +11,8 @@ class Configuracion(BaseSettings):
     app_nombre: str = "Tunelab API"
 
     # Cadena de conexion a la base de datos.
-    # Si no hay .env, usa este valor por defecto de SQLite para pruebas.
-    database_url: str = "sqlite:///./tunelab_local.db"
+    # Es obligatoria: debe venir desde .env para asegurar que siempre se usa MySQL.
+    database_url: str
 
     # Lista de webs que pueden llamar al backend.
     # Se guarda como texto separado por comas porque asi es facil ponerlo en .env.

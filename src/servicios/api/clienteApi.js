@@ -1,5 +1,29 @@
-﻿export const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8010/api";
+export const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8010/api";
 const CLAVE_IDENTIDAD_API = "tunelab_identidad_api";
+
+function guardarIdentidadApi(identidad) {
+  const datos = JSON.stringify(identidad);
+  window.localStorage.setItem(CLAVE_IDENTIDAD_API, datos);
+  window.sessionStorage.setItem(CLAVE_IDENTIDAD_API, datos);
+}
+
+function cargarIdentidadApi() {
+  const datosPersistentes = window.localStorage.getItem(CLAVE_IDENTIDAD_API);
+  const datosSesion = window.sessionStorage.getItem(CLAVE_IDENTIDAD_API);
+  const datos = datosPersistentes || datosSesion;
+
+  if (!datos) {
+    return null;
+  }
+
+  const identidad = JSON.parse(datos);
+
+  if (!datosPersistentes) {
+    guardarIdentidadApi(identidad);
+  }
+
+  return identidad;
+}
 
 export class ErrorApi extends Error {
   constructor(mensaje, respuesta, detalle = "") {
@@ -18,12 +42,12 @@ export function configurarIdentidadApi(usuarioActual = {}) {
     rol: usuarioActual.rol || "alumno",
   };
 
-  window.sessionStorage.setItem(CLAVE_IDENTIDAD_API, JSON.stringify(identidad));
+  guardarIdentidadApi(identidad);
 }
 
 function obtenerCabecerasIdentidad() {
   try {
-    const identidad = JSON.parse(window.sessionStorage.getItem(CLAVE_IDENTIDAD_API) || "{}");
+    const identidad = cargarIdentidadApi() || {};
 
     return {
       "X-Usuario-Uacloud": identidad.identificador || "usuario-local",
@@ -77,13 +101,14 @@ export function apiDisponible() {
 
 export function leerIdentidadApi() {
   try {
-    return JSON.parse(window.sessionStorage.getItem(CLAVE_IDENTIDAD_API) || "null");
+    return cargarIdentidadApi();
   } catch {
     return null;
   }
 }
 
 export function borrarIdentidadApi() {
+  window.localStorage.removeItem(CLAVE_IDENTIDAD_API);
   window.sessionStorage.removeItem(CLAVE_IDENTIDAD_API);
 }
 

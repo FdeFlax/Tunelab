@@ -1,10 +1,11 @@
-﻿from datetime import datetime
+from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query, WebSocket, WebSocketDisconnect, status
 from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 
 from app.base_datos import obtener_sesion
+from app.control_tunel import controlador_tunel
 from app.configuracion import configuracion
 from app.datos_api import (
     EnsayoActualizar,
@@ -20,6 +21,9 @@ from app.datos_api import (
     UsuarioCrear,
     UsuarioRespuesta,
     TunelConexionRespuesta,
+    TunelConsignaCrear,
+    TunelEstadoRespuesta,
+    TunelMuestraRespuesta,
 )
 from app.tablas import (
     Ensayo,
@@ -128,6 +132,25 @@ def preparar_respuesta_conexion(uso: UsoTunel | None, usuario_actual: Usuario):
     }
 
 
+
+def comprobar_usuario_controla_tunel(sesion: Session, usuario_actual: Usuario) -> UsoTunel:
+    # Comprueba que el usuario actual es quien tiene reservado el tunel.
+    # Asi evitamos que otra pantalla pueda encender, apagar o cambiar consignas.
+    uso = sesion.scalar(select(UsoTunel).where(UsoTunel.id == 1))
+
+    if not uso or not uso.conectado:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Conecta el tunel antes de operar.",
+        )
+
+    if uso.usuario_id != usuario_actual.id:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="El tunel esta ocupado por otro usuario.",
+        )
+
+    return uso
 @router.get("/tunel/conexion", response_model=TunelConexionRespuesta)
 def ver_conexion_tunel(
     sesion: Session = Depends(obtener_sesion),
@@ -137,6 +160,95 @@ def ver_conexion_tunel(
     uso = sesion.scalar(select(UsoTunel).where(UsoTunel.id == 1))
     return preparar_respuesta_conexion(uso, usuario_actual)
 
+
+
+@router.get("/tunel/estado", response_model=TunelEstadoRespuesta)
+def ver_estado_operativo_tunel():
+    # Devuelve el estado operativo del controlador del tunel.
+    # Ahora responde el simulador; en el tunel real respondera la capa de hardware.
+    return controlador_tunel.leer_estado()
+
+
+@router.post("/tunel/consigna", response_model=TunelEstadoRespuesta)
+def aplicar_consigna_tunel(
+    datos: TunelConsignaCrear,
+    sesion: Session = Depends(obtener_sesion),
+    usuario_actual: Usuario = Depends(obtener_usuario_actual),
+):
+    comprobar_usuario_controla_tunel(sesion, usuario_actual)
+    estado = controlador_tunel.aplicar_consigna(datos.potencia_porcentaje)
+    guardar_evento(sesion, f"Consigna aplicada al tunel: {datos.potencia_porcentaje}%.")
+    sesion.commit()
+    return estado
+
+
+@router.post("/tunel/encender", response_model=TunelEstadoRespuesta)
+async def encender_tunel_operativo(
+    datos: TunelConsignaCrear,
+    sesion: Session = Depends(obtener_sesion),
+    usuario_actual: Usuario = Depends(obtener_usuario_actual),
+):
+    comprobar_usuario_controla_tunel(sesion, usuario_actual)
+    estado = controlador_tunel.encender(datos.potencia_porcentaje)
+    guardar_evento(sesion, f"Tunel encendido con consigna {datos.potencia_porcentaje}%.")
+    sesion.commit()
+    await gestor_websocket_tunel.avisar_cambio_conexion()
+    return estado
+
+
+@router.post("/tunel/apagar", response_model=TunelEstadoRespuesta)
+async def apagar_tunel_operativo(
+    sesion: Session = Depends(obtener_sesion),
+    usuario_actual: Usuario = Depends(obtener_usuario_actual),
+):
+    uso = comprobar_usuario_controla_tunel(sesion, usuario_actual)
+    estado = controlador_tunel.apagar()
+    guardar_evento(sesion, f"{usuario_actual.identificador_uacloud} apago y libero el tunel.")
+    uso.conectado = False
+    uso.usuario_id = None
+    uso.conectado_en = None
+    uso.actualizado_en = datetime.utcnow()
+    sesion.commit()
+    await gestor_websocket_tunel.avisar_cambio_conexion()
+    return estado
+
+
+@router.post("/tunel/medicion/iniciar", response_model=TunelEstadoRespuesta)
+def iniciar_medicion_tunel_operativo(
+    sesion: Session = Depends(obtener_sesion),
+    usuario_actual: Usuario = Depends(obtener_usuario_actual),
+):
+    comprobar_usuario_controla_tunel(sesion, usuario_actual)
+
+    try:
+        estado = controlador_tunel.iniciar_medicion()
+    except RuntimeError as error:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(error)) from error
+
+    guardar_evento(sesion, f"Medicion operativa iniciada por {usuario_actual.identificador_uacloud}.")
+    sesion.commit()
+    return estado
+
+
+@router.post("/tunel/medicion/detener", response_model=TunelEstadoRespuesta)
+def detener_medicion_tunel_operativo(
+    sesion: Session = Depends(obtener_sesion),
+    usuario_actual: Usuario = Depends(obtener_usuario_actual),
+):
+    comprobar_usuario_controla_tunel(sesion, usuario_actual)
+    estado = controlador_tunel.detener_medicion()
+    guardar_evento(sesion, f"Medicion operativa detenida por {usuario_actual.identificador_uacloud}.")
+    sesion.commit()
+    return estado
+
+
+@router.get("/tunel/muestra", response_model=TunelMuestraRespuesta)
+def leer_muestra_tunel(
+    sesion: Session = Depends(obtener_sesion),
+    usuario_actual: Usuario = Depends(obtener_usuario_actual),
+):
+    comprobar_usuario_controla_tunel(sesion, usuario_actual)
+    return controlador_tunel.leer_muestra()
 
 @router.post("/tunel/conectar", response_model=TunelConexionRespuesta)
 async def conectar_tunel(
@@ -185,6 +297,7 @@ async def desconectar_tunel(
     if uso.conectado and uso.usuario_id != usuario_actual.id:
         return preparar_respuesta_conexion(uso, usuario_actual)
 
+    controlador_tunel.apagar()
     guardar_evento(sesion, f"{usuario_actual.identificador_uacloud} desconectado del tunel.")
     uso.conectado = False
     uso.usuario_id = None
@@ -209,6 +322,30 @@ async def desconectar_tunel_docente(
         return preparar_respuesta_conexion(None, usuario_actual)
 
     usuario_liberado = uso.usuario.identificador_uacloud if uso.usuario else "usuario desconocido"
+    usuario_liberado_id = uso.usuario.identificador_uacloud if uso.usuario else None
+
+    if uso.usuario_id:
+        mediciones_activas = sesion.scalars(
+            select(Medicion)
+            .join(Ensayo)
+            .where(
+                Ensayo.usuario_id == uso.usuario_id,
+                Medicion.estado == EstadoMedicion.en_curso,
+            )
+        ).all()
+
+        for medicion in mediciones_activas:
+            medicion.estado = EstadoMedicion.finalizada
+            medicion.fecha_fin = medicion.fecha_fin or datetime.utcnow()
+            guardar_evento(
+                sesion,
+                f"Medicion {medicion.nombre} detenida porque el docente libero el tunel.",
+                tipo="advertencia",
+                ensayo_id=medicion.ensayo_id,
+                medicion_id=medicion.id,
+            )
+
+    controlador_tunel.apagar()
     guardar_evento(
         sesion,
         f"{usuario_actual.identificador_uacloud} libero el tunel ocupado por {usuario_liberado}.",
@@ -220,8 +357,8 @@ async def desconectar_tunel_docente(
     uso.actualizado_en = datetime.utcnow()
     sesion.commit()
     sesion.refresh(uso)
+    await gestor_websocket_tunel.avisar_liberacion_docente(usuario_liberado_id)
     await gestor_websocket_tunel.avisar_cambio_conexion()
-
     return preparar_respuesta_conexion(uso, usuario_actual)
 
 @router.get("/usuarios", response_model=list[UsuarioRespuesta])
@@ -311,6 +448,18 @@ def actualizar_ensayo(
     # Solo se permite editar ensayos del usuario actual.
     ensayo = obtener_ensayo_del_usuario(ensayo_id, usuario_actual, sesion)
 
+    medicion_activa = sesion.scalar(
+        select(Medicion).where(
+            Medicion.ensayo_id == ensayo.id,
+            Medicion.estado == EstadoMedicion.en_curso,
+        )
+    )
+
+    if medicion_activa:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="No se puede editar el ensayo mientras hay una medicion activa.",
+        )
     ensayo.nombre = datos.nombre.strip()
     ensayo.objetivo = (datos.objetivo or "").strip() or None
     ensayo.descripcion = (datos.descripcion or "").strip() or None
@@ -719,6 +868,7 @@ def registrar_evento(
 
     # Devuelve el id del evento creado para que el frontend pueda saber que se guardo.
     return {"id": evento.id, "estado": "evento registrado"}
+
 
 
 

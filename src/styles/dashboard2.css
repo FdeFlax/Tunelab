@@ -1,19 +1,22 @@
-.dash2operacion {
+﻿.dash2operacion {
   display: grid;
   grid-template-columns: minmax(0, 1.22fr) minmax(420px, 1fr);
   gap: 0;
-  align-items: stretch;
+  align-items: start;
 }
 
 .dash2visorcard {
   grid-template-rows: auto minmax(0, 1fr);
-  min-height: clamp(500px, 44vw, 650px);
+  height: 610px;
+  min-height: 0;
+  max-height: 610px;
+  overflow: hidden;
 }
 
 .dash2visor {
   position: relative;
   min-height: 0;
-  height: 100%;
+  height: auto;
   overflow: hidden;
   border: 1px solid rgba(133, 154, 184, 0.16);
   background: #101b2d;
@@ -30,6 +33,24 @@
   background: #101b2d;
 }
 
+.dash2estadoflotante {
+  position: absolute;
+  top: 18px;
+  left: 18px;
+  z-index: 2;
+  display: grid;
+  gap: 4px;
+  min-width: 170px;
+  padding: 14px 16px;
+  border: 1px solid rgba(133, 154, 184, 0.2);
+  background: #1f2d3e;
+}
+
+.dash2estadoflotante strong {
+  color: #ffffff;
+  font-size: 22px;
+  line-height: 1;
+}
 .dash2estadoflotante span,
 .dash2tarjeta span,
 .dash2tecnicaitem span {
@@ -49,7 +70,10 @@
 
 .dash2panelprincipal {
   grid-template-rows: auto auto minmax(0, 1fr) auto;
-  min-height: clamp(500px, 44vw, 650px);
+  height: 610px;
+  min-height: 0;
+  max-height: 610px;
+  overflow: hidden;
   background: #101b2d;
 }
 
@@ -79,7 +103,7 @@
 .dash2tabs .dash2tabactivo {
   background: rgba(77, 198, 255, 0.12);
   color: #ffffff;
-  box-shadow: inset 0 -3px 0 #58c3ff;
+  box-shadow: inset 0 -3px 0 var(--primary);
 }
 
 .dash2alertamini {
@@ -99,11 +123,38 @@
 .dash2rejillapanel {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  grid-auto-rows: minmax(142px, 1fr);
+  grid-auto-rows: minmax(108px, 1fr);
   gap: 10px;
   align-content: start;
 }
 
+
+.dash2card {
+  gap: 18px;
+  padding: 20px;
+}
+
+.dash2tarjeta {
+  position: relative;
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  min-height: 0;
+  place-items: center;
+  align-content: center;
+  justify-items: center;
+  text-align: center;
+  padding: 12px;
+  border: 1px solid rgba(133, 154, 184, 0.18);
+  background: #0c1726;
+}
+
+.dash2tarjeta strong {
+  color: #ffffff;
+  font-size: clamp(23px, 2vw, 32px);
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
 .dash2tarjeta > .dash2alertamini {
   position: absolute;
   top: 10px;
@@ -113,7 +164,7 @@
 
 .dash2medidor {
   position: relative;
-  width: min(142px, 100%);
+  width: min(118px, 100%);
   aspect-ratio: 1.65;
   display: grid;
   place-items: end center;
@@ -138,7 +189,7 @@
 }
 
 .dash2medidorrelleno {
-  stroke: #58c3ff;
+  stroke: var(--primary);
   stroke-dasharray: var(--dash2medidor) 100;
 }
 
@@ -147,12 +198,12 @@
 }
 
 .dash2tarjetacian .dash2medidorrelleno {
-  stroke: #58c3ff;
+  stroke: var(--primary);
 }
 
 .dash2medidor strong {
   z-index: 1;
-  font-size: clamp(25px, 2vw, 34px);
+  font-size: clamp(22px, 1.8vw, 30px);
 }
 
 .dash2medidor strong small {
@@ -212,6 +263,9 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
+  align-self: end;
+  position: relative;
+  z-index: 1;
 }
 
 .dash2tecnica {
@@ -247,6 +301,8 @@
 
   .dash2visorcard,
   .dash2panelprincipal {
+    height: auto;
+    max-height: none;
     min-height: auto;
   }
 
@@ -272,6 +328,7 @@
     height: 360px;
   }
 }
+
 
 
 

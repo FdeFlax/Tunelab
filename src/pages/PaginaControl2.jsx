@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   PanelEstadoSistemaControl2,
   PanelManiobraControl2,
@@ -17,10 +17,29 @@ import { descargarArchivoMed } from "../servicios/archivos/medicionArchivo";
 import { useTunel } from "../servicios/tunel/useTunel";
 import { obtenerIdEnsayoApi as getIdEnsayoApi } from "../servicios/api/ensayosApi";
 import { crearMedApi, guardarEventoApi, guardarMuestrasApi } from "../servicios/api/medicionesApi";
-import { conectarTunelApi, desconectarTunelApi, verConexionTunelApi } from "../servicios/api/tunelConexionApi";
+import {
+  conectarTunelApi,
+  desconectarTunelApi,
+  desconectarTunelDocenteApi,
+  verConexionTunelApi,
+} from "../servicios/api/tunelConexionApi";
 import { escucharEventosTunel } from "../servicios/api/tunelEventosApi";
 
 const POT_RAPIDAS = [10, 25, 50, 100];
+
+const COMPROBACIONES_ENCENDIDO = [
+  { id: "interior", texto: "Interior del túnel despejado." },
+  { id: "modelo", texto: "Modelo correctamente fijado." },
+  { id: "puertas", texto: "Puertas cerradas." },
+  { id: "pitot", texto: "Tubo de Pitot alineado y sin obstrucciones." },
+  { id: "conexiones", texto: "Conexiones revisadas." },
+  { id: "emergencia", texto: "Parada de emergencia accesible." },
+  { id: "epis", texto: "Personal con los EPIs necesarios." },
+];
+
+function crearEstadoComprobaciones() {
+  return Object.fromEntries(COMPROBACIONES_ENCENDIDO.map(({ id }) => [id, false]));
+}
 
 function limpiar(texto) {
   return String(texto || "").trim().replace(/\s+/g, " ").toLowerCase();
@@ -118,7 +137,7 @@ function muestrasApi(med) {
   });
 }
 
-function PaginaControl2() {
+function PaginaControl2({ usuarioActual }) {
   const { estadoTunel: tunel, accionesTunel: acciones, fuenteTunel } = useTunel();
   const [nombreMed, setNombreMed] = useState("");
   const [medDup, setMedDup] = useState(null);
@@ -127,6 +146,12 @@ function PaginaControl2() {
   const [conexion, setConexion] = useState(null);
   const [avisoConexion, setAvisoConexion] = useState("");
   const [avisoOcupado, setAvisoOcupado] = useState("");
+  const [confirmacionEncendido, setConfirmacionEncendido] = useState(null);
+  const [comprobacionesEncendido, setComprobacionesEncendido] = useState(
+    crearEstadoComprobaciones
+  );
+  const [encendiendoTunel, setEncendiendoTunel] = useState(false);
+  const [errorEncendido, setErrorEncendido] = useState("");
 
   const ensayo = getEnsayoActivo(tunel);
   const resumen = tunel.resumenUltMed;
@@ -138,8 +163,13 @@ function PaginaControl2() {
   const limiteMed = Number(tunel.limitesUso?.medicionesPorEnsayo || 0);
   const hayLimite = Number.isFinite(limiteMed) && limiteMed > 0;
   const tieneConexion = Boolean(conexion?.conectado);
+  const esDocenteControl = ["profesor", "tecnico", "admin"].includes(usuarioActual?.rol);
+  const puedeLiberarOcupado = Boolean(conexion?.ocupado && esDocenteControl);
   const puedeOperar = tieneConexion && tunel.permiteCtrl;
   const puedeMed = puedeOperar && tunel.estadoTunel === "RUNNING";
+  const comprobacionesCompletas = COMPROBACIONES_ENCENDIDO.every(
+    ({ id }) => comprobacionesEncendido[id]
+  );
   const medExport = ensayo?.mediciones?.[0] || null;
   const medRep = nombreNorm
     ? ensayo?.mediciones?.find((med) => limpiar(med.nombre) === nombreNorm) || null
@@ -167,7 +197,7 @@ function PaginaControl2() {
       }
     } catch {
       if (!silencioso) {
-        setAvisoConexion("No se ha podido comprobar la conexion del tunel");
+        setAvisoConexion("No se ha podido comprobar la conexión del túnel");
       }
     }
   }
@@ -180,7 +210,22 @@ function PaginaControl2() {
     });
   }, []);
 
+  useEffect(() => {
+    if (!puedeOperar || tunel.estadoTunel === "RUNNING") {
+      setConfirmacionEncendido(null);
+      setComprobacionesEncendido(crearEstadoComprobaciones());
+      setEncendiendoTunel(false);
+      setErrorEncendido("");
+    }
+  }, [puedeOperar, tunel.estadoTunel]);
+
   async function conectarTunel() {
+    setConfirmacionEncendido(null);
+    setComprobacionesEncendido(crearEstadoComprobaciones());
+    setEncendiendoTunel(false);
+    setErrorEncendido("");
+    setAvisoOcupado("");
+
     try {
       const respuesta = await conectarTunelApi();
       setConexion(respuesta);
@@ -189,26 +234,45 @@ function PaginaControl2() {
       if (respuesta.ocupado) {
         const usuario = respuesta.usuario?.nombre || "otro usuario";
         setAvisoOcupado(
-          `El tunel esta ocupado por ${usuario}. Debe desconectarse antes de que puedas tomar el control.`
+          `El túnel está ocupado por ${usuario}. Debe desconectarse antes de que puedas tomar el control.`
         );
       }
     } catch {
-      setAvisoConexion("No se ha podido conectar con el tunel");
+      setAvisoConexion("No se ha podido conectar con el túnel");
     }
   }
 
+  async function liberarConexionOcupada() {
+    if (!puedeLiberarOcupado) return;
+
+    setConfirmacionEncendido(null);
+    setComprobacionesEncendido(crearEstadoComprobaciones());
+    setEncendiendoTunel(false);
+    setErrorEncendido("");
+    setAvisoConexion("Liberando el túnel...");
+
+    try {
+      const respuesta = await desconectarTunelDocenteApi();
+      setConexion(respuesta);
+      setAvisoOcupado("");
+      setAvisoConexion(respuesta.mensaje || "Túnel liberado");
+      await cargarConexion(true);
+    } catch {
+      setAvisoConexion("No se ha podido liberar el túnel");
+    }
+  }
   async function desconectarTunel() {
     if (tunel.estadoTunel === "RUNNING" || tunel.medActiva) {
-      setAvisoConexion("Apaga el tunel antes de desconectar");
+      setAvisoConexion("Apaga el túnel antes de desconectar");
       return;
     }
 
     try {
       const respuesta = await desconectarTunelApi();
       setConexion(respuesta);
-      setAvisoConexion(respuesta.mensaje || "Tunel desconectado");
+      setAvisoConexion(respuesta.mensaje || "Túnel desconectado");
     } catch {
-      setAvisoConexion("No se ha podido desconectar el tunel");
+      setAvisoConexion("No se ha podido desconectar el túnel");
     }
   }
 
@@ -218,11 +282,61 @@ function PaginaControl2() {
     try {
       const respuesta = await desconectarTunelApi();
       setConexion(respuesta);
-      setAvisoConexion(respuesta.mensaje || "Tunel apagado y desconectado");
+      setAvisoConexion(respuesta.mensaje || "Túnel apagado y desconectado");
     } catch {
-      setAvisoConexion("Tunel apagado, pero no se ha podido liberar la conexion");
+      setAvisoConexion("Túnel apagado, pero no se ha podido liberar la conexión");
     }
   }
+
+  function solicitarEncendido(potencia) {
+    if (!puedeOperar || tunel.estadoTunel === "RUNNING") return;
+
+    const potenciaNormalizada = Math.min(
+      100,
+      Math.max(0, Math.round(Number(potencia) || 0))
+    );
+    setComprobacionesEncendido(crearEstadoComprobaciones());
+    setErrorEncendido("");
+    setConfirmacionEncendido({ potencia: potenciaNormalizada });
+  }
+
+  function cerrarConfirmacionEncendido() {
+    if (encendiendoTunel) return;
+    setConfirmacionEncendido(null);
+    setErrorEncendido("");
+  }
+
+  function cambiarComprobacionEncendido(id) {
+    setComprobacionesEncendido((actuales) => ({
+      ...actuales,
+      [id]: !actuales[id],
+    }));
+  }
+
+  async function confirmarYEncender() {
+    if (!confirmacionEncendido || !comprobacionesCompletas || encendiendoTunel) return;
+
+    setEncendiendoTunel(true);
+    setErrorEncendido("");
+
+    try {
+      acciones.actualizarPotencia?.(confirmacionEncendido.potencia);
+      const resultado = await acciones.encenderTunel?.();
+
+      if (resultado === false) {
+        setErrorEncendido("No se ha podido confirmar el encendido del túnel.");
+        return;
+      }
+
+      setConfirmacionEncendido(null);
+      setComprobacionesEncendido(crearEstadoComprobaciones());
+    } catch {
+      setErrorEncendido("No se ha podido enviar la orden de encendido.");
+    } finally {
+      setEncendiendoTunel(false);
+    }
+  }
+
   async function iniciarMed() {
     if (medRep) {
       setMedDup(medRep);
@@ -331,8 +445,8 @@ function PaginaControl2() {
   return (
     <div className="page page--control2">
       <section className={`cont2conexion ${conexion?.ocupado ? "cont2conexionocupada" : ""}`}>
-        <div>
-          <span>Conexion del tunel</span>
+        <div className="cont2conexionestado">
+          <span>Conexión del túnel</span>
           <strong>{tieneConexion ? "Conectado" : conexion?.ocupado ? "Ocupado" : "Sin conectar"}</strong>
       
         </div>
@@ -364,6 +478,7 @@ function PaginaControl2() {
           lecturasMed={lecturas(tunel)}
           puedeOperar={puedeOperar}
           onApagarTunel={apagarTunelYDesconectar}
+          onSolicitarEncendido={solicitarEncendido}
         />
         <PanelMedicionControl2
           estadoTunel={tunel}
@@ -393,6 +508,75 @@ function PaginaControl2() {
         onBorrarMed={borrarUlt}
       />
 
+      {confirmacionEncendido ? (
+        <div className="cont2modalfondo cont2modalfondoflotante" role="presentation">
+          <section
+            className="cont2modal cont2modalcomprobaciones"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="cont2modalcomprobacionestitulo"
+            aria-describedby="cont2modalcomprobacionesdescripcion"
+          >
+            <div>
+              <p className="cont2sobretitulo">Comprobación previa</p>
+              <h3 id="cont2modalcomprobacionestitulo">Antes de encender el túnel</h3>
+              <p
+                id="cont2modalcomprobacionesdescripcion"
+                className="cont2modalintroduccion"
+              >
+                Confirma presencialmente cada punto de seguridad. Ninguna comprobación
+                sustituye a los dispositivos físicos de protección.
+              </p>
+            </div>
+
+            <fieldset className="cont2checklist">
+              <legend>Lista de comprobación</legend>
+              {COMPROBACIONES_ENCENDIDO.map((comprobacion) => (
+                <label key={comprobacion.id} className="cont2checkitem">
+                  <input
+                    type="checkbox"
+                    checked={comprobacionesEncendido[comprobacion.id]}
+                    onChange={() => cambiarComprobacionEncendido(comprobacion.id)}
+                    disabled={encendiendoTunel}
+                  />
+                  <span>{comprobacion.texto}</span>
+                </label>
+              ))}
+            </fieldset>
+
+            <div className="cont2potenciaconfirmacion">
+              <span>Potencia que se aplicará</span>
+              <strong>{confirmacionEncendido.potencia}%</strong>
+            </div>
+
+            {errorEncendido ? (
+              <p className="cont2modalerror" role="alert">
+                {errorEncendido}
+              </p>
+            ) : null}
+
+            <div className="cont2modalacciones">
+              <button
+                type="button"
+                className="cont2boton cont2botonsecundario"
+                onClick={cerrarConfirmacionEncendido}
+                disabled={encendiendoTunel}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                className="cont2boton cont2botonprimario"
+                onClick={() => void confirmarYEncender()}
+                disabled={!comprobacionesCompletas || encendiendoTunel}
+              >
+                {encendiendoTunel ? "Encendiendo..." : "Confirmar y encender"}
+              </button>
+            </div>
+          </section>
+        </div>
+      ) : null}
+
       {avisoOcupado ? (
         <div
           className="cont2modalfondo"
@@ -407,13 +591,22 @@ function PaginaControl2() {
             aria-modal="true"
             aria-labelledby="cont2modalocupadotitulo"
           >
-            <p className="cont2sobretitulo">Tunel ocupado</p>
+            <p className="cont2sobretitulo">Túnel ocupado</p>
             <h3 id="cont2modalocupadotitulo">No se puede conectar ahora</h3>
             <p>{avisoOcupado}</p>
             <div className="cont2modalacciones">
+              {puedeLiberarOcupado ? (
+                <button
+                  type="button"
+                  className="cont2boton cont2botonprimario"
+                  onClick={() => void liberarConexionOcupada()}
+                >
+                  Liberar túnel
+                </button>
+              ) : null}
               <button
                 type="button"
-                className="cont2boton cont2botonprimario"
+                className="cont2boton cont2botonsecundario"
                 onClick={() => setAvisoOcupado("")}
               >
                 Entendido
@@ -500,6 +693,8 @@ function PaginaControl2() {
 }
 
 export default PaginaControl2;
+
+
 
 
 

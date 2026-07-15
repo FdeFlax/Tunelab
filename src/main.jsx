@@ -1,4 +1,4 @@
-﻿import React from "react";
+import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
 import "./styles/global.css";
@@ -12,6 +12,7 @@ import "./styles/docente.css";
 import "./styles/inspeccion.css";
 import "./styles/lab-theme.css";
 import "./styles/lab-light-theme.css";
+import "./styles/componentes.css";
 
 class ErrorBoundaryRaiz extends React.Component {
   constructor(props) {
@@ -89,4 +90,6 @@ ReactDOM.createRoot(document.getElementById("root")).render(
     <App />
   </ErrorBoundaryRaiz>
 );
+
+
 

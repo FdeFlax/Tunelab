@@ -1,4 +1,4 @@
-.page--inspeccion {
+﻿.page--inspeccion {
   gap: 0;
   margin: -22px -28px -28px;
   min-height: calc(100dvh - 88px);
@@ -6,8 +6,10 @@
 
 .inspescena {
   position: relative;
-  min-height: max(calc(100dvh + 320px), 1220px);
-  overflow: hidden;
+  display: grid;
+  grid-template-rows: clamp(580px, 72dvh, 760px) auto;
+  min-height: calc(100dvh - 88px);
+  overflow: visible;
   border-radius: 0;
   border: none;
   background: #07101b;
@@ -15,22 +17,16 @@
 }
 
 .inspescena::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: calc(100% - clamp(365px, 33vh, 430px));
-  z-index: 0;
-  background: #c9d3df;
-  pointer-events: none;
+  content: none;
 }
 
 .inspescenafondo {
-  position: absolute;
-  inset: -30% -4% -6%;
+  position: relative;
   z-index: 0;
-  transform: translate(0, -184px) scale(1.03);
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  background: #dce6ef;
 }
 
 .inspescenafondo::after {
@@ -43,8 +39,11 @@
 }
 
 .inspescenacanvas {
-  height: 100%;
-  min-height: 100%;
+  position: absolute;
+  inset: -30% -4% -6%;
+  height: auto;
+  min-height: 0;
+  transform: translate(0, -8px) scale(1.12);
 }
 
 .inspescena .tunnel-viewer {
@@ -87,7 +86,7 @@
   width: 20px;
   height: 250px;
   margin: 2px 0;
-  accent-color: #58c3ff;
+  accent-color: var(--primary);
   cursor: pointer;
 }
 
@@ -124,7 +123,7 @@
 .inspselectorcontrol {
   width: 100%;
   border: 1px solid rgba(141, 160, 188, 0.18);
-  border-radius: 7px;
+  border-radius: 9px;
   padding: 12px 14px;
   background: rgba(255, 255, 255, 0.04);
   color: #ffffff;
@@ -142,7 +141,7 @@
 }
 
 .inspselectorcontrol:hover {
-  border-color: rgba(88, 195, 255, 0.28);
+  border-color: color-mix(in srgb, var(--primary) 28%, transparent);
   background: rgba(255, 255, 255, 0.06);
 }
 
@@ -174,29 +173,20 @@
 }
 
 .inspselectoritemactivo {
-  background: rgba(88, 195, 255, 0.14);
-  border-color: rgba(88, 195, 255, 0.32);
+  background: #1c2634;
+  border-color: rgba(132, 150, 170, 0.5);
   color: #ffffff;
 }
 
-.inspresetvisible {
-  opacity: 0.82;
-  transform: translateX(-50%) translateY(0);
-  pointer-events: auto;
-}
 
 .inspescenainferior {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 24px;
-  z-index: 2;
+  position: relative;
+  z-index: 1;
   display: grid;
   grid-template-columns: minmax(0, 1.12fr) minmax(320px, 0.88fr);
   gap: 18px;
   padding: 30px 28px 28px;
   background: #07101b;
-  pointer-events: none;
 }
 
 .inspactivo,
@@ -232,7 +222,7 @@
 .inspactivoresumen {
   margin: 0;
   color: #ffffff;
-  font-size: 17px;
+  font-size: 21px;
   font-weight: 700;
   line-height: 1.45;
 }
@@ -274,8 +264,8 @@
 }
 
 .inspitemactivo {
-  background: rgba(20, 63, 98, 0.72);
-  border-color: rgba(88, 195, 255, 0.62);
+  background: #1c2634;
+  border-color: rgba(132, 150, 170, 0.5);
 }
 
 .visorpuntowrapper {
@@ -285,36 +275,21 @@
   overflow: visible;
 }
 
-.visorpuntoicono {
-  width: 16px;
-  height: 16px;
-  border-radius: 999px;
-  border: 1px solid rgba(88, 195, 255, 0.35);
-  background: rgba(88, 195, 255, 0.18);
-}
 
-.visorpuntobotonactivo .visorpuntoicono {
-  border-color: rgba(156, 229, 109, 0.38);
-  background: rgba(156, 229, 109, 0.3);
-}
 
 @media (max-width: 1240px) {
   .inspescena {
-    min-height: max(calc(100dvh + 280px), 1160px);
+    grid-template-rows: clamp(560px, 70dvh, 720px) auto;
   }
 
   .inspescenainferior {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 24px;
-  z-index: 2;
+  position: relative;
+  z-index: 1;
   display: grid;
   grid-template-columns: minmax(0, 1.12fr) minmax(320px, 0.88fr);
   gap: 18px;
   padding: 30px 28px 28px;
   background: #07101b;
-  pointer-events: none;
 }
 
   .inspescenalateral {
@@ -333,21 +308,17 @@
 
 @media (max-width: 960px) {
   .inspescena {
-    min-height: max(calc(100dvh + 230px), 1080px);
+    grid-template-rows: clamp(520px, 68dvh, 660px) auto;
   }
 
   .inspescenainferior {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 24px;
-  z-index: 2;
+  position: relative;
+  z-index: 1;
   display: grid;
   grid-template-columns: minmax(0, 1.12fr) minmax(320px, 0.88fr);
   gap: 18px;
   padding: 30px 28px 28px;
   background: #07101b;
-  pointer-events: none;
 }
 
   .inspescenalateral {
@@ -373,7 +344,7 @@
 @media (max-width: 680px) {
   .inspescena {
     border-radius: 0;
-    min-height: max(calc(100dvh + 190px), 990px);
+    grid-template-rows: clamp(480px, 66dvh, 600px) auto;
   }
 
   .inspactivocabecera,
@@ -383,17 +354,13 @@
   }
 
   .inspescenainferior {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 24px;
-  z-index: 2;
+  position: relative;
+  z-index: 1;
   display: grid;
   grid-template-columns: minmax(0, 1.12fr) minmax(320px, 0.88fr);
   gap: 18px;
   padding: 30px 28px 28px;
   background: #07101b;
-  pointer-events: none;
 }
 
   .inspescenalateral {
@@ -422,19 +389,264 @@
     min-height: calc(100dvh - 88px);
   }
 }
+/* Reparacion visual de Inspeccion: etiquetas del modelo y tarjetas inferiores. */
+.visorpuntoboton {
+  position: absolute;
+  left: var(--desplazamiento-etiqueta-x, 0px);
+  top: var(--desplazamiento-etiqueta-y, 0px);
+  display: inline-flex;
+  align-items: center;
+  min-width: max-content;
+  padding: 14px 20px;
+  border: 1px solid color-mix(in srgb, var(--primary) 34%, transparent);
+  border-radius: 9px;
+  background: rgba(7, 18, 31, 0.92);
+  color: #eef6ff;
+  font: inherit;
+  font-size: 21px;
+  font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.28);
+  cursor: pointer;
+  transform: translate(-50%, -50%);
+}
+
+.visorpuntoboton:hover,
+.visorpuntobotonactivo {
+  border-color: color-mix(in srgb, var(--primary) 52%, transparent);
+  background: #12314b;
+  color: #ffffff;
+}
+
+.visorpuntoboton span {
+  color: inherit;
+}
 
 
+.inspselectoritem,
+.inspitem {
+  width: 100%;
+  display: grid;
+  gap: 7px;
+  padding: 14px 16px;
+  border: 1px solid rgba(130, 151, 181, 0.22);
+  border-radius: 0;
+  background: #0d1828;
+  color: #d9e6f8;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
 
+.inspselectoritem:hover,
+.inspitem:hover {
+  background: #111f33;
+  border-color: rgba(130, 151, 181, 0.36);
+}
 
+.inspitem strong,
+.inspselectoritem strong {
+  color: #ffffff;
+  font-weight: 800;
+}
 
+.inspitem span,
+.inspselectoritem span {
+  color: #c5d4e8;
+  line-height: 1.45;
+}
 
+.inspitemactivo,
+.inspselectoritemactivo {
+  background: #1c2634;
+  border: 1px solid rgba(132, 150, 170, 0.5);
+  color: #ffffff;
+}
 
+.inspreset {
+  position: absolute;
+  top: 26px;
+  left: 50%;
+  z-index: 3;
+  padding: 10px 18px;
+  border: 1px solid rgba(130, 151, 181, 0.24);
+  border-radius: 9px;
+  background: rgba(17, 28, 45, 0.82);
+  color: #eef6ff;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  opacity: 0;
+  transform: translateX(-50%) translateY(-8px);
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
 
+.inspresetvisible {
+  opacity: 0.82;
+  transform: translateX(-50%) translateY(0);
+  pointer-events: auto;
+}
 
+.appblanca .visorpuntoboton {
+  background: rgba(255, 255, 255, 0.94);
+  border-color: #8fa8bb;
+  color: #102033;
+  box-shadow: 0 10px 24px rgba(58, 76, 96, 0.18);
+}
 
+.appblanca .visorpuntoboton:hover,
+.appblanca .visorpuntobotonactivo {
+  background: #e9f2f8;
+  border-color: #4f95bd;
+  color: #07172b;
+}
 
+.appblanca .inspactivo,
+.appblanca .insppuntos {
+  background: #f8fafc;
+  border-color: #c5d2de;
+  color: #07172b;
+}
 
+.appblanca .inspitem,
+.appblanca .inspselectoritem {
+  background: #f1f5f8;
+  border-color: #c9d5df;
+  color: #16314a;
+}
 
+.appblanca .inspitem:hover,
+.appblanca .inspselectoritem:hover {
+  background: #eaf1f6;
+  border-color: #aebfce;
+}
 
+.appblanca .inspitemactivo,
+.appblanca .inspselectoritemactivo {
+  background: #e9eff4;
+  border-color: #b8c6d2;
+}
 
+.appblanca .inspitem strong,
+.appblanca .inspselectoritem strong,
+.appblanca .inspactivotitulo,
+.appblanca .inspactivoresumen {
+  color: #07172b;
+}
+
+.appblanca .inspitem span,
+.appblanca .inspselectoritem span,
+.appblanca .inspactivotexto {
+  color: #344f68;
+}
+/* Tipografia inferior de Inspeccion: jerarquia mas legible y menos pesada. */
+.page--inspeccion .inspactivocabecera,
+.page--inspeccion .insppuntoscabecera {
+  padding-bottom: 12px;
+}
+
+.page--inspeccion .inspactivotitulo,
+.page--inspeccion .insppuntoscabecera .inspactivotitulo {
+  font-size: clamp(21px, 1.75vw, 27px);
+  font-weight: 800;
+  line-height: 1.12;
+}
+
+.page--inspeccion .inspactivoresumen {
+  font-size: clamp(16px, 1.35vw, 20px);
+  font-weight: 500;
+  line-height: 1.45;
+  letter-spacing: -0.015em;
+}
+
+.page--inspeccion .inspactivotexto {
+  max-width: 82ch;
+  color: #c7d4e8;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.6;
+}
+
+.page--inspeccion .inspitem,
+.page--inspeccion .inspselectoritem {
+  gap: 6px;
+  padding: 12px 14px;
+}
+
+.page--inspeccion .inspitem strong,
+.page--inspeccion .inspselectoritem strong {
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.25;
+}
+
+.page--inspeccion .inspitem span,
+.page--inspeccion .inspselectoritem span {
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.45;
+}
+
+.appblanca .page--inspeccion .inspactivotexto {
+  color: #344f68;
+}
+/* Ajuste final: zoom y selector de etiquetas simples. */
+.page--inspeccion .inspescenazoom {
+  top: clamp(120px, 18vh, 180px);
+}
+
+.page--inspeccion .inspselector {
+  border-radius: 4px;
+  border: 1px solid rgba(130, 151, 181, 0.28);
+  background: #111c2d;
+  backdrop-filter: none;
+  box-shadow: none;
+}
+
+.page--inspeccion .inspselectorcontrol {
+  border-radius: 4px;
+  background: #0d1728;
+  border-color: rgba(130, 151, 181, 0.32);
+  transform: none;
+}
+
+.page--inspeccion .inspselectorcontrol:hover {
+  background: #0d1728;
+  border-color: rgba(130, 151, 181, 0.44);
+}
+
+.page--inspeccion .inspselectorlista {
+  border-radius: 4px;
+  background: #111c2d;
+  backdrop-filter: none;
+  box-shadow: none;
+}
+
+.appblanca .page--inspeccion .inspselector {
+  background: #ffffff;
+  border-color: #b9c8d5;
+  color: #07172b;
+}
+
+.appblanca .page--inspeccion .inspselectoretiqueta {
+  color: #344f68;
+}
+
+.appblanca .page--inspeccion .inspselectorcontrol {
+  background: #ffffff;
+  border-color: #b9c8d5;
+  color: #07172b;
+}
+
+.appblanca .page--inspeccion .inspselectorcontrol:hover {
+  background: #ffffff;
+  border-color: #8fa8bb;
+}
+
+.appblanca .page--inspeccion .inspselectorlista {
+  background: #ffffff;
+  border-color: #b9c8d5;
+}
 

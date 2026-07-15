@@ -1,4 +1,4 @@
-﻿function crearHoraEvento(fecha = new Date()) {
+function crearHoraEvento(fecha = new Date()) {
   return fecha.toLocaleTimeString("es-ES", {
     hour: "2-digit",
     minute: "2-digit",
@@ -109,7 +109,7 @@ export function crearEstadoTunelBase() {
     eventosMedicion: [],
     resumenUltMed: null,
     consignaVelocidadMs: 13.0,
-    potPct: 10,
+    potPct: 0,
     tempC: 21.2,
     objTempC: 23.5,
     velMs: 0,

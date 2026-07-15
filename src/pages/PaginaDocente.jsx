@@ -1,4 +1,4 @@
-﻿import { Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { InformeMedicionComun } from "../components/ResumenMedicion";
 import {
@@ -355,6 +355,7 @@ function PaginaDocente() {
   );
 
   useEffect(() => {
+    cerrarVistaMedicion();
     void cargarMediciones(ensayoSeleccionado?.id);
   }, [ensayoSeleccionado?.id]);
 
@@ -659,6 +660,7 @@ function PaginaDocente() {
 }
 
 export default PaginaDocente;
+
 
 
 

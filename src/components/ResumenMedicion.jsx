@@ -432,7 +432,7 @@ export function InformeMedicionComun({
       <div className="reg2graficasgrid">
         <GraficaMedicion
           titulo="Velocidad del aire"
-          color="#39bdf8"
+          color="var(--primary)"
           unidad=" m/s"
           objetivo={medicion.objVelMs}
           datos={trazas.velocidad || []}

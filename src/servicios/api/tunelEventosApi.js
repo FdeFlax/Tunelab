@@ -7,7 +7,7 @@ function crearUrlWebSocket(ruta) {
   return url.toString();
 }
 
-export function escucharEventosTunel(onCambioConexion) {
+export function escucharEventosTunel(onCambioConexion, onLiberacionDocente) {
   const socket = new WebSocket(crearUrlWebSocket("/ws/tunel"));
 
   socket.addEventListener("message", (evento) => {
@@ -15,7 +15,15 @@ export function escucharEventosTunel(onCambioConexion) {
       const datos = JSON.parse(evento.data);
 
       if (datos.tipo === "conexion_tunel_actualizada") {
-        onCambioConexion?.();
+        if (onCambioConexion) {
+          onCambioConexion();
+        }
+      }
+
+      if (datos.tipo === "tunel_liberado_por_docente") {
+        if (onLiberacionDocente) {
+          onLiberacionDocente(datos);
+        }
       }
     } catch {
       // Si llega algo que no sea JSON, se ignora.
@@ -31,3 +39,4 @@ export function escucharEventosTunel(onCambioConexion) {
     socket.close();
   };
 }
+

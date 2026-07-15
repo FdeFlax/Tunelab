@@ -6,11 +6,9 @@ from pydantic import BaseModel, Field
 # Estos modelos definen los datos que entran y salen por la API.
 # No son tablas: sirven para validar y documentar las peticiones.
 class EnsayoCrear(BaseModel):
-    codigo: str | None = Field(default=None, min_length=1, max_length=30)
     nombre: str = Field(min_length=1, max_length=30)
     objetivo: str | None = Field(default=None, max_length=40)
     descripcion: str | None = Field(default=None, max_length=200)
-    usuario_id: int | None = None
 
 
 class EnsayoActualizar(BaseModel):
@@ -140,3 +138,33 @@ class TunelConexionRespuesta(BaseModel):
     conectado_en: datetime | None = None
 
     model_config = {"from_attributes": True}
+
+class TunelConsignaCrear(BaseModel):
+    potencia_porcentaje: float = Field(ge=0, le=100)
+
+
+class TunelEstadoRespuesta(BaseModel):
+    conectado_fisico: bool
+    encendido: bool
+    midiendo: bool
+    potencia_objetivo: float
+    potencia_aplicada: float
+    velocidad_ms: float
+    temperatura_c: float
+    frecuencia_hz: float
+    corriente_a: float
+    rpm: int
+    fuente: str
+    actualizado_en: datetime
+
+
+class TunelMuestraRespuesta(BaseModel):
+    instante: datetime
+    velocidad_ms: float
+    temperatura_c: float
+    potencia_porcentaje: float
+    frecuencia_hz: float
+    corriente_a: float
+    rpm: int
+    fuente: str
+

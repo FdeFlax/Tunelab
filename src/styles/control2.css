@@ -1,5 +1,7 @@
 .page--control2 {
+  position: relative;
   gap: 18px;
+  isolation: isolate;
 }
 
 .cont2cabecera {
@@ -27,7 +29,7 @@
 
 .cont2sobretitulo {
   margin: 0;
-  color: #58c3ff;
+  color: var(--primary);
   font-size: 12px;
   font-weight: 800;
   letter-spacing: 1.5px;
@@ -170,7 +172,7 @@
 
 .cont2boton:hover:not(:disabled) {
   transform: translateY(-1px);
-  border-color: rgba(88, 195, 255, 0.46);
+  border-color: color-mix(in srgb, var(--primary) 46%, transparent);
 }
 
 .cont2boton:disabled {
@@ -184,8 +186,8 @@
 }
 
 .cont2botonprimario {
-  background: #1f7fab;
-  border-color: rgba(88, 195, 255, 0.42);
+  background: var(--primary);
+  border-color: color-mix(in srgb, var(--primary) 42%, transparent);
 }
 
 .cont2botonsecundario {
@@ -274,8 +276,8 @@
 }
 
 .cont2campo input:focus {
-  border-color: rgba(88, 195, 255, 0.62);
-  box-shadow: 0 0 0 3px rgba(88, 195, 255, 0.1);
+  border-color: color-mix(in srgb, var(--primary) 62%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 10%, transparent);
 }
 
 .cont2campo input:disabled {
@@ -296,7 +298,7 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  gap: 14px;
+  gap: 18px;
   padding: 14px;
   background: #17263d;
   border: 1px solid rgba(130, 151, 181, 0.16);
@@ -332,7 +334,7 @@
   gap: 9px;
   padding: 15px;
   background: #101b2d;
-  border-top: 3px solid rgba(88, 195, 255, 0.42);
+  border-top: 3px solid color-mix(in srgb, var(--primary) 42%, transparent);
 }
 
 .cont2recaptarjetavalor,
@@ -390,23 +392,40 @@
 }
 
 .cont2modalfondo {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  align-items: start;
+  justify-items: center;
+  min-height: 100%;
+  padding: 48px 24px 24px;
+  background: rgba(4, 9, 18, 0.72);
+  backdrop-filter: blur(6px);
+}
+.cont2modalfondoflotante {
   position: fixed;
   inset: 0;
   z-index: 80;
-  display: grid;
-  place-items: center;
+  align-items: center;
+  min-height: 0;
   padding: 24px;
-  background: rgba(4, 9, 18, 0.72);
-  backdrop-filter: blur(6px);
+  background: transparent;
+  backdrop-filter: none;
+  pointer-events: none;
+}
+
+.cont2modalfondoflotante .cont2modal {
+  pointer-events: auto;
 }
 
 .cont2modal {
   width: min(580px, 100%);
   display: grid;
-  gap: 14px;
+  gap: 18px;
   padding: 28px;
   background: #142137;
-  border: 1px solid rgba(88, 195, 255, 0.28);
+  border: 1px solid color-mix(in srgb, var(--primary) 28%, transparent);
   box-shadow: 0 28px 70px rgba(0, 0, 0, 0.42);
 }
 
@@ -429,6 +448,83 @@
   justify-content: flex-end;
   gap: 10px;
   flex-wrap: wrap;
+}
+
+.cont2modalcomprobaciones {
+  width: min(680px, 100%);
+  max-height: min(720px, calc(100vh - 96px));
+  overflow-y: auto;
+}
+
+.cont2modalintroduccion {
+  margin-top: 10px;
+}
+
+.cont2checklist {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.cont2checklist legend {
+  margin-bottom: 8px;
+  color: #a9bdd7;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+}
+
+.cont2checkitem {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  min-height: 42px;
+  padding: 9px 12px;
+  color: #e8f0fa;
+  background: #101c2e;
+  border: 1px solid rgba(169, 189, 215, 0.24);
+  cursor: pointer;
+}
+
+.cont2checkitem input {
+  width: 17px;
+  height: 17px;
+  margin: 0;
+  accent-color: var(--primary);
+}
+
+.cont2checkitem span {
+  line-height: 1.35;
+}
+
+.cont2potenciaconfirmacion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 13px 15px;
+  background: rgba(23, 109, 159, 0.14);
+  border: 1px solid rgba(63, 180, 232, 0.32);
+}
+
+.cont2potenciaconfirmacion span {
+  color: #c6d6e9;
+}
+
+.cont2potenciaconfirmacion strong {
+  font-size: 20px;
+}
+
+.cont2modalerror {
+  padding: 10px 12px;
+  color: #ffd9dd;
+  background: rgba(126, 45, 59, 0.2);
+  border: 1px solid rgba(227, 93, 98, 0.42);
 }
 
 @media (max-width: 1280px) {
@@ -484,7 +580,7 @@
   gap: 16px;
   padding: 22px 24px;
   background: #081525;
-  border: 1px solid rgba(88, 195, 255, 0.22);
+  border: 1px solid color-mix(in srgb, var(--primary) 22%, transparent);
 }
 
 .cont2potenciacontrol {
@@ -566,7 +662,7 @@
 .cont2barrarelleno {
   width: var(--cont2progresopotencia);
   height: 100%;
-  background: #58c3ff;
+  background: var(--primary);
   transition: width 0.45s ease;
 }
 
@@ -658,14 +754,34 @@
   margin-top: 0;
 }
 
+.cont2botonpower {
+  display: inline-grid;
+  place-items: center;
+  width: 42px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid rgba(130, 151, 181, 0.3);
+  border-radius: 4px;
+  background: #17243a;
+  color: #eaf2ff;
+  cursor: pointer;
+}
+
+.cont2botonpower:disabled {
+  cursor: not-allowed;
+  opacity: 0.52;
+}
+
 .cont2botonpowerencendido {
-  background: #3f8f38;
-  border-color: rgba(143, 227, 106, 0.42);
+  background: #1f6f3a;
+  border-color: #2f855a;
+  color: #f2fff7;
 }
 
 .cont2botonpowerapagado {
-  background: #8a3144;
-  border-color: rgba(255, 123, 114, 0.42);
+  background: #7a2e3e;
+  border-color: #9f4053;
+  color: #fff4f6;
 }
 
 .cont2medicionfila {
@@ -676,8 +792,8 @@
 }
 
 .cont2botonmedicioniniciar {
-  background: #1f7fab;
-  border-color: rgba(88, 195, 255, 0.42);
+  background: var(--primary);
+  border-color: color-mix(in srgb, var(--primary) 42%, transparent);
 }
 
 .cont2botonmedicionparar {
@@ -712,7 +828,7 @@
   font-size: 30px;
   font-weight: 800;
   letter-spacing: -0.04em;
-  color: var(--texto-principal);
+  color: var(--text-main);
 }
 
 .cont2potenciainputfila {
@@ -755,5 +871,80 @@
   padding: 0;
   border-left: 1px solid rgba(130, 151, 181, 0.32);
   box-sizing: border-box;
+}
+
+/* Barra de conexion del tunel en Control. */
+.cont2conexion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 14px 18px;
+  background: #101b2d;
+  border: 1px solid rgba(130, 151, 181, 0.22);
+  color: #edf3fb;
+}
+
+.cont2conexion > div:first-child {
+  display: grid;
+  gap: 5px;
+}
+
+.cont2conexion span {
+  color: #94a6be;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.cont2conexion strong {
+  color: #ffffff;
+  font-size: 22px;
+  line-height: 1.1;
+}
+
+.cont2conexion .cont2conexionacciones {
+  width: auto;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.cont2conexion .cont2boton {
+  min-width: 132px;
+  min-height: 42px;
+  height: 42px;
+  padding: 0 18px;
+}
+
+@media (max-width: 720px) {
+  .cont2conexion {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .cont2conexion .cont2conexionacciones {
+    width: 100%;
+  }
+
+  .cont2conexion .cont2boton {
+    width: 100%;
+  }
+}
+
+/* Estado de conexion del tunel en Control. */
+.cont2conexionestado {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  min-width: 220px;
+}
+
+.cont2conexionestado span,
+.cont2conexionestado strong {
+  display: block;
 }
 

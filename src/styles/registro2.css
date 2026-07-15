@@ -1,4 +1,4 @@
-.reg2navegador {
+﻿.reg2navegador {
   display: grid;
   grid-template-columns: minmax(360px, 0.88fr) minmax(520px, 1.12fr);
   gap: 0;
@@ -22,25 +22,17 @@
   gap: 20px;
 }
 
-.reg2lista {
-  display: grid;
-  gap: 8px;
-  align-content: start;
-  overflow-y: auto;
-  padding-right: 6px;
-}
-
 .reg2listaensayos {
-  max-height: clamp(260px, 32vh, 360px);
+  max-height: clamp(280px, 38vh, 420px);
 }
 
 .reg2listamediciones {
-  max-height: clamp(330px, 44vh, 520px);
+  max-height: clamp(330px, 48vh, 560px);
 }
 
 .reg2itemcodigo {
   color: #aebdd2;
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 650;
   letter-spacing: 0;
   text-transform: none;
@@ -56,7 +48,7 @@
   gap: 9px;
   padding: 15px;
   background: #101b2d;
-  border-top: 3px solid rgba(88, 195, 255, 0.42);
+  border-top: 3px solid color-mix(in srgb, var(--primary) 42%, transparent);
 }
 
 .reg2resumenvalor,
@@ -136,6 +128,32 @@
   padding-right: 4px;
 }
 
+
+.informemedeventoslista {
+  max-height: 286px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 10px;
+  border: 1px solid rgba(130, 151, 181, 0.2);
+  background: #0d1828;
+  scrollbar-gutter: stable;
+}
+
+.informemedeventoslista .reg2evento {
+  min-height: 82px;
+}
+
+.informemedeventoslista::-webkit-scrollbar {
+  width: 8px;
+}
+
+.informemedeventoslista::-webkit-scrollbar-thumb {
+  background: rgba(130, 151, 181, 0.36);
+}
+
+.informemedeventoslista::-webkit-scrollbar-track {
+  background: transparent;
+}
 .reg2evento {
   padding: 14px;
   background: #101b2d;
@@ -181,6 +199,13 @@
   line-height: 1.4;
 }
 
+.reg2errorlinea {
+  grid-column: 1 / -1;
+  margin: 0 0 12px;
+  color: #c93636;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
 .reg2eventoerror {
   margin-bottom: 12px;
   border-color: rgba(255, 112, 126, 0.35);
@@ -195,9 +220,7 @@
 }
 
 .reg2tablamuestras table {
-  width: 100%;
   min-width: 620px;
-  border-collapse: collapse;
 }
 
 .reg2tablamuestras th,
@@ -213,7 +236,7 @@
   position: sticky;
   top: 0;
   z-index: 1;
-  color: #58c3ff;
+  color: var(--primary);
   background: #102039;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -263,11 +286,6 @@
 
 
 
-.reg2itemfecha {
-  color: #aebdd2;
-  font-size: 12px;
-  font-weight: 600;
-}
 .informemed {
   gap: 16px;
 }
@@ -360,28 +378,17 @@
 
 
 .reg2importador .reg2boton {
-  display: flex;
-  align-items: center;
-  justify-content: center;
   text-align: center;
 }
 
-.reg2itemacciones {
-  position: absolute;
-  top: 14px;
-  right: 14px;
-  display: flex;
-  gap: 8px;
-}
-
 .reg2itemacciones .reg2boton {
-  min-height: 36px;
+  min-height: 32px;
 }
 
 .reg2itemacciones .botondescargar,
 .reg2itemacciones .botonborrar {
-  width: 38px;
-  min-width: 38px;
+  width: 32px;
+  min-width: 32px;
 }
 
 .appblanca .reg2itemacciones .reg2botonsecundario {
@@ -389,8 +396,6 @@
 }
 
 .informemedresumentabla {
-  width: 100%;
-  border-collapse: collapse;
   margin: 14px 0 18px;
   border: 1px solid rgba(128, 160, 190, 0.28);
   background: #07111f;
@@ -400,7 +405,6 @@
 .informemedresumentabla td {
   border-right: 1px solid rgba(128, 160, 190, 0.22);
   padding: 11px 14px;
-  text-align: left;
 }
 
 .informemedresumentabla th:last-child,
@@ -424,10 +428,6 @@
   font-size: 1rem;
   font-weight: 700;
 }
-
-
-
-
 
 
 

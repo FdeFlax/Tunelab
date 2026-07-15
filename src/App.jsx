@@ -6,7 +6,6 @@ import PaginaEnsayos from "./pages/PaginaEnsayos2";
 import PaginaRegistro from "./pages/PaginaRegistro2";
 import PaginaDocente from "./pages/PaginaDocente";
 import BarraLateral from "./components/BarraLateral";
-import BarraSuperior from "./components/Topbar";
 import LoginLocal from "./components/LoginLocal";
 import { borrarIdentidadApi, configurarIdentidadApi, leerIdentidadApi } from "./servicios/api/clienteApi";
 import {
@@ -20,16 +19,35 @@ import { useTunel } from "./servicios/tunel/useTunel";
 function leerUsuarioInicial() {
   const identidad = leerIdentidadApi();
 
-  if (!identidad?.identificador) {
+  if (!identidad) {
     return null;
+  }
+
+  if (!identidad.identificador) {
+    return null;
+  }
+
+  let nombre = identidad.nombre;
+  if (!nombre) {
+    nombre = "Usuario UACloud";
+  }
+
+  let email = identidad.email;
+  if (!email) {
+    email = "";
+  }
+
+  let rol = identidad.rol;
+  if (!rol) {
+    rol = "alumno";
   }
 
   return {
     id: identidad.identificador,
     usuario: identidad.identificador,
-    nombre: identidad.nombre || "Usuario UACloud",
-    email: identidad.email || "",
-    rol: identidad.rol || "alumno",
+    nombre,
+    email,
+    rol,
   };
 }
 
@@ -44,7 +62,10 @@ function App() {
   });
   const temporizadorAviso = useRef(null);
   const tunelEncendido = estadoTunel.estadoTunel === "RUNNING";
-  const esDocente = ["profesor", "tecnico", "admin"].includes(usuarioActual?.rol);
+  let esDocente = false;
+  if (usuarioActual && usuarioActual.rol) {
+    esDocente = ["profesor", "tecnico", "admin"].includes(usuarioActual.rol);
+  }
 
   useEffect(() => {
     if (!usuarioActual) {
@@ -55,7 +76,12 @@ function App() {
   }, [usuarioActual]);
 
   useEffect(() => {
-    window.localStorage.setItem("tunelab_tema", temaClaro ? "claro" : "oscuro");
+    let nombreTema = "oscuro";
+    if (temaClaro) {
+      nombreTema = "claro";
+    }
+
+    window.localStorage.setItem("tunelab_tema", nombreTema);
     document.body.classList.toggle("body--tema-claro", temaClaro);
   }, [temaClaro]);
 
@@ -97,7 +123,7 @@ function App() {
         nombre: medicion.nombre,
         fecha: formatearFecha(medicion.creado_en),
         hora: formatearHora(medicion.creado_en),
-        durSeg: medicion.duracion_segundos || 0,
+        durSeg: medicion.duracion_segundos ? medicion.duracion_segundos : 0,
         totalMuestras: 0,
         objVelMs: Number(medicion.velocidad_objetivo || 0),
         objPotPct: Number(medicion.potencia_objetivo || 0),
@@ -131,15 +157,30 @@ function App() {
     }
 
     function convertirEnsayoApi(ensayo, mediciones) {
+      let objetivoEnsayo = ensayo.objetivo;
+      if (!objetivoEnsayo) {
+        objetivoEnsayo = "Sin objetivo definido";
+      }
+
+      let descripcionEnsayo = ensayo.descripcion;
+      if (!descripcionEnsayo) {
+        descripcionEnsayo = "";
+      }
+
+      let estadoEnsayo = "Preparado";
+      if (mediciones.length) {
+        estadoEnsayo = "Con mediciones";
+      }
+
       return {
         id: `api-ensayo-${ensayo.id}`,
         codigo: ensayo.codigo,
         nombre: ensayo.nombre,
-        objetivo: ensayo.objetivo || "Sin objetivo definido",
-        descripcion: ensayo.descripcion || "",
+        objetivo: objetivoEnsayo,
+        descripcion: descripcionEnsayo,
         fecha: formatearFecha(ensayo.creado_en),
         hora: formatearHora(ensayo.creado_en),
-        estado: mediciones.length ? "Con mediciones" : "Preparado",
+        estado: estadoEnsayo,
         mediciones: mediciones.map(convertirMedicionApi),
       };
     }
@@ -157,7 +198,9 @@ function App() {
         );
 
         if (!cancelado) {
-          accionesTunel.cargarEnsayosPersistidos?.(ensayosConMediciones);
+          if (accionesTunel.cargarEnsayosPersistidos) {
+            accionesTunel.cargarEnsayosPersistidos(ensayosConMediciones);
+          }
         }
       } catch (error) {
         console.warn("No se han podido recuperar los ensayos guardados.", error);
@@ -232,6 +275,24 @@ function App() {
     setPaginaActual("dashboard");
   }
 
+  function obtenerTituloPagina() {
+    switch (paginaActual) {
+      case "control":
+        return "Control";
+      case "inspeccion":
+        return "Inspección";
+      case "ensayos":
+        return "Ensayos";
+      case "registro":
+        return "Registro";
+      case "docente":
+        return esDocente ? "Docente" : "Dashboard";
+      case "dashboard":
+      default:
+        return "Dashboard";
+    }
+  }
+
   function renderizarPagina() {
     switch (paginaActual) {
       case "control":
@@ -275,32 +336,45 @@ function App() {
     return <LoginLocal onEntrar={entrarConUsuario} />;
   }
 
+  let claseApp = "app-shell";
+  if (barraAbierta) {
+    claseApp = claseApp + " app-shell--open";
+  } else {
+    claseApp = claseApp + " app-shell--collapsed";
+  }
+
+  if (temaClaro) {
+    claseApp = claseApp + " appblanca";
+  }
+
   return (
-    <div
-      className={`app-shell ${barraAbierta ? "app-shell--open" : "app-shell--collapsed"} ${
-        temaClaro ? "appblanca" : ""
-      }`}
-    >
+    <div className={claseApp}>
       <BarraLateral
         paginaActual={paginaActual}
         cambiarPagina={cambiarPaginaSegura}
         barraAbierta={barraAbierta}
         cambiarBarraAbierta={setBarraAbierta}
         usuarioActual={usuarioActual}
+        temaClaro={temaClaro}
+        onCambiarTema={() => setTemaClaro((temaActual) => !temaActual)}
+        onLogout={cerrarSesionLocal}
       />
 
       <div className="app-main">
         {avisoGlobal ? <div className="aviso-global">{avisoGlobal}</div> : null}
-        <BarraSuperior
-          temaClaro={temaClaro}
-          onCambiarTema={() => setTemaClaro((temaActual) => !temaActual)}
-          onLogout={cerrarSesionLocal}
-        />
-        <div className="app-content">{renderizarPagina()}</div>
+        <div className={"app-content app-content--" + paginaActual}>
+          <header className="app-page-title">
+            <h1>{obtenerTituloPagina()}</h1>
+          </header>
+          {renderizarPagina()}
+        </div>
       </div>
     </div>
   );
 }
 
 export default App;
+
+
+
 

@@ -1,0 +1,886 @@
+﻿/* Componentes reutilizables entre paginas.
+   Aqui van piezas que se repiten: listas, tarjetas, botones y tablas. */
+
+:root {
+  --tarjeta-lista-fondo: #0b1626;
+  --tarjeta-lista-fondo-hover: #101b2d;
+  --tarjeta-lista-fondo-activa: #102842;
+  --tarjeta-lista-borde: rgba(132, 150, 170, 0.24);
+  --tarjeta-lista-borde-activo: rgba(63, 180, 232, 0.58);
+  --lista-scroll-pista: transparent;
+  --tarjeta-lista-texto: #f5f8fc;
+  --tarjeta-lista-secundario: #aebdd2;
+}
+
+.appblanca {
+  --tarjeta-lista-fondo: #f7fafc;
+  --tarjeta-lista-fondo-hover: #eef4f8;
+  --tarjeta-lista-fondo-activa: #e6eef3;
+  --tarjeta-lista-borde: #c6d4df;
+  --tarjeta-lista-borde-activo: #9bb5c8;
+  --lista-scroll-pista: transparent;
+  --tarjeta-lista-texto: #07162b;
+  --tarjeta-lista-secundario: #37506c;
+}
+
+:is(.reg2lista, .ens2lista, .doclista, .docmedicioneslista, .dochistoriallista) {
+  display: grid;
+  align-content: start;
+  gap: 5px;
+  overflow-y: auto;
+  padding: 0 6px 0 0;
+  scrollbar-gutter: stable;
+}
+
+:is(.reg2lista, .ens2lista, .doclista, .docmedicioneslista, .dochistoriallista)::-webkit-scrollbar-track {
+  margin-block: 0;
+  background: var(--lista-scroll-pista);
+}
+
+.docmedicioneslista {
+  gap: 6px;
+}
+
+:is(.reg2item, .ens2item, .docitem, .docmedicion) {
+  position: relative;
+  display: grid;
+  align-content: start;
+  gap: 4px;
+  width: 100%;
+  min-height: auto;
+  padding: 8px 10px;
+  background: var(--tarjeta-lista-fondo);
+  border: 1px solid var(--tarjeta-lista-borde);
+  box-shadow: none;
+  color: var(--tarjeta-lista-texto);
+  text-align: left;
+}
+
+
+.reg2itemensayo,
+.reg2itemmedicion {
+  padding-right: 82px;
+}
+
+.ens2item {
+  padding-right: 172px;
+}
+
+:is(.reg2item, .ens2item, .docitem):hover,
+:is(.reg2boton, .ens2boton, .docbtn):hover:not(:disabled) {
+  transform: none;
+}
+
+:is(.reg2item, .ens2item, .docitem):hover {
+  background: var(--tarjeta-lista-fondo-hover);
+}
+
+:is(.reg2itemseleccionado, .ens2itemactivo, .ens2itemseleccionado, .docitemactivo) {
+  background: var(--tarjeta-lista-fondo-activa);
+  border-color: var(--tarjeta-lista-borde-activo);
+}
+
+:is(.reg2itemfecha, .reg2itemcodigo, .ens2itemcodigo, .docitem span, .docitem small, .docitem em, .docmedicion span, .ens2item span, .ens2item p, .reg2item span) {
+  margin: 0;
+  color: var(--tarjeta-lista-secundario);
+  letter-spacing: 0;
+  text-transform: none;
+  font-size: 11px;
+  line-height: 1.28;
+}
+
+:is(.reg2item strong, .ens2item strong, .docitem strong, .docmedicion strong) {
+  color: var(--tarjeta-lista-texto);
+  font-size: 14px;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+:is(.reg2itemacciones, .ens2itemacciones, .docacciones) {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+
+:is(.reg2itemacciones, .ens2itemacciones) {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+}
+
+.ens2itemacciones {
+  display: grid;
+  width: 180px;
+}
+
+.reg2itemacciones .reg2boton,
+.docacciones .docbtn {
+  width: 32px;
+  min-width: 32px;
+  min-height: 32px;
+  padding: 0;
+}
+
+.ens2itemacciones .ens2boton {
+  min-height: 34px;
+  padding: 0 10px;
+}
+
+:is(.botondescargar, .botonborrar, .reg2importador .reg2boton) {
+  display: inline-grid;
+  place-items: center;
+}
+
+/* Botones reutilizables.
+   Los colores siguen en cada pagina; aqui solo va la estructura comun. */
+:is(.dash2boton, .ens2boton, .reg2boton, .cont2boton, .docbtn) {
+  border-radius: 2px;
+  box-shadow: none;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+:is(.ens2boton, .reg2boton, .cont2boton) {
+  min-height: 34px;
+  transition:
+    border-color 0.16s ease,
+    background 0.16s ease,
+    transform 0.16s ease;
+}
+
+:is(.ens2boton, .reg2boton, .cont2boton, .docbtn):disabled {
+  cursor: not-allowed;
+  opacity: 0.52;
+}
+
+/* Tablas reutilizables. */
+:is(.informemedresumentabla, .docdetalletabla, .reg2tablamuestras table) {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+:is(.informemedresumentabla th, .informemedresumentabla td, .docdetalletabla th, .docdetalletabla td, .reg2tablamuestras th, .reg2tablamuestras td) {
+  text-align: left;
+}
+
+/* Ajuste fino de iconos de acciones: no afecta graficas ni medidores SVG. */
+:is(.botondescargar, .botonborrar, .cont2botonpower, .docacciones .docbtn, .reg2itemacciones .reg2boton) svg {
+  width: 14px;
+  height: 14px;
+}
+/* Normalizacion tipografica de Control: solo tamanos de letra/iconos, sin tocar layout. */
+.page--control2 .cont2conexion span,
+.page--control2 .cont2sobretitulo,
+.page--control2 .cont2indicadoretiqueta,
+.page--control2 .cont2campoestado span,
+.page--control2 .cont2lectura span,
+.page--control2 .cont2campo span,
+.page--control2 .cont2bloquetitulo span,
+.page--control2 .cont2recaptarjetaetiqueta,
+.page--control2 .cont2recapgraficaetiqueta {
+  font-size: 10px;
+  letter-spacing: 1px;
+}
+
+.page--control2 .cont2conexion strong {
+  font-size: 18px;
+  line-height: 1.15;
+}
+
+.page--control2 .cont2panel h3,
+.page--control2 .cont2modal h3 {
+  font-size: clamp(22px, 1.55vw, 26px);
+  line-height: 1.15;
+}
+
+.page--control2 .cont2cabecera h2 {
+  font-size: clamp(26px, 2.45vw, 36px);
+  line-height: 1.08;
+}
+
+.page--control2 .cont2indicadorvalor,
+.page--control2 .cont2campoestado strong {
+  font-size: clamp(15px, 1.15vw, 18px);
+  line-height: 1.18;
+}
+
+.page--control2 .cont2lectura strong,
+.page--control2 .cont2recaptarjetavalor,
+.page--control2 .cont2recapgraficavalor {
+  font-size: clamp(20px, 1.65vw, 26px);
+  line-height: 1.05;
+}
+
+.page--control2 .cont2potenciaentrada > span {
+  font-size: 22px;
+  line-height: 1.05;
+}
+
+.page--control2 .cont2potenciainputfila input {
+  font-size: 22px;
+}
+
+.page--control2 .cont2potenciainputfila small {
+  font-size: 18px;
+}
+
+.page--control2 .cont2barraescala,
+.page--control2 .cont2lectura small,
+.page--control2 .cont2bloquetitulo small,
+.page--control2 .cont2recaptarjetaapoyo,
+.page--control2 .cont2recapgraficaobjetivo,
+.page--control2 .cont2recapgraficapie,
+.page--control2 .cont2alertahora {
+  font-size: 11px;
+}
+
+.page--control2 .cont2boton {
+  font-size: 12px;
+}
+
+.page--control2 .cont2botonpower svg {
+  width: 15px;
+  height: 15px;
+}
+/* Control: titulos con peso fuerte, resto de textos mas ligeros. */
+.page--control2 :is(.cont2conexion span, .cont2conexion strong, .cont2indicadoretiqueta, .cont2indicadorvalor, .cont2campoestado span, .cont2campoestado strong, .cont2lectura span, .cont2lectura strong, .cont2lectura small, .cont2campo span, .cont2bloquetitulo span, .cont2bloquetitulo small, .cont2recaptarjetaetiqueta, .cont2recaptarjetavalor, .cont2recaptarjetaapoyo, .cont2recapgraficaetiqueta, .cont2recapgraficavalor, .cont2recapgraficaobjetivo, .cont2recapgraficapie, .cont2barraescala, .cont2alerta strong, .cont2alertahora, .cont2campo input, .cont2potenciaentrada > span, .cont2potenciainputfila input, .cont2potenciainputfila small) {
+  font-weight: 400;
+}
+
+.page--control2 :is(.cont2panel h3, .cont2cabecera h2, .cont2modal h3) {
+  font-weight: 800;
+}
+
+.page--control2 .cont2conexion strong {
+  font-size: 17px;
+}
+
+.page--control2 .cont2indicadorvalor,
+.page--control2 .cont2campoestado strong {
+  font-size: clamp(14px, 1.05vw, 17px);
+}
+
+.page--control2 .cont2lectura strong,
+.page--control2 .cont2recaptarjetavalor,
+.page--control2 .cont2recapgraficavalor {
+  font-size: clamp(18px, 1.45vw, 24px);
+}
+
+.page--control2 .cont2potenciaentrada > span {
+  font-size: 20px;
+}
+
+.page--control2 .cont2potenciainputfila input {
+  font-size: 20px;
+}
+
+.page--control2 .cont2potenciainputfila small {
+  font-size: 16px;
+}
+
+.page--control2 :is(.cont2conexion span, .cont2indicadoretiqueta, .cont2campoestado span, .cont2lectura span, .cont2campo span, .cont2bloquetitulo span, .cont2recaptarjetaetiqueta, .cont2recapgraficaetiqueta) {
+  font-size: 9.5px;
+}
+
+.page--control2 :is(.cont2barraescala, .cont2lectura small, .cont2bloquetitulo small, .cont2recaptarjetaapoyo, .cont2recapgraficaobjetivo, .cont2recapgraficapie, .cont2alertahora) {
+  font-size: 10.5px;
+}
+.page--control2 .cont2boton {
+  font-weight: 500;
+}
+/* Sintonia tipografica general: titulos marcados, contenido ligero. */
+:is(
+  .dash2seccioncabecera h2,
+  .dash2seccioncabecera h3,
+  .dash2paneleventoscabecera h4,
+  .dash2panelprincipal h2,
+  .ens2cabecera h2,
+  .ens2panel h3,
+  .ens2modal h3,
+  .reg2cabecera h2,
+  .reg2panel h3,
+  .reg2modal h3,
+  .informemedcabecera h3,
+  .doccabecera h2,
+  .docpanelcabecera h3,
+  .docinformecabecera h3,
+  .dochistorialcabecera h3,
+  .insppuntoscabecera h3,
+  .inspactivotitulo
+) {
+  font-weight: 800;
+}
+
+:is(
+  .dash2estadoflotante span,
+  .dash2estadoflotante small,
+  .dash2tarjeta span,
+  .dash2tarjeta small,
+  .dash2tecnicaitem span,
+  .dash2tecnicaitem small,
+  .dash2alertamini,
+  .dash2tabs button,
+  .dash2boton,
+  .ens2sobretitulo,
+  .ens2metrica span,
+  .ens2metrica small,
+  .ens2campo span,
+  .ens2campo input,
+  .ens2campo textarea,
+  .ens2boton,
+  .reg2sobretitulo,
+  .reg2resumenetiqueta,
+  .reg2resumenapoyo,
+  .reg2graficaetiqueta,
+  .reg2graficaobjetivo,
+  .reg2graficapie,
+  .reg2bloquetitulo span,
+  .reg2bloquetitulo small,
+  .reg2campo span,
+  .reg2campo input,
+  .reg2metrica span,
+  .reg2metrica small,
+  .reg2boton,
+  .docdato span,
+  .docdato small,
+  .docpanelcabecera span,
+  .docpanelcabecera > strong,
+  .doccampo span,
+  .docdescripcion span,
+  .docmedicion span,
+  .docbtn,
+  .inspselectoretiqueta,
+  .inspselectorvalor,
+  .inspactivosubtitulo,
+  .inspactivotexto,
+  .insppunto p,
+  .insppunto span
+) {
+  font-weight: 400;
+}
+
+:is(
+  .dash2estadoflotante strong,
+  .dash2tarjeta strong,
+  .dash2medidor strong,
+  .dash2tecnicaitem strong,
+  .ens2metrica strong,
+  .reg2metrica strong,
+  .reg2resumenvalor,
+  .reg2graficavalor,
+  .docdato strong,
+  .docmedicion strong,
+  .docusotuneldatos strong,
+  .inspactivoetiqueta,
+  .insppunto strong
+) {
+  font-weight: 500;
+}
+
+:is(
+  .dash2estadoflotante span,
+  .dash2tarjeta span,
+  .dash2tecnicaitem span,
+  .ens2sobretitulo,
+  .ens2metrica span,
+  .ens2campo span,
+  .reg2sobretitulo,
+  .reg2resumenetiqueta,
+  .reg2graficaetiqueta,
+  .reg2bloquetitulo span,
+  .reg2campo span,
+  .reg2metrica span,
+  .docdato span,
+  .docpanelcabecera span,
+  .doccampo span,
+  .docdescripcion span,
+  .inspselectoretiqueta,
+  .inspactivosubtitulo
+) {
+  font-size: 9.5px;
+}
+
+:is(
+  .dash2estadoflotante small,
+  .dash2tarjeta small,
+  .dash2medidor strong small,
+  .dash2tecnicaitem small,
+  .ens2metrica small,
+  .reg2metrica small,
+  .reg2resumenapoyo,
+  .reg2graficaobjetivo,
+  .reg2graficapie,
+  .reg2bloquetitulo small,
+  .docdato small,
+  .docmedicion span,
+  .inspactivotexto,
+  .insppunto p
+) {
+  font-size: 10.5px;
+}
+
+:is(.dash2boton, .ens2boton, .reg2boton, .docbtn) {
+  font-weight: 500;
+}
+/* Control: lecturas de maniobra como tabla horizontal. */
+.page--control2 .cont2lecturasmaniobra {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-rows: auto auto;
+  gap: 0;
+  overflow: hidden;
+  border: 1px solid rgba(130, 151, 181, 0.24);
+  background: #101b2d;
+}
+
+.page--control2 .cont2lecturasmaniobra .cont2lectura {
+  display: contents;
+}
+
+.page--control2 .cont2lecturasmaniobra .cont2lectura span,
+.page--control2 .cont2lecturasmaniobra .cont2lectura strong {
+  min-width: 0;
+  padding: 10px 14px;
+  background: #101b2d;
+  text-align: center;
+}
+
+.page--control2 .cont2lecturasmaniobra .cont2lectura span {
+  grid-row: 1;
+  border-bottom: 1px solid rgba(130, 151, 181, 0.22);
+  color: #aebdd2;
+  font-size: 9.5px;
+  font-weight: 400;
+  letter-spacing: 1.05px;
+  text-transform: uppercase;
+}
+
+.page--control2 .cont2lecturasmaniobra .cont2lectura strong {
+  grid-row: 2;
+  color: #ffffff;
+  font-size: clamp(17px, 1.35vw, 22px);
+  font-weight: 500;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+}
+
+.page--control2 .cont2lecturasmaniobra .cont2lectura small {
+  display: none;
+}
+
+.page--control2 .cont2lecturasmaniobra .cont2lectura:nth-child(1) span,
+.page--control2 .cont2lecturasmaniobra .cont2lectura:nth-child(1) strong {
+  grid-column: 1;
+}
+
+.page--control2 .cont2lecturasmaniobra .cont2lectura:nth-child(2) span,
+.page--control2 .cont2lecturasmaniobra .cont2lectura:nth-child(2) strong {
+  grid-column: 2;
+}
+
+.page--control2 .cont2lecturasmaniobra .cont2lectura:nth-child(3) span,
+.page--control2 .cont2lecturasmaniobra .cont2lectura:nth-child(3) strong {
+  grid-column: 3;
+}
+
+.page--control2 .cont2lecturasmaniobra .cont2lectura:nth-child(4) span,
+.page--control2 .cont2lecturasmaniobra .cont2lectura:nth-child(4) strong {
+  grid-column: 4;
+}
+
+.page--control2 .cont2lecturasmaniobra .cont2lectura:not(:nth-child(4)) span,
+.page--control2 .cont2lecturasmaniobra .cont2lectura:not(:nth-child(4)) strong {
+  border-right: 1px solid rgba(130, 151, 181, 0.22);
+}
+
+@media (max-width: 720px) {
+  .page--control2 .cont2lecturasmaniobra {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: auto auto auto auto;
+  }
+
+  .page--control2 .cont2lecturasmaniobra .cont2lectura:nth-child(3) span,
+  .page--control2 .cont2lecturasmaniobra .cont2lectura:nth-child(3) strong {
+    grid-column: 1;
+  }
+
+  .page--control2 .cont2lecturasmaniobra .cont2lectura:nth-child(4) span,
+  .page--control2 .cont2lecturasmaniobra .cont2lectura:nth-child(4) strong {
+    grid-column: 2;
+  }
+}
+.appblanca .page--control2 .cont2lecturasmaniobra {
+  border-color: #c6d5e4;
+  background: #f7fafc;
+}
+
+.appblanca .page--control2 .cont2lecturasmaniobra .cont2lectura span {
+  background: #eef4f8;
+}
+
+.appblanca .page--control2 .cont2lecturasmaniobra .cont2lectura strong {
+  background: #ffffff;
+}
+
+.appblanca .page--control2 .cont2lecturasmaniobra .cont2lectura span {
+  border-bottom-color: #c6d5e4;
+  color: #415875;
+}
+
+.appblanca .page--control2 .cont2lecturasmaniobra .cont2lectura strong {
+  color: #06182f;
+}
+
+.appblanca .page--control2 .cont2lecturasmaniobra .cont2lectura:not(:nth-child(4)) span,
+.appblanca .page--control2 .cont2lecturasmaniobra .cont2lectura:not(:nth-child(4)) strong {
+  border-right-color: #c6d5e4;
+}
+
+/* Barra lateral: hover sin recuadro alrededor de los iconos. */
+:is(.sidelink, .sideactionbtn, .sideuser, .sidebar-logo):hover {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+:is(.sidelink, .sideactionbtn, .sideuser, .sidebar-logo):hover :is(.sidelinkicon, .sideusericon, svg) {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.appblanca :is(.sidelink, .sideactionbtn, .sideuser, .sidebar-logo):hover {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.appblanca :is(.sidelink, .sideactionbtn, .sideuser, .sidebar-logo):hover :is(.sidelinkicon, .sideusericon, svg) {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+/* Modo oscuro menos cerrado: mas contraste entre fondo, paneles y bloques internos. */
+.app-shell:not(.appblanca) {
+  --bg-main: #0d1826;
+  --bg-sidebar: #0b1624;
+  --bg-card: #152235;
+  --bg-soft: #1b2b40;
+  --bg-elevated: #18283c;
+  --text-soft: #b0bfd0;
+}
+
+.app-shell:not(.appblanca),
+.app-shell:not(.appblanca) .app-main {
+  background: #0d1826;
+}
+
+.app-shell:not(.appblanca) .page--control2 .cont2conexion,
+.app-shell:not(.appblanca) .page--control2 .cont2cabecera,
+.app-shell:not(.appblanca) .page--control2 .cont2panel {
+  background: #152235;
+  border-color: rgba(150, 170, 196, 0.32);
+}
+
+.app-shell:not(.appblanca) .page--control2 .cont2panelcabecera,
+.app-shell:not(.appblanca) .page--control2 .cont2cabeceratexto {
+  border-color: rgba(150, 170, 196, 0.24);
+}
+
+.app-shell:not(.appblanca) .page--control2 .cont2potencia,
+.app-shell:not(.appblanca) .page--control2 .cont2campoestado,
+.app-shell:not(.appblanca) .page--control2 .cont2alerta,
+.app-shell:not(.appblanca) .page--control2 .cont2objetivos,
+.app-shell:not(.appblanca) .page--control2 .cont2recaptarjeta,
+.app-shell:not(.appblanca) .page--control2 .cont2recapgrafica {
+  background: #1b2b40;
+  border-color: rgba(150, 170, 196, 0.28);
+}
+
+.app-shell:not(.appblanca) .page--control2 .cont2lineasestado,
+.app-shell:not(.appblanca) .page--control2 .cont2tablasistema,
+.app-shell:not(.appblanca) .page--control2 .cont2seguridadresumen {
+  background: transparent;
+}
+
+.app-shell:not(.appblanca) .page--control2 .cont2campo input,
+.app-shell:not(.appblanca) .page--control2 .cont2potenciainputfila,
+.app-shell:not(.appblanca) .page--control2 .cont2botonsecundario {
+  background: #111d2d;
+  border-color: rgba(150, 170, 196, 0.32);
+}
+
+.app-shell:not(.appblanca) .page--control2 .cont2lecturasmaniobra {
+  border-color: rgba(150, 170, 196, 0.34);
+  background: #152235;
+}
+
+.app-shell:not(.appblanca) .page--control2 .cont2lecturasmaniobra .cont2lectura span {
+  background: #1b2b40;
+  border-color: rgba(150, 170, 196, 0.28);
+  color: #b8c7d8;
+}
+
+.app-shell:not(.appblanca) .page--control2 .cont2lecturasmaniobra .cont2lectura strong {
+  background: #152235;
+  color: #ffffff;
+}
+
+.app-shell:not(.appblanca) .page--control2 .cont2lecturasmaniobra .cont2lectura:not(:nth-child(4)) span,
+.app-shell:not(.appblanca) .page--control2 .cont2lecturasmaniobra .cont2lectura:not(:nth-child(4)) strong {
+  border-right-color: rgba(150, 170, 196, 0.28);
+}
+
+.app-shell:not(.appblanca) .page--control2 .cont2barrapotencia {
+  background: #26364a;
+  border-color: rgba(150, 170, 196, 0.36);
+}
+
+.app-shell:not(.appblanca) .page--control2 .cont2indicadoretiqueta,
+.app-shell:not(.appblanca) .page--control2 .cont2campoestado span,
+.app-shell:not(.appblanca) .page--control2 .cont2lectura span,
+.app-shell:not(.appblanca) .page--control2 .cont2campo span,
+.app-shell:not(.appblanca) .page--control2 .cont2barraescala,
+.app-shell:not(.appblanca) .page--control2 .cont2barraescala span {
+  color: #b8c7d8;
+}
+
+/* Registro en modo oscuro: menos negro y mas separacion visual. */
+.app-shell:not(.appblanca) .page--registro2 .reg2panel,
+.app-shell:not(.appblanca) .page--registro2 .reg2navegador,
+.app-shell:not(.appblanca) .page--registro2 .reg2detalle,
+.app-shell:not(.appblanca) .page--registro2 .informemed {
+  background: #152235;
+  border-color: rgba(150, 170, 196, 0.32);
+}
+
+.app-shell:not(.appblanca) .page--registro2 .reg2panelcabecera,
+.app-shell:not(.appblanca) .page--registro2 .informemedcabecera {
+  border-color: rgba(150, 170, 196, 0.24);
+}
+
+.app-shell:not(.appblanca) .page--registro2 .reg2item,
+.app-shell:not(.appblanca) .page--registro2 .reg2itemensayo,
+.app-shell:not(.appblanca) .page--registro2 .reg2itemmedicion,
+.app-shell:not(.appblanca) .page--registro2 .reg2resumentarjeta,
+.app-shell:not(.appblanca) .page--registro2 .reg2grafica,
+.app-shell:not(.appblanca) .page--registro2 .reg2evento,
+.app-shell:not(.appblanca) .page--registro2 .reg2vacio,
+.app-shell:not(.appblanca) .page--registro2 .informemedeventoslista,
+.app-shell:not(.appblanca) .page--registro2 .reg2tablamuestras,
+.app-shell:not(.appblanca) .page--registro2 .informemedresumentabla {
+  background: #1b2b40;
+  border-color: rgba(150, 170, 196, 0.28);
+}
+
+.app-shell:not(.appblanca) .page--registro2 .reg2item:hover,
+.app-shell:not(.appblanca) .page--registro2 .reg2itemensayo:hover,
+.app-shell:not(.appblanca) .page--registro2 .reg2itemmedicion:hover {
+  background: #20334b;
+  border-color: rgba(150, 170, 196, 0.38);
+}
+
+.app-shell:not(.appblanca) .page--registro2 .reg2itemseleccionado,
+.app-shell:not(.appblanca) .page--registro2 .reg2itemensayo.reg2itemseleccionado,
+.app-shell:not(.appblanca) .page--registro2 .reg2itemmedicion.reg2itemseleccionado {
+  background: #223a52;
+  border-color: rgba(63, 180, 232, 0.52);
+}
+
+.app-shell:not(.appblanca) .page--registro2 .reg2campo input,
+.app-shell:not(.appblanca) .page--registro2 .reg2campo textarea,
+.app-shell:not(.appblanca) .page--registro2 .reg2importadorayuda,
+.app-shell:not(.appblanca) .page--registro2 .reg2botonsecundario {
+  background: #111d2d;
+  border-color: rgba(150, 170, 196, 0.32);
+}
+
+.app-shell:not(.appblanca) .page--registro2 .reg2tablamuestras th,
+.app-shell:not(.appblanca) .page--registro2 .informemedresumentabla th {
+  background: #22334a;
+  color: #b8dff5;
+}
+
+.app-shell:not(.appblanca) .page--registro2 .reg2tablamuestras td,
+.app-shell:not(.appblanca) .page--registro2 .informemedresumentabla td {
+  background: #17283c;
+  border-color: rgba(150, 170, 196, 0.24);
+}
+
+.app-shell:not(.appblanca) .page--registro2 .reg2resumenapoyo,
+.app-shell:not(.appblanca) .page--registro2 .reg2graficaobjetivo,
+.app-shell:not(.appblanca) .page--registro2 .reg2graficapie,
+.app-shell:not(.appblanca) .page--registro2 .reg2evento span,
+.app-shell:not(.appblanca) .page--registro2 .reg2item span,
+.app-shell:not(.appblanca) .page--registro2 .reg2itemcodigo {
+  color: #b8c7d8;
+}
+
+.app-shell:not(.appblanca) .page--registro2 .reg2graficabase {
+  stroke: rgba(170, 190, 214, 0.42);
+}
+
+/* Docente en modo oscuro: menos negro y mas separacion visual. */
+.app-shell:not(.appblanca) .page--docente .doccabecera,
+.app-shell:not(.appblanca) .page--docente .docpanel,
+.app-shell:not(.appblanca) .page--docente .docinforme,
+.app-shell:not(.appblanca) .page--docente .dochistorial,
+.app-shell:not(.appblanca) .page--docente .docusotunel {
+  background: #152235;
+  border-color: rgba(150, 170, 196, 0.32);
+}
+
+.app-shell:not(.appblanca) .page--docente .docpanelcabecera,
+.app-shell:not(.appblanca) .page--docente .dochistorialcabecera,
+.app-shell:not(.appblanca) .page--docente .docinformecabecera {
+  border-color: rgba(150, 170, 196, 0.24);
+}
+
+.app-shell:not(.appblanca) .page--docente .docdato,
+.app-shell:not(.appblanca) .page--docente .docitem,
+.app-shell:not(.appblanca) .page--docente .docmedicion,
+.app-shell:not(.appblanca) .page--docente .docdescripcion,
+.app-shell:not(.appblanca) .page--docente .docvacio,
+.app-shell:not(.appblanca) .page--docente .dochistorialevento,
+.app-shell:not(.appblanca) .page--docente .docdetalletabla,
+.app-shell:not(.appblanca) .page--docente .docdetalletabla td,
+.app-shell:not(.appblanca) .page--docente .informemedresumentabla,
+.app-shell:not(.appblanca) .page--docente .docpanelcabecera > strong {
+  background: #1b2b40;
+  border-color: rgba(150, 170, 196, 0.28);
+}
+
+.app-shell:not(.appblanca) .page--docente .docitem:hover {
+  background: #20334b;
+  border-color: rgba(150, 170, 196, 0.38);
+}
+
+.app-shell:not(.appblanca) .page--docente .docitemactivo,
+.app-shell:not(.appblanca) .page--docente .docusotunelactivo {
+  background: #223a52;
+  border-color: rgba(63, 180, 232, 0.52);
+}
+
+.app-shell:not(.appblanca) .page--docente .docdetalletabla th,
+.app-shell:not(.appblanca) .page--docente .informemedresumentabla th {
+  background: #22334a;
+  color: #b8dff5;
+  border-color: rgba(150, 170, 196, 0.28);
+}
+
+.app-shell:not(.appblanca) .page--docente .docbuscarcentral input,
+.app-shell:not(.appblanca) .page--docente .doccampo input,
+.app-shell:not(.appblanca) .page--docente .doccampo select,
+.app-shell:not(.appblanca) .page--docente .docbtn {
+  background: #111d2d;
+  border-color: rgba(150, 170, 196, 0.32);
+}
+
+.app-shell:not(.appblanca) .page--docente .docdato small,
+.app-shell:not(.appblanca) .page--docente .docmedicion span,
+.app-shell:not(.appblanca) .page--docente .docitem span,
+.app-shell:not(.appblanca) .page--docente .docitem small,
+.app-shell:not(.appblanca) .page--docente .docitem em,
+.app-shell:not(.appblanca) .page--docente .dochistorialevento span,
+.app-shell:not(.appblanca) .page--docente .docusotunel span,
+.app-shell:not(.appblanca) .page--docente .docusotuneldatos span {
+  color: #b8c7d8;
+}
+/* Ajuste final: cabeceras de panel al estilo de Control. */
+:is(
+  .cont2panelcabecera,
+  .ens2panelcabecera,
+  .reg2panelcabecera,
+  .docpanelcabecera,
+  .informemedcabecera,
+  .docinformecabecera,
+  .dochistorialcabecera,
+  .dash2seccioncabecera,
+  .dash2paneleventoscabecera,
+  .inspactivocabecera,
+  .insppuntoscabecera
+) {
+  gap: 16px;
+  padding-bottom: 14px;
+  border-bottom: 0;
+}
+
+.page--docente .docpanelcabecera {
+  border-bottom: 0;
+}
+
+:is(
+  .cont2panel h3,
+  .cont2modal h3,
+  .ens2panel h3,
+  .ens2modal h3,
+  .reg2panel h3,
+  .reg2modal h3,
+  .informemedcabecera h3,
+  .docpanelcabecera h3,
+  .docinformecabecera h3,
+  .dochistorialcabecera h3,
+  .dash2seccioncabecera h3,
+  .dash2paneleventoscabecera h4,
+  .inspactivotitulo,
+  .insppuntoscabecera h3
+) {
+  margin: 4px 0 0;
+  font-size: clamp(22px, 1.55vw, 26px);
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+}
+/* Ajuste final real: cabeceras como Control en Registro, Ensayos y Docente. */
+:is(
+  .page--ensayo2 .ens2panel,
+  .page--registro2 .reg2panel,
+  .page--docente .docpanel,
+  .page--docente .docinforme,
+  .page--docente .dochistorial
+) {
+  gap: 18px;
+  padding: 22px;
+}
+
+.page--docente .docmediciones {
+  gap: 18px;
+}
+
+:is(
+  .page--ensayo2 .ens2panelcabecera,
+  .page--registro2 .reg2panelcabecera,
+  .page--docente .docpanelcabecera,
+  .page--docente .docinformecabecera,
+  .page--docente .dochistorialcabecera
+) {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 14px;
+  margin: 0;
+  border-bottom: 0;
+}
+
+:is(
+  .page--ensayo2 .ens2panelcabecera h3,
+  .page--registro2 .reg2panelcabecera h3,
+  .page--docente .docpanelcabecera h3,
+  .page--docente .docinformecabecera h3,
+  .page--docente .dochistorialcabecera h3
+) {
+  margin: 4px 0 0;
+  font-size: clamp(22px, 1.55vw, 26px);
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+}
+
+.page--docente .docmedicionescabecera {
+  padding-bottom: 14px;
+}
+
+
+

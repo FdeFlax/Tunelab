@@ -1,4 +1,4 @@
-﻿import { memo, Suspense, useCallback, useEffect, useRef } from "react";
+import { memo, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Environment, Html, OrbitControls, useGLTF } from "@react-three/drei";
 import { Vector3 } from "three";
@@ -31,6 +31,9 @@ function ControladorCamara({
   nivelZoom = 50,
   solicitudReinicio = 0,
   onCambioVistaAlterada = null,
+  onInicioInteraccion = null,
+  onFinInteraccion = null,
+  onInteraccionUsuario = null,
 }) {
   const { camera, invalidate } = useThree();
   const [posicionInicialX, posicionInicialY, posicionInicialZ] = posicionCamaraInicial;
@@ -51,6 +54,10 @@ function ControladorCamara({
   const nivelZoomActual = useRef(nivelZoom);
 
   const actualizarEstadoVistaAlterada = useCallback(() => {
+    if (!onCambioVistaAlterada) {
+      return;
+    }
+
     const distanciaCamaraInicio = camera.position.distanceTo(posicionInicio.current);
     const distanciaObjetivoInicio = controlesRef.current
       ? controlesRef.current.target.distanceTo(objetivoInicio.current)
@@ -59,7 +66,7 @@ function ControladorCamara({
 
     if (vistaAlterada !== vistaAlteradaAnterior.current) {
       vistaAlteradaAnterior.current = vistaAlterada;
-      onCambioVistaAlterada?.(vistaAlterada);
+      onCambioVistaAlterada(vistaAlterada);
     }
   }, [camera, controlesRef, onCambioVistaAlterada]);
 
@@ -157,12 +164,11 @@ function ControladorCamara({
         }
 
         animando.current = false;
+        actualizarEstadoVistaAlterada();
       } else {
         invalidate();
       }
     }
-
-    actualizarEstadoVistaAlterada();
   });
 
   useEffect(() => {
@@ -181,9 +187,11 @@ function ControladorCamara({
     }
 
     function cancelarAnimacionPorInteraccion() {
+      onInicioInteraccion?.();
+      onInteraccionUsuario?.();
+
       if (!animando.current) {
         invalidate();
-        actualizarEstadoVistaAlterada();
         return;
       }
 
@@ -191,29 +199,44 @@ function ControladorCamara({
       controles.target.copy(destinoObjetivo.current);
       controles.update();
       invalidate();
-      actualizarEstadoVistaAlterada();
     }
 
     function invalidarDuranteInteraccion() {
+      invalidate();
+    }
+
+    function finalizarInteraccion() {
+      onFinInteraccion?.();
       invalidate();
       actualizarEstadoVistaAlterada();
     }
 
     controles.addEventListener("start", cancelarAnimacionPorInteraccion);
     controles.addEventListener("change", invalidarDuranteInteraccion);
-    controles.addEventListener("end", invalidarDuranteInteraccion);
+    controles.addEventListener("end", finalizarInteraccion);
 
     return () => {
       controles.removeEventListener("start", cancelarAnimacionPorInteraccion);
       controles.removeEventListener("change", invalidarDuranteInteraccion);
-      controles.removeEventListener("end", invalidarDuranteInteraccion);
+      controles.removeEventListener("end", finalizarInteraccion);
     };
-  }, [actualizarEstadoVistaAlterada, controlesRef, invalidate]);
+  }, [actualizarEstadoVistaAlterada, controlesRef, invalidate, onFinInteraccion, onInicioInteraccion, onInteraccionUsuario]);
 
   return null;
 }
 
 function PuntosInteres({ puntos, puntoActivoId, onSeleccionarPunto }) {
+  function detenerEventoEtiqueta(evento) {
+    evento.stopPropagation();
+    evento.nativeEvent?.stopImmediatePropagation?.();
+  }
+
+  function seleccionarEtiqueta(evento, puntoId) {
+    evento.preventDefault();
+    detenerEventoEtiqueta(evento);
+    onSeleccionarPunto?.(puntoId);
+  }
+
   return puntos.map((punto) => (
     <Html key={punto.id} position={punto.posicion} distanceFactor={5}>
       <div className="visorpuntowrapper">
@@ -226,12 +249,9 @@ function PuntosInteres({ puntos, puntoActivoId, onSeleccionarPunto }) {
             "--desplazamiento-etiqueta-x": punto.desplazamientoEtiqueta?.x || "0px",
             "--desplazamiento-etiqueta-y": punto.desplazamientoEtiqueta?.y || "0px",
           }}
-          onClick={(evento) => {
-            evento.stopPropagation();
-            onSeleccionarPunto?.(punto.id);
-          }}
+          onPointerDown={detenerEventoEtiqueta}
+          onClick={(evento) => seleccionarEtiqueta(evento, punto.id)}
         >
-          <span className="visorpuntoicono" aria-hidden="true" />
           <span>{punto.etiqueta}</span>
         </button>
       </div>
@@ -244,13 +264,28 @@ function ModeloTunel({
   puntoActivoId,
   onSeleccionarPunto,
   rotacionModeloY = -0.35,
+  escalaModelo = 1.15,
+  desplazamientoModelo = [0, -0.55, 0],
+  mostrarPuntosInteres = true,
+  onCambioCursorSobreModelo = null,
 }) {
   const { scene } = useGLTF("/models/tfg.glb");
+  const eventosCursorModelo = onCambioCursorSobreModelo
+    ? {
+        onPointerOver: () => onCambioCursorSobreModelo(true),
+        onPointerOut: () => onCambioCursorSobreModelo(false),
+      }
+    : {};
 
   return (
-    <group position={[0, -0.55, 0]} rotation={[0, rotacionModeloY, 0]} scale={1.15}>
+    <group
+      position={desplazamientoModelo}
+      rotation={[0, rotacionModeloY, 0]}
+      scale={escalaModelo}
+      {...eventosCursorModelo}
+    >
       <primitive object={scene} />
-      {puntosInteres?.length ? (
+      {mostrarPuntosInteres && puntosInteres?.length ? (
         <PuntosInteres
           puntos={puntosInteres}
           puntoActivoId={puntoActivoId}
@@ -276,15 +311,46 @@ function VisorTunel({
   zoomHabilitado = true,
   solicitudReinicio = 0,
   onCambioVistaAlterada = null,
+  onInteraccionUsuario = null,
   anguloPolarMinimo = 0.85,
   anguloPolarMaximo = 1.6,
   velocidadRotacion = 0.85,
+  factorFrenado = 0.08,
+  dprLigeroMaximo = 1.1,
   rotacionModeloY = -0.35,
+  escalaModelo = 1.15,
+  desplazamientoModelo = [0, -0.55, 0],
   modoRendimiento = "normal",
+  ocultarEtiquetasDuranteInteraccion = false,
+  zoomSoloSobreModelo = false,
 }) {
   const controlesRef = useRef(null);
   const contenedorRef = useRef(null);
+  const [interaccionActiva, setInteraccionActiva] = useState(false);
+  const [cursorSobreModelo, setCursorSobreModelo] = useState(false);
   const renderLigero = modoRendimiento === "ligero";
+  const mostrarPuntosInteres = !ocultarEtiquetasDuranteInteraccion || !interaccionActiva;
+  const zoomPermitido = zoomHabilitado && (!zoomSoloSobreModelo || cursorSobreModelo);
+  const marcarInicioInteraccion = useCallback(() => {
+    if (ocultarEtiquetasDuranteInteraccion) {
+      setInteraccionActiva(true);
+    }
+  }, [ocultarEtiquetasDuranteInteraccion]);
+  const marcarFinInteraccion = useCallback(() => {
+    if (ocultarEtiquetasDuranteInteraccion) {
+      setInteraccionActiva(false);
+    }
+  }, [ocultarEtiquetasDuranteInteraccion]);
+  const marcarCursorSobreModelo = useCallback((estaSobreModelo) => {
+    if (!zoomSoloSobreModelo) {
+      return;
+    }
+
+    setCursorSobreModelo((valorActual) =>
+      valorActual === estaSobreModelo ? valorActual : estaSobreModelo
+    );
+  }, [zoomSoloSobreModelo]);
+  const manejadorCursorModelo = zoomSoloSobreModelo ? marcarCursorSobreModelo : null;
 
 
   useEffect(() => {
@@ -304,12 +370,35 @@ function VisorTunel({
       contenedor.removeEventListener("contextmenu", permitirMenuContextual, true);
     };
   }, []);
+
+  useEffect(() => {
+    if (!zoomSoloSobreModelo) {
+      return undefined;
+    }
+
+    const contenedor = contenedorRef.current;
+
+    if (!contenedor) {
+      return undefined;
+    }
+
+    function limpiarCursorSobreModelo() {
+      setCursorSobreModelo(false);
+    }
+
+    contenedor.addEventListener("pointerleave", limpiarCursorSobreModelo);
+
+    return () => {
+      contenedor.removeEventListener("pointerleave", limpiarCursorSobreModelo);
+    };
+  }, [zoomSoloSobreModelo]);
+
   return (
     <div ref={contenedorRef} className={`tunnel-viewer ${className}`.trim()}>
       <Canvas
         camera={{ position: posicionCamaraInicial, fov: campoVision }}
         frameloop={renderLigero ? "demand" : "always"}
-        dpr={renderLigero ? [1, 1.1] : [1, 1.5]}
+        dpr={renderLigero ? [1, dprLigeroMaximo] : [1, 1.5]}
         gl={{
           antialias: !renderLigero,
           alpha: true,
@@ -329,6 +418,9 @@ function VisorTunel({
           nivelZoom={nivelZoom}
           solicitudReinicio={solicitudReinicio}
           onCambioVistaAlterada={onCambioVistaAlterada}
+          onInicioInteraccion={marcarInicioInteraccion}
+          onFinInteraccion={marcarFinInteraccion}
+          onInteraccionUsuario={onInteraccionUsuario}
         />
 
         <Suspense fallback={null}>
@@ -337,6 +429,10 @@ function VisorTunel({
             puntoActivoId={puntoActivoId}
             onSeleccionarPunto={onSeleccionarPunto}
             rotacionModeloY={rotacionModeloY}
+            escalaModelo={escalaModelo}
+            desplazamientoModelo={desplazamientoModelo}
+            mostrarPuntosInteres={mostrarPuntosInteres}
+            onCambioCursorSobreModelo={manejadorCursorModelo}
           />
           <Environment preset="studio" resolution={renderLigero ? 64 : 256} />
         </Suspense>
@@ -344,9 +440,9 @@ function VisorTunel({
         <OrbitControls
           ref={controlesRef}
           enablePan={false}
-          enableZoom={zoomHabilitado}
+          enableZoom={zoomPermitido}
           enableDamping
-          dampingFactor={0.08}
+          dampingFactor={factorFrenado}
           maxDistance={distanciaMaxima}
           minDistance={distanciaMinima}
           minPolarAngle={anguloPolarMinimo}
@@ -361,6 +457,8 @@ function VisorTunel({
 useGLTF.preload("/models/tfg.glb");
 
 export default memo(VisorTunel);
+
+
 
 
 

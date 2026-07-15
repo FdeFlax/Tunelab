@@ -1,7 +1,7 @@
-.ens2gridprincipal {
+﻿.ens2gridprincipal {
   display: grid;
   grid-template-columns: minmax(0, 1.08fr) minmax(360px, 0.92fr);
-  gap: 18px;
+  gap: 10px;
   align-items: stretch;
 }
 
@@ -28,24 +28,24 @@
 }
 
 .ens2lista {
-  gap: 10px;
+  gap: 6px;
   align-content: start;
   max-height: min(50vh, 520px);
 }
 
 .ens2itemactivo {
-  border-color: rgba(88, 195, 255, 0.46);
+  border-color: color-mix(in srgb, var(--primary) 46%, transparent);
   background: #101b2d;
 }
 
 .ens2itemcontenido {
   display: grid;
-  gap: 7px;
+  gap: 5px;
 }
 
 .ens2itemcodigo {
-  color: #58c3ff;
-  font-size: 12px;
+  color: var(--primary);
+  font-size: 11px;
   font-weight: 850;
   letter-spacing: 1px;
   text-transform: uppercase;
@@ -53,7 +53,7 @@
 
 .ens2itemacciones {
   display: grid;
-  gap: 10px;
+  gap: 6px;
   align-content: start;
 }
 
@@ -77,14 +77,19 @@
 
 
 
-/* Error visible si MySQL no puede crear la ficha. */
-.ens2error {
-  margin: 0 0 12px;
-  padding: 10px 12px;
-  border: 1px solid #bb5a5a;
-  color: #9f2929;
-  background: #fff4f4;
-  font-weight: 650;
+.ens2accionescrear {
+  display: grid;
+  gap: 10px;
+}
+
+.ens2accionescrear .ens2botonprimario {
+  width: 100%;
+}
+
+.ens2errorlinea {
+  color: #c93636;
+  font-size: 0.92rem;
+  font-weight: 700;
 }
 
 .ens2panelhistorial {
@@ -124,7 +129,7 @@
   align-content: start;
   padding: 18px;
   background: #101b2d;
-  border: 1px solid rgba(88, 195, 255, 0.26);
+  border: 1px solid color-mix(in srgb, var(--primary) 26%, transparent);
 }
 
 .ens2resumenficha strong {
@@ -154,7 +159,7 @@
 }
 
 .ens2historialancho {
-  margin-top: 18px;
+  margin-top: 0;
 }
 
 .ens2listahorizontal {
@@ -261,8 +266,8 @@
 }
 
 .ens2botonprimario {
-  background: #1f7fab;
-  border-color: #1f7fab;
+  background: var(--primary);
+  border-color: var(--primary);
 }
 
 .ens2botonsecundario {
@@ -281,4 +286,115 @@
   }
 }
 
+/* Ensayos: resumen de ficha como tabla horizontal. */
+.page--ensayo2 .ens2resumenficha {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: auto auto;
+  gap: 0;
+  overflow: hidden;
+  padding: 0;
+  border: 1px solid rgba(130, 151, 181, 0.24);
+  background: #101b2d;
+}
 
+.page--ensayo2 .ens2resumenficha > div {
+  display: contents;
+}
+
+.page--ensayo2 .ens2resumenficha span,
+.page--ensayo2 .ens2resumenficha strong {
+  min-width: 0;
+  padding: 7px 12px;
+  background: #101b2d;
+  text-align: center;
+}
+
+.page--ensayo2 .ens2resumenficha span {
+  grid-row: 1;
+  border-bottom: 1px solid rgba(130, 151, 181, 0.22);
+  color: #aebdd2;
+  font-size: 8.8px;
+  font-weight: 400;
+  letter-spacing: 0.9px;
+  text-transform: uppercase;
+}
+
+.page--ensayo2 .ens2resumenficha strong {
+  grid-row: 2;
+  color: #ffffff;
+  font-size: clamp(13px, 0.9vw, 15px);
+  font-weight: 500;
+  line-height: 1.12;
+  letter-spacing: -0.01em;
+}
+
+.page--ensayo2 .ens2resumenficha > div:nth-child(1) span,
+.page--ensayo2 .ens2resumenficha > div:nth-child(1) strong {
+  grid-column: 1;
+}
+
+.page--ensayo2 .ens2resumenficha > div:nth-child(2) span,
+.page--ensayo2 .ens2resumenficha > div:nth-child(2) strong {
+  grid-column: 2;
+}
+
+.page--ensayo2 .ens2resumenficha > div:nth-child(3) span,
+.page--ensayo2 .ens2resumenficha > div:nth-child(3) strong {
+  grid-column: 3;
+}
+
+.page--ensayo2 .ens2resumenficha > div:not(:nth-child(3)) span,
+.page--ensayo2 .ens2resumenficha > div:not(:nth-child(3)) strong {
+  border-right: 1px solid rgba(130, 151, 181, 0.22);
+}
+
+.appblanca .page--ensayo2 .ens2resumenficha {
+  border-color: #c6d5e4;
+  background: #f7fafc;
+}
+
+.appblanca .page--ensayo2 .ens2resumenficha span {
+  border-bottom-color: #c6d5e4;
+  background: #eef4f8;
+  color: #415875;
+}
+
+.appblanca .page--ensayo2 .ens2resumenficha strong {
+  background: #ffffff;
+  color: #06182f;
+}
+
+.appblanca .page--ensayo2 .ens2resumenficha > div:not(:nth-child(3)) span,
+.appblanca .page--ensayo2 .ens2resumenficha > div:not(:nth-child(3)) strong {
+  border-right-color: #c6d5e4;
+}
+
+/* Editar ensayo: formulario mas compacto entre nombre/objetivo y descripcion. */
+.page--ensayo2 .ens2editarform .ens2formulario {
+  gap: 6px 12px;
+}
+
+.page--ensayo2 .ens2editarform .ens2campo {
+  gap: 4px;
+}
+
+.page--ensayo2 .ens2editarform .ens2campocontador {
+  margin-top: -2px;
+  line-height: 1;
+}
+
+.page--ensayo2 .ens2editarform .ens2campoarea {
+  margin-top: 0;
+}
+
+/* Editar ensayo: campos de texto mas contenidos. */
+.page--ensayo2 .ens2editarform .ens2campo input {
+  min-height: 36px;
+  padding: 6px 10px;
+}
+
+.page--ensayo2 .ens2editarform .ens2campo textarea {
+  min-height: 82px;
+  padding: 8px 10px;
+}

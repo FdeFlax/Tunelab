@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Download, Trash2 } from "lucide-react";
 import { InformeMedicionComun } from "../components/ResumenMedicion";
 import {
@@ -271,11 +271,13 @@ function PaginaRegistro2() {
   const [ensayosApi, setEnsayosApi] = useState([]);
   const [ensayoApiSeleccionadoId, setEnsayoApiSeleccionadoId] = useState(null);
   const [medicionesApi, setMedicionesApi] = useState([]);
+  const [conteoMedicionesApi, setConteoMedicionesApi] = useState({});
   const [medicionApiSeleccionadaId, setMedicionApiSeleccionadaId] = useState(null);
   const [medicionApiDetalle, setMedicionApiDetalle] = useState(null);
   const [errorApi, setErrorApi] = useState("");
   const [archivosCargados, setArchivosCargados] = useState(cargarArchivosRegistroGuardados);
   const [archivoSeleccionadoId, setArchivoSeleccionadoId] = useState(null);
+  const [grupoArchivoSeleccionadoId, setGrupoArchivoSeleccionadoId] = useState(null);
   const [errorImportacion, setErrorImportacion] = useState("");
   const [importando, setImportando] = useState(false);
   const [fuenteSeleccionada, setFuenteSeleccionada] = useState("api");
@@ -294,20 +296,22 @@ function PaginaRegistro2() {
     null;
   const medicionApiSeleccionada =
     medicionesApi.find((medicion) => medicion.id === medicionApiSeleccionadaId) ||
-    medicionesApi[0] ||
     null;
   const archivoSeleccionado =
     archivosCargados.find((archivo) => archivo.id === archivoSeleccionadoId) ||
-    archivosCargados[0] ||
     null;
   const medicionArchivoSeleccionada = archivoSeleccionado?.medicion || null;
-  const ensayoArchivoSeleccionado = archivoSeleccionado?.ensayo || null;
   const grupoArchivoSeleccionado =
-    ensayosImportados.find(
-      (grupo) => grupo.id === crearClaveEnsayoImportado(ensayoArchivoSeleccionado)
-    ) ||
+    ensayosImportados.find((grupo) => grupo.id === grupoArchivoSeleccionadoId) ||
+    (archivoSeleccionado
+      ? ensayosImportados.find((grupo) =>
+          grupo.id === crearClaveEnsayoImportado(archivoSeleccionado.ensayo)
+        )
+      : null) ||
     ensayosImportados[0] ||
     null;
+  const ensayoArchivoSeleccionado =
+    grupoArchivoSeleccionado?.ensayo || archivoSeleccionado?.ensayo || null;
   const medicionSeleccionada = usaApi ? medicionApiDetalle : medicionArchivoSeleccionada;
   const tarjetasResumen = crearTarjetasResumen(medicionSeleccionada);
 
@@ -317,6 +321,15 @@ function PaginaRegistro2() {
     try {
       const ensayos = await listarEnsayosApi();
       setEnsayosApi(ensayos);
+      setConteoMedicionesApi((actual) => {
+        const siguiente = { ...actual };
+        ensayos.forEach((ensayo) => {
+          if (siguiente[ensayo.id] === undefined) {
+            siguiente[ensayo.id] = Number(ensayo.total_mediciones || 0);
+          }
+        });
+        return siguiente;
+      });
       setEnsayoApiSeleccionadoId((actual) => {
         if (mantenerSeleccion && ensayos.some((ensayo) => ensayo.id === actual)) {
           return actual;
@@ -377,7 +390,12 @@ function PaginaRegistro2() {
         if (cancelado) return;
 
         setMedicionesApi(mediciones);
-        setMedicionApiSeleccionadaId(mediciones[0]?.id || null);
+        setConteoMedicionesApi((actual) => ({
+          ...actual,
+          [ensayoApiSeleccionado.id]: mediciones.length,
+        }));
+        setMedicionApiSeleccionadaId(null);
+        setMedicionApiDetalle(null);
       } catch {
         if (!cancelado) {
           setMedicionesApi([]);
@@ -431,11 +449,14 @@ function PaginaRegistro2() {
   function seleccionarEnsayoApi(idEnsayo) {
     setFuenteSeleccionada("api");
     setEnsayoApiSeleccionadoId(idEnsayo);
+    setMedicionApiSeleccionadaId(null);
+    setMedicionApiDetalle(null);
   }
 
   function seleccionarEnsayoImportado(grupo) {
     setFuenteSeleccionada("archivo");
-    setArchivoSeleccionadoId(grupo.archivos[0]?.id || null);
+    setGrupoArchivoSeleccionadoId(grupo.id);
+    setArchivoSeleccionadoId(null);
   }
 
   async function importarArchivos(evento) {
@@ -462,7 +483,8 @@ function PaginaRegistro2() {
       }
 
       setArchivosCargados((actuales) => [...documentos, ...actuales]);
-      setArchivoSeleccionadoId(documentos[0]?.id || null);
+      setGrupoArchivoSeleccionadoId(crearClaveEnsayoImportado(documentos[0]?.ensayo));
+      setArchivoSeleccionadoId(null);
       setFuenteSeleccionada("archivo");
     } catch (error) {
       setErrorImportacion(error.message || "No se ha podido importar el archivo.");
@@ -475,6 +497,7 @@ function PaginaRegistro2() {
   function limpiarArchivos() {
     setArchivosCargados([]);
     setArchivoSeleccionadoId(null);
+    setGrupoArchivoSeleccionadoId(null);
     setErrorImportacion("");
     setFuenteSeleccionada("api");
   }
@@ -538,6 +561,12 @@ function PaginaRegistro2() {
       await borrarMedicionApi(medicion.id);
       const restantes = medicionesApi.filter((item) => item.id !== medicion.id);
       setMedicionesApi(restantes);
+      if (ensayoApiSeleccionado?.id) {
+        setConteoMedicionesApi((actual) => ({
+          ...actual,
+          [ensayoApiSeleccionado.id]: restantes.length,
+        }));
+      }
       setMedicionApiSeleccionadaId((actual) => (actual === medicion.id ? restantes[0]?.id || null : actual));
       setMedicionApiDetalle((actual) => (actual?.id === `api-medicion-${medicion.id}` ? null : actual));
       await cargarEnsayosApi();
@@ -618,6 +647,11 @@ function PaginaRegistro2() {
     try {
       await borrarEnsayoApi(ensayo.id);
       setEnsayosApi((actuales) => actuales.filter((item) => item.id !== ensayo.id));
+      setConteoMedicionesApi((actual) => {
+        const siguiente = { ...actual };
+        delete siguiente[ensayo.id];
+        return siguiente;
+      });
       setMedicionesApi([]);
       setMedicionApiSeleccionadaId(null);
       setMedicionApiDetalle(null);
@@ -640,6 +674,7 @@ function PaginaRegistro2() {
       actuales.filter((archivo) => crearClaveEnsayoImportado(archivo.ensayo) !== grupo.id)
     );
     setArchivoSeleccionadoId(null);
+    setGrupoArchivoSeleccionadoId(null);
   }
 
   return (
@@ -674,9 +709,7 @@ function PaginaRegistro2() {
           </div>
 
           {errorApi ? (
-            <article className="reg2evento reg2eventoerror">
-              <strong>No se ha podido cargar MySQL. Los archivos importados siguen disponibles.</strong>
-            </article>
+            <p className="reg2errorlinea">No se ha podido conectar con la base de datos.</p>
           ) : null}
 
           {errorImportacion ? (
@@ -716,6 +749,7 @@ function PaginaRegistro2() {
 
               {apiDisponible && ensayosApi.map((ensayo) => {
                 const esSeleccionado = usaApi && ensayo.id === ensayoApiSeleccionado?.id;
+                const totalMediciones = conteoMedicionesApi[ensayo.id] ?? ensayo.total_mediciones ?? 0;
 
                 return (
                   <article
@@ -729,7 +763,7 @@ function PaginaRegistro2() {
                     <strong>{ensayo.nombre}</strong>
                     <span>{ensayo.objetivo || "Sin objetivo registrado"}</span>
                     <span className="reg2itemcodigo">
-                      {ensayo.codigo} - {ensayo.total_mediciones || 0} mediciones
+                      {ensayo.codigo} - {totalMediciones} mediciones
                     </span>
                     <div className="reg2itemacciones">
                       <button type="button" className="reg2boton reg2botonsecundario botondescargar" onClick={(evento) => descargarEnsayoApiRegistro(evento, ensayo)} aria-label="Descargar ensayo" title="Descargar ensayo">
@@ -882,6 +916,10 @@ function PaginaRegistro2() {
 }
 
 export default PaginaRegistro2;
+
+
+
+
 
 
 

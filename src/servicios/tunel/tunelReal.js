@@ -1,4 +1,4 @@
-﻿import {
+import {
   actualizarEnsayoEnLista,
   crearEnsayo,
   crearEstadoTunelBase,
@@ -10,15 +10,30 @@
   limitarAlarmasPorCategoria,
   renombrarMedicionEnEnsayos,
 } from "./estadoTunel";
+import {
+  aplicarConsignaTunelApi,
+  apagarTunelApi,
+  encenderTunelApi,
+  iniciarMedicionTunelApi,
+  detenerMedicionTunelApi,
+  verEstadoTunelApi,
+} from "../api/tunelOperativoApi";
+import { escucharEventosTunel } from "../api/tunelEventosApi";
 
-function crearTunelReal() {
-  let estado = {
+function crearHora() {
+  return new Date().toLocaleTimeString("es-ES", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function crearEstadoRealInicial() {
+  return {
     ...crearEstadoTunelBase(),
-    modoControl: "Pendiente de conexion",
-    etiquetaEnsayo: "Pendiente de conexion",
+    modoControl: "Control por API",
     estadoTunel: "DESCONECTADO",
-    daq: "Sin conexion",
-    conVariador: "Sin conexion",
+    daq: "Pendiente de backend",
+    conVariador: "Pendiente de backend",
     estadoVar: "Sin enlace",
     permiteCtrl: false,
     bloqSeg: true,
@@ -32,19 +47,27 @@ function crearTunelReal() {
     motorKw: 0,
     rpm: 0,
     tiempoSeg: 0,
+    ultimaOrden: "Modo real preparado. Esperando respuesta del backend.",
+    horaUltimaOrden: crearHora(),
     alarmas: [
       {
-        id: "modo-real-sin-conexion",
-        hora: "--:--",
+        id: "modo-real-api",
+        hora: crearHora(),
         nivel: "info",
         etiqueta: "Info",
         mensaje:
-          "Modo real preparado. Falta conectar la fuente de datos del tunel.",
+          "Modo real preparado. Las ordenes se envian al backend antes de llegar al tunel.",
       },
     ],
   };
+}
 
+function crearTunelReal() {
+  let estado = crearEstadoRealInicial();
   const suscriptores = new Set();
+  let iniciado = false;
+  let temporizadorEstado = null;
+  let cerrarEventosTunel = null;
 
   function notificarCambios() {
     suscriptores.forEach((suscriptor) => suscriptor());
@@ -62,51 +85,150 @@ function crearTunelReal() {
     return estado;
   }
 
-  function publicarSinConexion(accion, cambios = {}) {
+  function publicar(cambios = {}) {
     estado = {
       ...estado,
       ...cambios,
       marcaAct: Date.now(),
-      ultimaOrden: `Solicitud pendiente: ${accion}`,
-      horaUltimaOrden: new Date().toLocaleTimeString("es-ES", {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-      alarmas: limitarAlarmasPorCategoria([
-        {
-          id: `accion-${accion}-${Date.now()}`,
-          hora: new Date().toLocaleTimeString("es-ES", {
-            hour: "2-digit",
-            minute: "2-digit",
-          }),
-          nivel: "info",
-          etiqueta: "Info",
-          mensaje: `La accion "${accion}" queda pendiente hasta conectar el modo real.`,
-        },
-        ...estado.alarmas,
-      ]),
     };
 
     notificarCambios();
   }
 
+  function registrarEvento(mensaje, nivel = "info", cambios = {}) {
+    const hora = crearHora();
+
+    publicar({
+      ...cambios,
+      ultimaOrden: mensaje,
+      horaUltimaOrden: hora,
+      alarmas: limitarAlarmasPorCategoria([
+        {
+          id: `real-${Date.now()}-${Math.random()}`,
+          hora,
+          nivel,
+          etiqueta: nivel === "advertencia" ? "Advertencia" : "Info",
+          mensaje,
+        },
+        ...estado.alarmas,
+      ]),
+    });
+  }
+
+  function aplicarEstadoBackend(datos, mensajeOrden = null) {
+    const conectado = datos?.conectado_fisico !== false;
+    const encendido = Boolean(datos?.encendido);
+    const potenciaAplicada = limitarValor(Number(datos?.potencia_aplicada) || 0, 0, 100);
+    const potenciaObjetivo = limitarValor(
+      Number(datos?.potencia_objetivo ?? estado.objPotPct) || 0,
+      0,
+      100
+    );
+
+    publicar({
+      modoControl: "Control por API",
+      estadoTunel: conectado ? (encendido ? "RUNNING" : "READY") : "DESCONECTADO",
+      daq: conectado ? "DAQ online" : "DAQ sin conexion",
+      conVariador: conectado ? "Variador online" : "Variador sin conexion",
+      estadoVar: conectado ? "Disponible" : "Sin enlace",
+      permiteCtrl: conectado,
+      bloqSeg: !conectado,
+      medActiva: Boolean(datos?.midiendo),
+      objPotPct: Math.round(potenciaObjetivo),
+      potPct: Math.round(potenciaAplicada),
+      tempC: Number(Number(datos?.temperatura_c ?? 0).toFixed(1)),
+      velMs: Number(Number(datos?.velocidad_ms ?? 0).toFixed(1)),
+      frecHz: Number(Number(datos?.frecuencia_hz ?? 0).toFixed(1)),
+      corrA: Number(Number(datos?.corriente_a ?? 0).toFixed(1)),
+      rpm: Math.round(Number(datos?.rpm ?? 0)),
+      motorKw: Number((potenciaAplicada * 0.015).toFixed(1)),
+      ultimaOrden: mensajeOrden || estado.ultimaOrden,
+      horaUltimaOrden: mensajeOrden ? crearHora() : estado.horaUltimaOrden,
+    });
+  }
+
+  async function sincronizarEstadoBackend() {
+    try {
+      const datos = await verEstadoTunelApi();
+      aplicarEstadoBackend(datos);
+    } catch {
+      publicar({
+        estadoTunel: "DESCONECTADO",
+        daq: "Backend no disponible",
+        conVariador: "Sin enlace",
+        estadoVar: "Sin enlace",
+        permiteCtrl: false,
+        bloqSeg: true,
+        medActiva: false,
+      });
+    }
+  }
+
+  async function ejecutarOrden(mensaje, accionApi) {
+    try {
+      const datos = await accionApi();
+      aplicarEstadoBackend(datos, mensaje);
+      return datos;
+    } catch (error) {
+      registrarEvento(
+        `No se pudo completar la orden: ${mensaje}. ${error.message || "Comprueba backend y conexion."}`,
+        "advertencia"
+      );
+      return null;
+    }
+  }
+
+  function registrarOperacionLocal(mensaje, cambios = {}) {
+    registrarEvento(mensaje, "info", cambios);
+  }
+
   return {
     modo: "real",
-    iniciar() {},
+    iniciar() {
+      if (iniciado) {
+        return;
+      }
+
+      iniciado = true;
+      sincronizarEstadoBackend();
+
+      if (typeof window !== "undefined") {
+        temporizadorEstado = window.setInterval(sincronizarEstadoBackend, 1500);
+        cerrarEventosTunel = escucharEventosTunel(
+          sincronizarEstadoBackend,
+          sincronizarEstadoBackend
+        );
+      }
+    },
+    detener() {
+      iniciado = false;
+
+      if (temporizadorEstado) {
+        window.clearInterval(temporizadorEstado);
+        temporizadorEstado = null;
+      }
+
+      if (cerrarEventosTunel) {
+        cerrarEventosTunel();
+        cerrarEventosTunel = null;
+      }
+    },
     suscribirse,
     obtenerEstado,
     actualizarPotencia(potencia) {
-      const potenciaNormalizada = limitarValor(Number(potencia) || 0, 0, 100);
-      publicarSinConexion(`solicitar potencia ${potenciaNormalizada}%`, {
-        objPotPct: potenciaNormalizada,
-      });
+      const potenciaNormalizada = Math.round(limitarValor(Number(potencia) || 0, 0, 100));
+
+      publicar({ objPotPct: potenciaNormalizada });
+      ejecutarOrden(`Consigna enviada: ${potenciaNormalizada}%`, () =>
+        aplicarConsignaTunelApi(potenciaNormalizada)
+      );
     },
     actualizarConsignaVelocidad(velocidad) {
       const velocidadNormalizada = Number(
         limitarValor(Number(velocidad) || 0, 0, 25).toFixed(1)
       );
 
-      publicarSinConexion(`actualizar velocidad a ${velocidadNormalizada} m/s`, {
+      registrarOperacionLocal(`Referencia de velocidad actualizada a ${velocidadNormalizada} m/s`, {
         consignaVelocidadMs: velocidadNormalizada,
       });
     },
@@ -131,14 +253,14 @@ function crearTunelReal() {
         );
       }
 
-      publicarSinConexion("actualizar objetivos de ensayo", cambios);
+      registrarOperacionLocal("Objetivos de ensayo actualizados", cambios);
     },
     cambiarModoControl(modo) {
       if (!modo) {
         return;
       }
 
-      publicarSinConexion(`cambiar modo a ${modo}`, { modoControl: modo });
+      registrarOperacionLocal(`Modo cambiado a ${modo}`, { modoControl: modo });
     },
     crearEnsayo(datos) {
       const codigo = datos?.codigo || generarCodigoEnsayo(estado.ensayos);
@@ -149,7 +271,7 @@ function crearTunelReal() {
         descripcion: datos?.descripcion || "",
       });
 
-      publicarSinConexion(`crear ensayo ${codigo}`, {
+      registrarOperacionLocal(`Ensayo ${codigo} preparado en modo real`, {
         ensayos: [ensayoNuevo, ...estado.ensayos],
         etiquetaEnsayo: ensayoNuevo.codigo,
         ensayoActivoId: ensayoNuevo.id,
@@ -167,7 +289,7 @@ function crearTunelReal() {
         ? ensayosPersistidos.find((ensayo) => ensayo.id === estado.ensayoActivoId)
         : ensayosPersistidos[0] || null;
 
-      publicarSinConexion("cargar ensayos guardados", {
+      registrarOperacionLocal("Ensayos guardados cargados", {
         ensayos: ensayosPersistidos,
         etiquetaEnsayo: ensayoActivo?.codigo || "Sin ficha preparada",
         ensayoActivoId: ensayoActivo?.id || null,
@@ -181,7 +303,7 @@ function crearTunelReal() {
         return null;
       }
 
-      publicarSinConexion(`activar ensayo ${ensayoSeleccionado.codigo}`, {
+      registrarOperacionLocal(`Ensayo ${ensayoSeleccionado.codigo} activado`, {
         etiquetaEnsayo: ensayoSeleccionado.codigo,
         ensayoActivoId: ensayoSeleccionado.id,
       });
@@ -198,9 +320,10 @@ function crearTunelReal() {
       const ensayosActualizados = actualizarEnsayoEnLista(estado.ensayos, idEnsayo, cambios);
       const ensayoActualizado = ensayosActualizados.find((ensayo) => ensayo.id === idEnsayo);
 
-      publicarSinConexion(`actualizar ensayo ${ensayoActualizado.codigo}`, {
+      registrarOperacionLocal(`Ensayo ${ensayoActualizado.codigo} actualizado`, {
         ensayos: ensayosActualizados,
-        etiquetaEnsayo: estado.ensayoActivoId === idEnsayo ? ensayoActualizado.codigo : estado.etiquetaEnsayo,
+        etiquetaEnsayo:
+          estado.ensayoActivoId === idEnsayo ? ensayoActualizado.codigo : estado.etiquetaEnsayo,
       });
 
       return ensayoActualizado;
@@ -216,7 +339,7 @@ function crearTunelReal() {
       const eraActivo = estado.ensayoActivoId === idEnsayo;
       const siguienteActivo = eraActivo ? ensayosActualizados[0] || null : null;
 
-      publicarSinConexion(`eliminar ensayo ${ensayoEliminado.codigo}`, {
+      registrarOperacionLocal(`Ensayo ${ensayoEliminado.codigo} eliminado`, {
         ensayos: ensayosActualizados,
         etiquetaEnsayo: eraActivo
           ? siguienteActivo?.codigo || "Sin ensayo activo"
@@ -236,7 +359,7 @@ function crearTunelReal() {
         return;
       }
 
-      publicarSinConexion(`renombrar medicion a ${nombreLimpio}`, {
+      registrarOperacionLocal(`Medicion renombrada a ${nombreLimpio}`, {
         ensayos: renombrarMedicionEnEnsayos(
           estado.ensayos,
           idEnsayo,
@@ -253,7 +376,7 @@ function crearTunelReal() {
       const ensayosActualizados = eliminarMedicionDeEnsayos(estado.ensayos, idEnsayo, idMedicion);
       const ensayoActualizado = ensayosActualizados.find((ensayo) => ensayo.id === idEnsayo);
 
-      publicarSinConexion("eliminar medicion", {
+      registrarOperacionLocal("Medicion eliminada", {
         ensayos: ensayosActualizados,
         resumenUltMed: eraUltimaVisible
           ? convertirMedicionAResumen(ensayoActualizado?.mediciones?.[0] || null)
@@ -261,16 +384,18 @@ function crearTunelReal() {
       });
     },
     encenderTunel() {
-      publicarSinConexion("encender tunel");
+      return ejecutarOrden(`Tunel encendido con consigna ${estado.objPotPct}%`, () =>
+        encenderTunelApi(estado.objPotPct)
+      );
     },
     apagarTunel() {
-      publicarSinConexion("apagar tunel");
+      return ejecutarOrden("Tunel apagado", apagarTunelApi);
     },
     iniciarMedicion() {
-      publicarSinConexion("iniciar medicion");
+      return ejecutarOrden("Medicion operativa iniciada", iniciarMedicionTunelApi);
     },
     detenerMedicion() {
-      publicarSinConexion("detener medicion");
+      return ejecutarOrden("Medicion operativa detenida", detenerMedicionTunelApi);
     },
   };
 }
@@ -278,8 +403,3 @@ function crearTunelReal() {
 const tunelReal = crearTunelReal();
 
 export default tunelReal;
-
-
-
-
-
