@@ -1,4 +1,4 @@
-﻿.appblanca {
+.appblanca {
   --bg-main: #e9eef3;
   --bg-sidebar: #f8fafc;
   --bg-card: #ffffff;
@@ -1912,3 +1912,8 @@ body.body--tema-claro {
 }
 
 
+
+.appblanca .cont2modalfondoflotante {
+  background: transparent;
+  backdrop-filter: none;
+}
