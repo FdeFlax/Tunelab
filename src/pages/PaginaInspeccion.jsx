@@ -36,9 +36,24 @@ const PUNTOS_TUNEL = [
   {
     id: "embocadura",
     etiqueta: "Embocadura",
-    resumen: "Permite la entrada inicial del aire y lo canaliza hacia el resto del túnel.",
+    resumen: "Entrada inicial del túnel: recoge el aire y lo dirige de forma ordenada hacia la línea aerodinámica.",
     descripcion:
-      "Es el primer elemento de la línea aerodinámica. Su función es recoger el aire de entrada y guiarlo de forma ordenada hacia las siguientes zonas del túnel.",
+      "La embocadura incorpora curvas de entrada pensadas para reducir perturbaciones y turbulencias desde el inicio. Su geometría ayuda a que el flujo entre de manera uniforme antes de pasar a la cámara de estabilización.",
+    datosClave: ["Entrada de aire", "Reduce perturbaciones", "Inicio del flujo"],
+    detalles: [
+      {
+        etiqueta: "Función",
+        texto: "Canaliza el aire exterior hacia el resto del túnel evitando entradas bruscas o desordenadas.",
+      },
+      {
+        etiqueta: "Diseño",
+        texto: "El perímetro está optimizado con curvas de entrada para mejorar el rendimiento aerodinámico.",
+      },
+      {
+        etiqueta: "En inspección",
+        texto: "Conviene comprobar que no haya objetos, polvo acumulado u obstrucciones en la zona de admisión.",
+      },
+    ],
     magnitudes: [],
     posicion: [-2.1, 0.7, 0],
     vista: {
@@ -54,7 +69,22 @@ const PUNTOS_TUNEL = [
     etiqueta: "Cámara de estabilización",
     resumen: "Homogeneiza y suaviza el flujo antes de que entre en la contracción.",
     descripcion:
-      "Esta zona reduce irregularidades del flujo y ayuda a que el aire llegue más uniforme a la contracción, mejorando la calidad de las mediciones posteriores.",
+      "En esta zona se estabiliza el aire que viene de la embocadura. El manual indica la presencia de un panel honeycomb, formado por celdas hexagonales, cuya función es laminar el flujo y reducir componentes transversales o turbulencias residuales.",
+    datosClave: ["Honeycomb", "Flujo uniforme", "Antes de la contracción"],
+    detalles: [
+      {
+        etiqueta: "Función",
+        texto: "Suaviza el flujo para que llegue a la contracción de forma más estable y repetible.",
+      },
+      {
+        etiqueta: "Impacto en ensayo",
+        texto: "Mejora la precisión de las mediciones al reducir irregularidades antes de la sección de ensayo.",
+      },
+      {
+        etiqueta: "En inspección",
+        texto: "Debe mantenerse limpia y sin elementos que alteren el paso del aire.",
+      },
+    ],
     magnitudes: [],
     posicion: [-1.42, 0.5, 0],
     vista: {
@@ -66,9 +96,24 @@ const PUNTOS_TUNEL = [
   {
     id: "contraccion",
     etiqueta: "Contracción",
-    resumen: "Acelera progresivamente el flujo de aire y lo conduce hacia la sección de ensayo.",
+    resumen: "Reduce progresivamente la sección de paso para acelerar el aire hacia la zona de ensayo.",
     descripcion:
-      "La contracción disminuye la sección de paso para aumentar la velocidad del aire de manera progresiva antes de llegar a la zona de ensayo.",
+      "La contracción utiliza una geometría decreciente y una curva optimizada para acelerar el flujo de forma controlada. Su objetivo es conseguir una transición eficiente hacia la sección de ensayo manteniendo un flujo homogéneo.",
+    datosClave: ["Aceleración progresiva", "Transición controlada", "Menos pérdidas"],
+    detalles: [
+      {
+        etiqueta: "Función",
+        texto: "Incrementa la velocidad del aire sin introducir cambios bruscos en el flujo.",
+      },
+      {
+        etiqueta: "Diseño",
+        texto: "La curva está pensada para evitar separaciones del flujo y mantener una aceleración uniforme.",
+      },
+      {
+        etiqueta: "En inspección",
+        texto: "Es importante que sus superficies no presenten deformaciones ni obstáculos internos.",
+      },
+    ],
     magnitudes: [],
     posicion: [-1.25, 0.9, 0.04],
     vista: {
@@ -80,9 +125,24 @@ const PUNTOS_TUNEL = [
   {
     id: "seccion-ensayo",
     etiqueta: "Sección de ensayo",
-    resumen: "Zona donde se colocan los modelos o equipos de medida y donde se realizan las pruebas.",
+    resumen: "Zona principal de pruebas: aquí se colocan los modelos, sensores o equipos de medida.",
     descripcion:
-      "Es la zona principal de trabajo del túnel. Aquí se sitúan los modelos, sensores o equipos de medida para realizar el ensayo y registrar los resultados.",
+      "Es el tramo donde se realizan los ensayos. Según el manual, la sección es cuadrada, de 0.6 m x 0.6 m y 1.0 m de longitud, con ventanas de policarbonato para observar el ensayo de forma clara y segura.",
+    datosClave: ["0.6 x 0.6 m", "Longitud 1.0 m", "20-25 m/s aprox."],
+    detalles: [
+      {
+        etiqueta: "Función",
+        texto: "Permite colocar el modelo de ensayo y registrar la velocidad del flujo con el sistema de medida.",
+      },
+      {
+        etiqueta: "Velocidad",
+        texto: "El manual sitúa la velocidad de trabajo de esta zona aproximadamente entre 20 y 25 m/s.",
+      },
+      {
+        etiqueta: "Seguridad",
+        texto: "Antes de medir hay que comprobar que el modelo está fijado, las puertas cerradas y el tubo de Pitot alineado.",
+      },
+    ],
     magnitudes: [],
     posicion: [-0.08, 0.5, -0.02],
     vista: {
@@ -93,9 +153,24 @@ const PUNTOS_TUNEL = [
   {
     id: "difusor-adaptador",
     etiqueta: "Difusor",
-    resumen: "Conecta la sección de ensayo con la zona circular de la turbomáquina, reduciendo pérdidas y adaptando la geometría.",
+    resumen: "Adapta la sección cuadrada de ensayo a la sección circular de la turbomáquina.",
     descripcion:
-      "Este elemento realiza la transición entre la sección rectangular de ensayo y la zona circular final, ayudando a recuperar presión y a reducir pérdidas del flujo.",
+      "El difusor actúa como transición geométrica y como difusor del flujo. Aumenta progresivamente el área de paso para reducir la velocidad, recuperar presión y minimizar pérdidas por separación del flujo.",
+    datosClave: ["Cuadrado a circular", "Recupera presión", "Reduce pérdidas"],
+    detalles: [
+      {
+        etiqueta: "Función",
+        texto: "Conecta la sección de ensayo con la brida y la turbomáquina en un único módulo compacto.",
+      },
+      {
+        etiqueta: "Diseño",
+        texto: "Su geometría evoluciona gradualmente desde una forma troncopiramidal hacia una troncocónica.",
+      },
+      {
+        etiqueta: "En inspección",
+        texto: "Debe revisarse que no haya daños, piezas sueltas o zonas que puedan alterar la transición del flujo.",
+      },
+    ],
     magnitudes: [],
     posicion: [1.08, 0.58, 0.0],
     vista: {
@@ -106,9 +181,24 @@ const PUNTOS_TUNEL = [
   {
     id: "brida-conexion",
     etiqueta: "Brida",
-    resumen: "Une el difusor con la turbomáquina y contribuye a reducir la transmisión de vibraciones.",
+    resumen: "Une el difusor con la turbomáquina y ayuda a mantener la integridad estructural del conjunto.",
     descripcion:
-      "La brida actúa como punto de unión entre el difusor-adaptador y la turbomáquina. También ayuda a mantener la alineación y a limitar vibraciones hacia el resto del conjunto.",
+      "La brida asegura la unión entre el difusor-adaptador y la turbomáquina. También contribuye a amortiguar vibraciones generadas por la turbomáquina para que no se transmitan al resto de la instalación.",
+    datosClave: ["Unión estructural", "Alineación", "Amortigua vibraciones"],
+    detalles: [
+      {
+        etiqueta: "Función",
+        texto: "Mantiene conectados y alineados los dos módulos finales del túnel.",
+      },
+      {
+        etiqueta: "Estabilidad",
+        texto: "Ayuda a que el funcionamiento sea estable y continuo durante los ensayos.",
+      },
+      {
+        etiqueta: "En inspección",
+        texto: "Conviene revisar fijaciones, alineación y ausencia de vibraciones anómalas.",
+      },
+    ],
     magnitudes: [],
     posicion: [1.78, 0.62, -0.08],
     vista: {
@@ -120,9 +210,24 @@ const PUNTOS_TUNEL = [
   {
     id: "turbomaquina",
     etiqueta: "Turbomáquina",
-    resumen: "Genera el flujo de aire necesario para el funcionamiento del túnel.",
+    resumen: "Genera el caudal de aire necesario para que el túnel funcione.",
     descripcion:
-      "Es el conjunto encargado de impulsar el aire por el circuito. Su funcionamiento se regula mediante el sistema de control y el variador asociado.",
+      "La turbomáquina impulsa el flujo de aire y su régimen se ajusta mediante el variador de frecuencia. Esto permite modificar la velocidad del flujo de forma precisa y adaptarla al ensayo.",
+    datosClave: ["Genera el flujo", "Control por variador", "Velocidad regulable"],
+    detalles: [
+      {
+        etiqueta: "Función",
+        texto: "Aporta la energía necesaria para mantener el flujo dentro de los parámetros previstos.",
+      },
+      {
+        etiqueta: "Control",
+        texto: "El variador de frecuencia regula la potencia suministrada y, con ello, la velocidad del aire.",
+      },
+      {
+        etiqueta: "Seguridad",
+        texto: "No deben manipularse sus protecciones ni introducir objetos en su entrada o salida.",
+      },
+    ],
     magnitudes: [],
     posicion: [2.18, 0.52, 0.02],
     vista: {
@@ -139,7 +244,18 @@ const PUNTO_VISTA_GENERAL = {
   etiqueta: "Vista general del túnel",
   resumen: "Selecciona una etiqueta para enfocar una zona concreta del túnel.",
   descripcion:
-    "Desde la vista general puedes explorar el modelo libremente y después elegir una zona para centrar la cámara y consultar su información asociada.",
+    "Desde la vista general puedes explorar el modelo libremente y elegir una zona para centrar la cámara. La información inferior resume la función, el diseño y las comprobaciones más relevantes de cada componente.",
+  datosClave: ["7 elementos", "Sección de ensayo 0.6 x 0.6 m", "Velocidad aprox. 20-25 m/s"],
+  detalles: [
+    {
+      etiqueta: "Cómo usar esta vista",
+      texto: "Pulsa una etiqueta del modelo o un punto de la lista para enfocar la cámara sobre esa parte del túnel.",
+    },
+    {
+      etiqueta: "Objetivo",
+      texto: "Relacionar visualmente cada componente con su función real dentro del flujo de aire.",
+    },
+  ],
   magnitudes: [],
 };
 
@@ -336,9 +452,29 @@ function PaginaInspeccion() {
               </div>
             </div>
 
-            <p className="inspactivoresumen">{puntoActivo.resumen}</p>
-            <p className="inspactivotexto">{puntoActivo.descripcion}</p>
+            <div className="inspactivocuerpo">
+              <p className="inspactivoresumen">{puntoActivo.resumen}</p>
+              <p className="inspactivotexto">{puntoActivo.descripcion}</p>
 
+              {puntoActivo.datosClave?.length ? (
+                <div className="inspchips" aria-label="Datos clave">
+                  {puntoActivo.datosClave.map((dato) => (
+                    <span key={dato} className="inspchip">{dato}</span>
+                  ))}
+                </div>
+              ) : null}
+
+              {puntoActivo.detalles?.length ? (
+                <div className="inspdetalles">
+                  {puntoActivo.detalles.map((detalle) => (
+                    <section key={detalle.etiqueta} className="inspdetalle">
+                      <span>{detalle.etiqueta}</span>
+                      <p>{detalle.texto}</p>
+                    </section>
+                  ))}
+                </div>
+              ) : null}
+            </div>
           </article>
 
           <aside className="insppuntos">

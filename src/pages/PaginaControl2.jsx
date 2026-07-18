@@ -3,13 +3,18 @@ import {
   PanelEstadoSistemaControl2,
   PanelManiobraControl2,
   PanelMedicionControl2,
+  PanelRangosOperacionControl2,
   PanelSeguridadControl2,
   RecapMedicionControl2,
 } from "../components/control/PanelesControl2";
 import {
+  SEGUNDOS_ESTABILIDAD_REQUERIDOS,
+  TOLERANCIA_ESTABILIDAD_MS,
+  VELOCIDAD_MAXIMA_SIMULADA_MS,
   formatearSegundosDesdeActualizacion as fmtAct,
   formatearTiempoFuncionamiento as fmtTiempo,
   obtenerEnsayoActivo as getEnsayoActivo,
+  obtenerEstadoOperativoTunel,
   resumirAlarmas as resumenAlarmas,
 } from "../servicios/tunel/estadoTunel";
 import { avisoLimMed, esErrorLim } from "../servicios/tunel/avisosLimite";
@@ -20,12 +25,12 @@ import { crearMedApi, guardarEventoApi, guardarMuestrasApi } from "../servicios/
 import {
   conectarTunelApi,
   desconectarTunelApi,
-  desconectarTunelDocenteApi,
   verConexionTunelApi,
 } from "../servicios/api/tunelConexionApi";
 import { escucharEventosTunel } from "../servicios/api/tunelEventosApi";
 
 const POT_RAPIDAS = [10, 25, 50, 100];
+const VELOCIDAD_MAXIMA_REFERENCIA_MS = VELOCIDAD_MAXIMA_SIMULADA_MS;
 
 const COMPROBACIONES_ENCENDIDO = [
   { id: "interior", texto: "Interior del túnel despejado." },
@@ -45,14 +50,34 @@ function limpiar(texto) {
   return String(texto || "").trim().replace(/\s+/g, " ").toLowerCase();
 }
 
-function datosSistema(tunel, fuente) {
+function construirMensajeTunelOcupado(conexion) {
+  if (!conexion?.ocupado || conexion?.conectado) return "";
+  return "Túnel ocupado";
+}
+
+function datosSistema(tunel, fuente, estadoOperativo) {
   return [
-    { etiqueta: "Estado del tunel", valor: tunel.estadoTunel },
+    { etiqueta: "Estado operativo", valor: estadoOperativo.etiqueta },
+    { etiqueta: "Estado tecnico", valor: tunel.estadoTunel },
     { etiqueta: "Conexion DAQ", valor: tunel.daq },
     { etiqueta: "Conexion variador", valor: tunel.conVariador },
     { etiqueta: "Fuente activa", valor: fuente },
     { etiqueta: "Ultima actualizacion", valor: fmtAct(tunel.marcaAct) },
     { etiqueta: "Tiempo de funcionamiento", valor: fmtTiempo(tunel.tiempoSeg) },
+  ];
+}
+
+function rangosOperacion(tunel) {
+  const estabilidadActual = tunel.estadoTunel !== "RUNNING"
+    ? "Sin flujo"
+    : tunel.flujoEstable
+      ? `Estable (${SEGUNDOS_ESTABILIDAD_REQUERIDOS} s)`
+      : `${tunel.estabilidadFlujoSeg || 0} s / ${SEGUNDOS_ESTABILIDAD_REQUERIDOS} s`;
+
+  return [
+    { parametro: "Velocidad aire", minimo: "0 m/s", maximo: `${VELOCIDAD_MAXIMA_REFERENCIA_MS} m/s`, actual: `${tunel.velMs} m/s` },
+    { parametro: "Consigna variador", minimo: "0%", maximo: "100%", actual: `${tunel.potPct}%` },
+    { parametro: "Estabilidad", minimo: "-", maximo: `+/- ${TOLERANCIA_ESTABILIDAD_MS} m/s`, actual: estabilidadActual },
   ];
 }
 
@@ -63,12 +88,20 @@ function lecturas(tunel) {
       valor: `${tunel.velMs} m/s`,
     },
     {
-      etiqueta: "Temperatura",
-      valor: `${tunel.tempC} C`,
+      etiqueta: "Presion dinamica",
+      valor: `${tunel.presionDinamicaPa ?? tunel.presionPa ?? 0} Pa`,
     },
     {
-      etiqueta: "Potencia",
+      etiqueta: "Caudal",
+      valor: `${tunel.caudalM3s ?? 0} m³/s`,
+    },
+    {
+      etiqueta: "Consigna variador",
       valor: `${tunel.potPct}%`,
+    },
+    {
+      etiqueta: "Carga aerodinamica",
+      valor: `${tunel.cargaAerodinamicaRelativaPct ?? 0}%`,
     },
     {
       etiqueta: "Tiempo de medicion",
@@ -97,12 +130,12 @@ function tarjetas(resumen) {
       apoyo: "Diferencia entre maximo y minimo",
     },
     {
-      etiqueta: "Temperatura media",
-      valor: `${resumen.temperatura.media} C`,
-      apoyo: `Min ${resumen.temperatura.minima} C`,
+      etiqueta: "Presion media",
+      valor: `${resumen.tecnicos?.presionMediaPa ?? 0} Pa`,
+      apoyo: "Presion dinamica Pitot",
     },
     {
-      etiqueta: "Potencia media",
+      etiqueta: "Consigna media",
       valor: `${resumen.potencia.media}%`,
       apoyo: `Objetivo ${resumen.potencia.objetivo}%`,
     },
@@ -110,6 +143,16 @@ function tarjetas(resumen) {
       etiqueta: "Tiempo en rango",
       valor: `${resumen.velocidad.porcentajeEnRango}%`,
       apoyo: "Velocidad dentro del objetivo",
+    },
+    {
+      etiqueta: "Caudal medio",
+      valor: `${resumen.tecnicos?.caudalMedioM3s ?? 0} m³/s`,
+      apoyo: "Calculado con la seccion de ensayo",
+    },
+    {
+      etiqueta: "Fuente",
+      valor: resumen.muestras?.[0]?.fuente || "simulado",
+      apoyo: "Origen de la captura",
     },
     {
       etiqueta: "Incidencias",
@@ -130,14 +173,14 @@ function muestrasApi(med) {
       velocidad_ms: muestra.velMs,
       temperatura_c: muestra.tempC,
       potencia_porcentaje: muestra.potPct,
-      frecuencia_hz: null,
-      corriente_a: null,
-      rpm: null,
+      frecuencia_hz: muestra.frecHz ?? null,
+      corriente_a: muestra.corrA ?? null,
+      rpm: muestra.rpm ?? null,
     };
   });
 }
 
-function PaginaControl2({ usuarioActual }) {
+function PaginaControl2() {
   const { estadoTunel: tunel, accionesTunel: acciones, fuenteTunel } = useTunel();
   const [nombreMed, setNombreMed] = useState("");
   const [medDup, setMedDup] = useState(null);
@@ -145,7 +188,6 @@ function PaginaControl2({ usuarioActual }) {
   const [iniciando, setIniciando] = useState(false);
   const [conexion, setConexion] = useState(null);
   const [avisoConexion, setAvisoConexion] = useState("");
-  const [avisoOcupado, setAvisoOcupado] = useState("");
   const [confirmacionEncendido, setConfirmacionEncendido] = useState(null);
   const [comprobacionesEncendido, setComprobacionesEncendido] = useState(
     crearEstadoComprobaciones
@@ -163,10 +205,15 @@ function PaginaControl2({ usuarioActual }) {
   const limiteMed = Number(tunel.limitesUso?.medicionesPorEnsayo || 0);
   const hayLimite = Number.isFinite(limiteMed) && limiteMed > 0;
   const tieneConexion = Boolean(conexion?.conectado);
-  const esDocenteControl = ["profesor", "tecnico", "admin"].includes(usuarioActual?.rol);
-  const puedeLiberarOcupado = Boolean(conexion?.ocupado && esDocenteControl);
   const puedeOperar = tieneConexion && tunel.permiteCtrl;
-  const puedeMed = puedeOperar && tunel.estadoTunel === "RUNNING";
+  const puedeMed = puedeOperar && tunel.estadoTunel === "RUNNING" && tunel.flujoEstable;
+  const comprobacionPendiente = Boolean(confirmacionEncendido);
+  const estadoOperativo = obtenerEstadoOperativoTunel(tunel, {
+    conectado: tieneConexion,
+    comprobacionPendiente,
+  });
+  const mensajeTunelOcupado = construirMensajeTunelOcupado(conexion);
+  const mensajeConexionVisible = mensajeTunelOcupado || avisoConexion;
   const comprobacionesCompletas = COMPROBACIONES_ENCENDIDO.every(
     ({ id }) => comprobacionesEncendido[id]
   );
@@ -176,14 +223,14 @@ function PaginaControl2({ usuarioActual }) {
     : null;
 
   const consigna = {
-    etiqueta: "Potencia",
+    etiqueta: "Consigna variador",
     valor: tunel.objPotPct,
     unidad: "%",
     min: 0,
     max: 100,
     paso: 1,
     atajos: POT_RAPIDAS,
-    onChange: (valor) => acciones.actualizarPotencia?.(valor),
+    onChange: (valor) => (acciones.actualizarConsigna || acciones.actualizarPotencia)?.(valor),
   };
 
 
@@ -192,7 +239,11 @@ function PaginaControl2({ usuarioActual }) {
       const respuesta = await verConexionTunelApi();
       setConexion(respuesta);
 
-      if (!silencioso) {
+      if (respuesta.ocupado) {
+        setAvisoConexion("");
+      } else if (silencioso) {
+        setAvisoConexion("");
+      } else {
         setAvisoConexion(respuesta.mensaje || "");
       }
     } catch {
@@ -203,7 +254,7 @@ function PaginaControl2({ usuarioActual }) {
   }
 
   useEffect(() => {
-    void cargarConexion();
+    void cargarConexion(true);
 
     return escucharEventosTunel(() => {
       void cargarConexion(true);
@@ -224,43 +275,16 @@ function PaginaControl2({ usuarioActual }) {
     setComprobacionesEncendido(crearEstadoComprobaciones());
     setEncendiendoTunel(false);
     setErrorEncendido("");
-    setAvisoOcupado("");
 
     try {
       const respuesta = await conectarTunelApi();
       setConexion(respuesta);
       setAvisoConexion(respuesta.mensaje || "");
-
-      if (respuesta.ocupado) {
-        const usuario = respuesta.usuario?.nombre || "otro usuario";
-        setAvisoOcupado(
-          `El túnel está ocupado por ${usuario}. Debe desconectarse antes de que puedas tomar el control.`
-        );
-      }
     } catch {
       setAvisoConexion("No se ha podido conectar con el túnel");
     }
   }
 
-  async function liberarConexionOcupada() {
-    if (!puedeLiberarOcupado) return;
-
-    setConfirmacionEncendido(null);
-    setComprobacionesEncendido(crearEstadoComprobaciones());
-    setEncendiendoTunel(false);
-    setErrorEncendido("");
-    setAvisoConexion("Liberando el túnel...");
-
-    try {
-      const respuesta = await desconectarTunelDocenteApi();
-      setConexion(respuesta);
-      setAvisoOcupado("");
-      setAvisoConexion(respuesta.mensaje || "Túnel liberado");
-      await cargarConexion(true);
-    } catch {
-      setAvisoConexion("No se ha podido liberar el túnel");
-    }
-  }
   async function desconectarTunel() {
     if (tunel.estadoTunel === "RUNNING" || tunel.medActiva) {
       setAvisoConexion("Apaga el túnel antes de desconectar");
@@ -270,7 +294,8 @@ function PaginaControl2({ usuarioActual }) {
     try {
       const respuesta = await desconectarTunelApi();
       setConexion(respuesta);
-      setAvisoConexion(respuesta.mensaje || "Túnel desconectado");
+      await cargarConexion(true);
+      setAvisoConexion(respuesta.ocupado ? "" : respuesta.mensaje || "Túnel desconectado");
     } catch {
       setAvisoConexion("No se ha podido desconectar el túnel");
     }
@@ -282,7 +307,8 @@ function PaginaControl2({ usuarioActual }) {
     try {
       const respuesta = await desconectarTunelApi();
       setConexion(respuesta);
-      setAvisoConexion(respuesta.mensaje || "Túnel apagado y desconectado");
+      await cargarConexion(true);
+      setAvisoConexion(respuesta.ocupado ? "" : respuesta.mensaje || "Túnel apagado y desconectado");
     } catch {
       setAvisoConexion("Túnel apagado, pero no se ha podido liberar la conexión");
     }
@@ -320,7 +346,7 @@ function PaginaControl2({ usuarioActual }) {
     setErrorEncendido("");
 
     try {
-      acciones.actualizarPotencia?.(confirmacionEncendido.potencia);
+      (acciones.actualizarConsigna || acciones.actualizarPotencia)?.(confirmacionEncendido.potencia);
       const resultado = await acciones.encenderTunel?.();
 
       if (resultado === false) {
@@ -389,7 +415,7 @@ function PaginaControl2({ usuarioActual }) {
   }
 
   async function detenerMed() {
-    const resultado = acciones.detenerMedicion?.();
+    const resultado = await acciones.detenerMedicion?.();
     if (resultado === false) return;
 
     const estadoNuevo = acciones.obtenerEstado?.() || tunel;
@@ -447,8 +473,18 @@ function PaginaControl2({ usuarioActual }) {
       <section className={`cont2conexion ${conexion?.ocupado ? "cont2conexionocupada" : ""}`}>
         <div className="cont2conexionestado">
           <span>Conexión del túnel</span>
-          <strong>{tieneConexion ? "Conectado" : conexion?.ocupado ? "Ocupado" : "Sin conectar"}</strong>
-      
+          <strong>{conexion?.ocupado && !tieneConexion ? "Ocupado" : estadoOperativo.etiqueta}</strong>
+          {mensajeConexionVisible ? (
+            <p
+              className={
+                mensajeTunelOcupado
+                  ? "cont2conexionmensaje cont2conexionmensajeocupado"
+                  : "cont2conexionmensaje"
+              }
+            >
+              {mensajeConexionVisible}
+            </p>
+          ) : null}
         </div>
         <div className="cont2conexionacciones">
           <button
@@ -498,8 +534,10 @@ function PaginaControl2({ usuarioActual }) {
             .filter((evento) => evento.nivel === "advertencia" || evento.nivel === "critica")
             .slice(0, 4)}
         />
-        <PanelEstadoSistemaControl2 datosSistema={datosSistema(tunel, fuente)} />
+        <PanelEstadoSistemaControl2 datosSistema={datosSistema(tunel, fuente, estadoOperativo)} />
       </div>
+
+      <PanelRangosOperacionControl2 rangos={rangosOperacion(tunel)} />
 
       <RecapMedicionControl2
         resumenUlt={hayInformeMedicion ? resumen : null}
@@ -509,7 +547,7 @@ function PaginaControl2({ usuarioActual }) {
       />
 
       {confirmacionEncendido ? (
-        <div className="cont2modalfondo cont2modalfondoflotante" role="presentation">
+        <div className="cont2popupfondo" role="presentation">
           <section
             className="cont2modal cont2modalcomprobaciones"
             role="dialog"
@@ -518,8 +556,7 @@ function PaginaControl2({ usuarioActual }) {
             aria-describedby="cont2modalcomprobacionesdescripcion"
           >
             <div>
-              <p className="cont2sobretitulo">Comprobación previa</p>
-              <h3 id="cont2modalcomprobacionestitulo">Antes de encender el túnel</h3>
+              <h3 id="cont2modalcomprobacionestitulo">Comprobación previa</h3>
               <p
                 id="cont2modalcomprobacionesdescripcion"
                 className="cont2modalintroduccion"
@@ -545,7 +582,7 @@ function PaginaControl2({ usuarioActual }) {
             </fieldset>
 
             <div className="cont2potenciaconfirmacion">
-              <span>Potencia que se aplicará</span>
+              <span>Consigna que se aplicara</span>
               <strong>{confirmacionEncendido.potencia}%</strong>
             </div>
 
@@ -571,45 +608,6 @@ function PaginaControl2({ usuarioActual }) {
                 disabled={!comprobacionesCompletas || encendiendoTunel}
               >
                 {encendiendoTunel ? "Encendiendo..." : "Confirmar y encender"}
-              </button>
-            </div>
-          </section>
-        </div>
-      ) : null}
-
-      {avisoOcupado ? (
-        <div
-          className="cont2modalfondo"
-          role="presentation"
-          onMouseDown={(evento) => {
-            if (evento.target === evento.currentTarget) setAvisoOcupado("");
-          }}
-        >
-          <section
-            className="cont2modal cont2modalocupado"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="cont2modalocupadotitulo"
-          >
-            <p className="cont2sobretitulo">Túnel ocupado</p>
-            <h3 id="cont2modalocupadotitulo">No se puede conectar ahora</h3>
-            <p>{avisoOcupado}</p>
-            <div className="cont2modalacciones">
-              {puedeLiberarOcupado ? (
-                <button
-                  type="button"
-                  className="cont2boton cont2botonprimario"
-                  onClick={() => void liberarConexionOcupada()}
-                >
-                  Liberar túnel
-                </button>
-              ) : null}
-              <button
-                type="button"
-                className="cont2boton cont2botonsecundario"
-                onClick={() => setAvisoOcupado("")}
-              >
-                Entendido
               </button>
             </div>
           </section>

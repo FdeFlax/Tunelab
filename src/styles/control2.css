@@ -130,6 +130,11 @@
   gap: 20px;
 }
 
+.cont2panelrangos {
+  gap: 14px;
+}
+
+
 .cont2panelcabecera {
   display: flex;
   justify-content: space-between;
@@ -201,6 +206,7 @@
   display: grid;
   gap: 10px;
 }
+
 
 .cont2campoestado {
   display: grid;
@@ -329,6 +335,58 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.cont2rangostablaenvoltorio {
+  overflow-x: auto;
+}
+
+.cont2rangostabla {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid rgba(130, 151, 181, 0.18);
+}
+
+.cont2rangostabla th,
+.cont2rangostabla td {
+  padding: 11px 14px;
+  border-bottom: 1px solid rgba(130, 151, 181, 0.14);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.cont2rangostabla thead th {
+  color: #94a6be;
+  background: #0d1728;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.cont2rangostabla tbody th,
+.cont2rangostabla tbody td {
+  color: #edf4ff;
+  background: #101b2d;
+  font-size: 13px;
+  font-weight: 400;
+}
+
+.cont2rangostabla tbody th {
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.cont2rangostabla tr:last-child th,
+.cont2rangostabla tr:last-child td {
+  border-bottom: 0;
+}
+
+.cont2rangosnota {
+  margin: 0;
+  color: #aebdd2;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
 .cont2recaptarjeta {
   display: grid;
   gap: 9px;
@@ -403,22 +461,16 @@
   background: rgba(4, 9, 18, 0.72);
   backdrop-filter: blur(6px);
 }
-.cont2modalfondoflotante {
+
+.cont2popupfondo {
   position: fixed;
   inset: 0;
   z-index: 80;
-  align-items: center;
-  min-height: 0;
+  display: grid;
+  place-items: center;
   padding: 24px;
-  background: transparent;
-  backdrop-filter: none;
-  pointer-events: none;
+  background: rgba(7, 18, 32, 0.52);
 }
-
-.cont2modalfondoflotante .cont2modal {
-  pointer-events: auto;
-}
-
 .cont2modal {
   width: min(580px, 100%);
   display: grid;
@@ -451,8 +503,8 @@
 }
 
 .cont2modalcomprobaciones {
-  width: min(680px, 100%);
-  max-height: min(720px, calc(100vh - 96px));
+  width: min(620px, calc(100vw - 48px));
+  max-height: min(680px, calc(100vh - 64px));
   overflow-y: auto;
 }
 
@@ -707,9 +759,6 @@
   color: #f0c27a;
 }
 
-.cont2modalocupado {
-  border-color: rgba(220, 161, 88, 0.42);
-}
 
 /* Ajuste visual: la maniobra se lee como una sola zona, sin tantas cajas internas. */
 .cont2panelmaniobra {
@@ -802,6 +851,7 @@
 }
 
 @media (max-width: 760px) {
+
   .cont2medicionfila {
     grid-template-columns: 1fr;
   }
@@ -904,6 +954,18 @@
   line-height: 1.1;
 }
 
+.cont2conexionmensaje {
+  margin: 0;
+  max-width: 42ch;
+  color: #b9c8d8;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.cont2conexionmensajeocupado {
+  color: #f2c98c;
+}
+
 .cont2conexion .cont2conexionacciones {
   width: auto;
   display: flex;
@@ -947,4 +1009,14 @@
 .cont2conexionestado strong {
   display: block;
 }
+/* Boton Aplicar potencia: alineado con los botones de medicion. */
+.page--control2 .cont2potenciacontrol .cont2boton {
+  background: var(--primary);
+  border-color: color-mix(in srgb, var(--primary) 42%, transparent);
+  color: #ffffff;
+}
 
+.page--control2 .cont2potenciacontrol .cont2boton:disabled {
+  color: #ffffff;
+  opacity: 0.78;
+}

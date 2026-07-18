@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import VisorTunel from "../components/TunnelViewer";
 import {
   MAX_EVENTOS_ALERTA,
@@ -6,13 +6,16 @@ import {
   contarAlarmasActivas,
   formatearTiempoFuncionamiento,
   obtenerEnsayoActivo,
-  resumirAlarmas,
+  obtenerEstadoOperativoTunel,
 } from "../servicios/tunel/estadoTunel";
 import { verConexionTunelApi } from "../servicios/api/tunelConexionApi";
 import { escucharEventosTunel } from "../servicios/api/tunelEventosApi";
 import { useTunel } from "../servicios/tunel/useTunel";
+import { calcularCaudalMaximoM3s, obtenerVelocidadMaximaCalibrada } from "../servicios/tunel/fichaTunel";
 
 const ARCO_MEDIDOR = "M 20 96 A 76 76 0 0 1 172 96";
+const VELOCIDAD_MAX_DASHBOARD_MS = obtenerVelocidadMaximaCalibrada();
+const CAUDAL_MAX_DASHBOARD_M3S = calcularCaudalMaximoM3s();
 
 const PESTANAS_SUPERVISION = [
   { id: "resumen", texto: "Resumen" },
@@ -41,38 +44,6 @@ function obtenerEventosDePestana(pestanaActiva, alarmas) {
   }
 
   return [];
-}
-
-function obtenerEstadoOperativo(estadoTunel, avisosActivos) {
-  if (estadoTunel.bloqSeg) {
-    return {
-      etiqueta: "Bloqueado",
-      detalle: "Revisar seguridad antes de operar",
-      tono: "rojo",
-    };
-  }
-
-  if (avisosActivos > 0) {
-    return {
-      etiqueta: "Atencion",
-      detalle: resumirAlarmas(estadoTunel.alarmas),
-      tono: "ambar",
-    };
-  }
-
-  if (estadoTunel.medActiva) {
-    return {
-      etiqueta: "Midiendo",
-      detalle: "Captura de datos en curso",
-      tono: "verde",
-    };
-  }
-
-  return {
-    etiqueta: "Preparado",
-    detalle: "Listo para iniciar una medicion",
-    tono: "verde",
-  };
 }
 
 function TarjetaPanel({ titulo, valor, detalle, tono = "azul", conAviso = false }) {
@@ -147,10 +118,10 @@ function PaginaDashboard2({ onAbrirControl, onAbrirRegistro }) {
   const [mostrarVisor3d, setMostrarVisor3d] = useState(false);
   const [pestanaSupervision, setPestanaSupervision] = useState("resumen");
   const [conexionTunel, setConexionTunel] = useState(null);
-  const { estadoTunel, fuenteTunel } = useTunel();
+  const { estadoTunel } = useTunel();
   const ensayoActivo = obtenerEnsayoActivo(estadoTunel);
   const avisosActivos = contarAlarmasActivas(estadoTunel.alarmas);
-  const estadoOperativo = obtenerEstadoOperativo(estadoTunel, avisosActivos);
+  const estadoOperativo = obtenerEstadoOperativoTunel(estadoTunel, { conectado: Boolean(conexionTunel?.usuario || conexionTunel?.conectado) });
   const eventosVisibles = obtenerEventosDePestana(pestanaSupervision, estadoTunel.alarmas);
 
   useEffect(() => {
@@ -208,22 +179,22 @@ function PaginaDashboard2({ onAbrirControl, onAbrirRegistro }) {
 
   const medidores = [
     {
-      titulo: "Temperatura",
-      valor: estadoTunel.tempC,
-      maximo: 40,
-      unidad: "C",
-      tono: "ambar",
-    },
-    {
       titulo: "Velocidad del aire",
       valor: estadoTunel.velMs,
-      maximo: 25,
+      maximo: VELOCIDAD_MAX_DASHBOARD_MS,
       unidad: "m/s",
       tono: "cian",
     },
     {
-      titulo: "Potencia",
-      valor: estadoTunel.potPct,
+      titulo: "Caudal",
+      valor: estadoTunel.caudalM3s ?? 0,
+      maximo: CAUDAL_MAX_DASHBOARD_M3S,
+      unidad: "m³/s",
+      tono: "azul",
+    },
+    {
+      titulo: "Consigna variador",
+      valor: estadoTunel.consignaVariadorPct ?? estadoTunel.potPct,
       maximo: 100,
       unidad: "%",
       tono: "azul",
@@ -263,7 +234,7 @@ function PaginaDashboard2({ onAbrirControl, onAbrirRegistro }) {
           <div className="dash2visor">
             <div className={`dash2estadoflotante dash2estadoflotante--${estadoOperativo.tono}`}>
               <span>Estado del tunel</span>
-              <strong>{estadoTunel.estadoTunel}</strong>
+              <strong>{estadoOperativo.etiqueta}</strong>
               <small>{estadoOperativo.detalle}</small>
             </div>
 

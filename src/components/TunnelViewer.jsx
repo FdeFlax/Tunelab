@@ -1,7 +1,8 @@
 import { memo, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { Environment, Html, OrbitControls, useGLTF } from "@react-three/drei";
-import { Vector3 } from "three";
+import { Html, OrbitControls, useGLTF } from "@react-three/drei";
+import { ACESFilmicToneMapping, PMREMGenerator, SRGBColorSpace, Vector3 } from "three";
+import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 
 const POSICION_CAMARA_INICIAL = [5.8, 1.9, 8.2];
 const OBJETIVO_CAMARA_INICIAL = [0, 0.2, 0];
@@ -21,6 +22,34 @@ function calcularPosicionConZoom(camara, objetivo, nivelZoom) {
 
   direccion.multiplyScalar(calcularFactorZoom(nivelZoom));
   return vectorObjetivo.add(direccion).toArray();
+}
+
+function IluminacionLocal() {
+  const { gl, scene } = useThree();
+
+  useEffect(() => {
+    gl.outputColorSpace = SRGBColorSpace;
+    gl.toneMapping = ACESFilmicToneMapping;
+    gl.toneMappingExposure = 1.2;
+
+    const entorno = new RoomEnvironment();
+    const generadorEntorno = new PMREMGenerator(gl);
+    const texturaEntorno = generadorEntorno.fromScene(entorno, 0.04).texture;
+
+    scene.environment = texturaEntorno;
+
+    return () => {
+      if (scene.environment === texturaEntorno) {
+        scene.environment = null;
+      }
+
+      texturaEntorno.dispose();
+      entorno.dispose();
+      generadorEntorno.dispose();
+    };
+  }, [gl, scene]);
+
+  return null;
 }
 
 function ControladorCamara({
@@ -407,9 +436,12 @@ function VisorTunel({
           stencil: false,
         }}
       >
-        <ambientLight intensity={1.2} />
-        <directionalLight position={[6, 4, 5]} intensity={1.9} />
-        <directionalLight position={[-4, 2, -3]} intensity={0.7} />
+        <IluminacionLocal />
+        <hemisphereLight args={["#ffffff", "#aebdcc", 1.35]} />
+        <ambientLight intensity={0.9} />
+        <directionalLight position={[6, 5, 6]} intensity={2.4} />
+        <directionalLight position={[-5, 3, -4]} intensity={1.1} />
+        <directionalLight position={[0, -3, 5]} intensity={0.45} />
         <ControladorCamara
           vistaActiva={vistaActiva}
           controlesRef={controlesRef}
@@ -434,7 +466,6 @@ function VisorTunel({
             mostrarPuntosInteres={mostrarPuntosInteres}
             onCambioCursorSobreModelo={manejadorCursorModelo}
           />
-          <Environment preset="studio" resolution={renderLigero ? 64 : 256} />
         </Suspense>
 
         <OrbitControls

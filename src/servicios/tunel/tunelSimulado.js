@@ -14,8 +14,27 @@ import {
   guardarMedicionEnEnsayo,
   limitarValor,
   limitarAlarmasPorCategoria,
+  calcularPresionPitotPa,
+  CORRIENTE_MAXIMA_SIMULADA_A,
+  SEGUNDOS_ESTABILIDAD_REQUERIDOS,
+  TOLERANCIA_ESTABILIDAD_MS,
+  VELOCIDAD_MAXIMA_SIMULADA_MS,
   renombrarMedicionEnEnsayos,
 } from "./estadoTunel";
+import {
+  FICHA_TUNEL_ACTIVO,
+  calcularDensidadAire,
+  calcularFrecuenciaPorConsigna,
+  calcularMagnitudesDerivadas,
+  calcularCargaAerodinamicaRelativaPct,
+  calcularConsignaPorVelocidad,
+  calcularPresionDinamica,
+  calcularRpmPorConsigna,
+  calcularVelocidadPitot,
+  calcularVelocidadPorConsigna,
+  crearGeneradorAleatorio,
+  generarRuidoNormal,
+} from "./fichaTunel";
 
 function crearTunelSimulado() {
   let estado = crearEstadoTunelBase();
@@ -73,6 +92,11 @@ function crearTunelSimulado() {
             velMs: estado.velMs,
             tempC: estado.tempC,
             potPct: estado.potPct,
+            frecHz: estado.frecHz,
+            corrA: estado.corrA,
+            rpm: estado.rpm,
+            presionPa: estado.presionPa ?? calcularPresionPitotPa(estado.velMs),
+            fuente: "simulado",
           }),
         ];
 
@@ -123,54 +147,123 @@ function crearTunelSimulado() {
   }
 
   function recalcularTelemetria() {
+    const ficha = FICHA_TUNEL_ACTIVO;
     const tunelEncendido = estado.estadoTunel === "RUNNING";
+    const tunelParando = estado.estadoTunel === "PARANDO";
+    const variadorActivo = tunelEncendido || tunelParando;
     const modoAutomatico = estado.modoControl === "Automatico";
-    const potenciaObjetivoAutomatico = tunelEncendido
-      ? limitarValor((estado.consignaVelocidadMs / 18.2) * 100, 0, 100)
+    const consignaObjetivoAutomatico = tunelEncendido
+      ? limitarValor(calcularConsignaPorVelocidad(estado.consignaVelocidadMs), 0, 100)
       : 0;
-    let potenciaObjetivo = 0;
-
-    if (tunelEncendido) {
-      potenciaObjetivo = estado.objPotPct;
-    }
-
-    if (modoAutomatico) {
-      potenciaObjetivo = potenciaObjetivoAutomatico;
-    }
-
-    const nuevaPotencia = tunelEncendido
-      ? Math.round(aproximarValor(estado.potPct, potenciaObjetivo, 2.4))
+    const consignaSolicitada = tunelEncendido
+      ? limitarValor(modoAutomatico ? consignaObjetivoAutomatico : estado.objPotPct, 0, 100)
       : 0;
-    const factorPotencia = nuevaPotencia / 100;
-    const velocidadObjetivo = tunelEncendido
-      ? modoAutomatico
-        ? estado.consignaVelocidadMs
-        : factorPotencia * 18.2
-      : 0;
-    const temperaturaObjetivo = tunelEncendido ? 22 + factorPotencia * 7.4 : 21.2;
-    const frecuenciaObjetivo = tunelEncendido ? factorPotencia * 61.5 : 0;
-    const corrienteObjetivo = tunelEncendido ? 7.2 + factorPotencia * 17.5 : 0;
-    const potenciaMotorObjetivo = tunelEncendido ? factorPotencia * 11.1 : 0;
-    const rpmObjetivo = tunelEncendido ? factorPotencia * 2140 : 0;
-
-    const nuevaVelocidad = Number(
-      aproximarValor(estado.velMs, velocidadObjetivo, 0.45).toFixed(1)
+    const intervaloVisibleS = 1;
+    const dtBase = ficha.dinamica.intervaloActualizacionS;
+    let tiempoRestante = intervaloVisibleS;
+    let consignaVariadorActual = Number(estado.consignaVariadorPct ?? estado.potPct ?? 0);
+    let velocidadObjetivo = calcularVelocidadPorConsigna(consignaVariadorActual);
+    let velocidadReal = Number(estado.velRealMs ?? estado.velMs ?? 0);
+    let velocidadPitot = Number(estado.velPitotMs ?? estado.velMs ?? 0);
+    let velocidadFiltrada = Number(estado.velFiltradaMs ?? estado.velMs ?? 0);
+    let temperatura = Number(estado.tempC ?? ficha.ambiente.temperaturaC);
+    let densidad = Number(estado.densidadKgM3 ?? ficha.ambiente.densidadReferenciaKgM3);
+    let presionDinamica = calcularPresionDinamica(velocidadReal, densidad);
+    let presionSensor = Number(estado.presionSensorPa ?? estado.presionPa ?? 0);
+    const generadorRuido = crearGeneradorAleatorio(
+      estado.semillaRuido ?? ficha.sensor.transductorPresion.semillaAleatoria
     );
+
+    while (tiempoRestante > 0) {
+      const dt = Math.min(dtBase, tiempoRestante, ficha.dinamica.tiempoMaximoPasoS);
+      const diferenciaConsigna = variadorActivo ? consignaSolicitada - consignaVariadorActual : -consignaVariadorActual;
+      const incremento = limitarValor(
+        diferenciaConsigna,
+        -ficha.variador.rampaBajadaPctS * dt,
+        ficha.variador.rampaSubidaPctS * dt
+      );
+
+      consignaVariadorActual += incremento;
+      velocidadObjetivo = calcularVelocidadPorConsigna(consignaVariadorActual);
+
+      const alphaAire = Math.exp(-dt / ficha.dinamica.constanteTiempoFlujoS);
+      velocidadReal = velocidadObjetivo + (velocidadReal - velocidadObjetivo) * alphaAire;
+
+      densidad = calcularDensidadAire({
+        ...ficha.ambiente,
+        temperaturaC: temperatura,
+      });
+      presionDinamica = calcularPresionDinamica(velocidadReal, densidad);
+
+      const ruidoPresion = ficha.sensor.transductorPresion.ruidoActivado
+        ? generarRuidoNormal(generadorRuido, ficha.sensor.transductorPresion.desviacionRuidoPa)
+        : 0;
+      presionSensor = Math.max(
+        0,
+        presionDinamica + ficha.sensor.transductorPresion.biasPa + ruidoPresion
+      );
+      velocidadPitot = calcularVelocidadPitot(
+        presionSensor,
+        densidad,
+        ficha.sensor.pitot.coeficiente
+      );
+
+      const alphaSensor = Math.exp(-dt / ficha.dinamica.constanteTiempoSensorS);
+      velocidadFiltrada = velocidadPitot + (velocidadFiltrada - velocidadPitot) * alphaSensor;
+      tiempoRestante = Number((tiempoRestante - dt).toFixed(6));
+    }
+
+    if (!variadorActivo) {
+      consignaVariadorActual = 0;
+      velocidadObjetivo = 0;
+      velocidadReal = 0;
+      velocidadPitot = 0;
+      velocidadFiltrada = 0;
+      presionDinamica = 0;
+      presionSensor = 0;
+    }
+
+    const nuevaPotencia = Number(consignaVariadorActual.toFixed(1));
+    const nuevaFrecuencia = calcularFrecuenciaPorConsigna(nuevaPotencia);
+    const nuevasRpm = calcularRpmPorConsigna(nuevaPotencia);
+    const factorVariador = limitarValor(nuevaPotencia / 100, 0, 1);
+    const temperaturaObjetivo = ficha.ambiente.temperaturaC + 1.2 + factorVariador * 3.5;
     const nuevaTemperatura = Number(
       aproximarValor(estado.tempC, temperaturaObjetivo, 0.12).toFixed(1)
     );
-    const nuevaFrecuencia = Number(
-      aproximarValor(estado.frecHz, frecuenciaObjetivo, 0.7).toFixed(1)
-    );
     const nuevaCorriente = Number(
-      aproximarValor(estado.corrA, corrienteObjetivo, 0.35).toFixed(1)
+      aproximarValor(estado.corrA, factorVariador * CORRIENTE_MAXIMA_SIMULADA_A, 0.35).toFixed(1)
     );
-    const nuevaPotenciaMotor = Number(
-      aproximarValor(estado.motorKw, potenciaMotorObjetivo, 0.22).toFixed(1)
+    const nuevaVelocidad = Number(
+      velocidadFiltrada.toFixed(ficha.sensor.visualizacion.decimalesVelocidad)
     );
-    const nuevasRpm = Math.round(aproximarValor(estado.rpm, rpmObjetivo, 28));
-    const nuevoTiempoMedicion =
-      estado.medSeg + (estado.medActiva ? 1 : 0);
+    const nuevaVelocidadReal = Number(velocidadReal.toFixed(4));
+    const nuevaVelocidadPitot = Number(velocidadPitot.toFixed(4));
+    const nuevaPresionPa = Number(presionSensor.toFixed(ficha.sensor.visualizacion.decimalesPresion));
+    const nuevaPresionDinamicaPa = Number(presionDinamica.toFixed(ficha.sensor.visualizacion.decimalesPresion));
+    const magnitudes = calcularMagnitudesDerivadas({
+      velocidadMs: nuevaVelocidadReal,
+      temperaturaC: nuevaTemperatura,
+      ficha,
+    });
+    const nuevaCargaAerodinamica = calcularCargaAerodinamicaRelativaPct(nuevaVelocidadReal);
+    const diferenciaObjetivo = Math.abs(nuevaVelocidadReal - Number(velocidadObjetivo || 0));
+    const flujoDentroDeRango =
+      tunelEncendido && Number(velocidadObjetivo || 0) > 0 && diferenciaObjetivo <= TOLERANCIA_ESTABILIDAD_MS;
+    const nuevaEstabilidadFlujoSeg = flujoDentroDeRango ? estado.estabilidadFlujoSeg + intervaloVisibleS : 0;
+    const nuevoFlujoEstable = nuevaEstabilidadFlujoSeg >= SEGUNDOS_ESTABILIDAD_REQUERIDOS;
+    const nuevoTiempoMedicion = estado.medSeg + (estado.medActiva ? intervaloVisibleS : 0);
+    const estadoListoTrasParada =
+      tunelParando &&
+      nuevaPotencia <= ficha.modelo.toleranciaConsignaDetenidoPct &&
+      nuevaVelocidadReal <= ficha.modelo.toleranciaVelocidadDetenidoMs;
+    const estadoVariador = !variadorActivo || estadoListoTrasParada
+      ? "Disponible"
+      : tunelParando || velocidadReal - velocidadObjetivo > TOLERANCIA_ESTABILIDAD_MS
+        ? "Parando"
+        : velocidadObjetivo - velocidadReal > TOLERANCIA_ESTABILIDAD_MS
+          ? "Acelerando"
+          : "Estable";
     const nuevasMuestrasMedicion = estado.medActiva
       ? [
           ...estado.muestrasMedicion,
@@ -179,28 +272,51 @@ function crearTunelSimulado() {
             velMs: nuevaVelocidad,
             tempC: nuevaTemperatura,
             potPct: nuevaPotencia,
+            frecHz: nuevaFrecuencia,
+            corrA: nuevaCorriente,
+            rpm: nuevasRpm,
+            presionPa: nuevaPresionPa,
+            fuente: "simulado",
           }),
-        ].slice(-180)
+        ]
       : estado.muestrasMedicion;
 
     estado = {
       ...estado,
       marcaAct: Date.now(),
       potPct: nuevaPotencia,
+      consignaPct: nuevaPotencia,
+      consignaVariadorPct: nuevaPotencia,
       velMs: nuevaVelocidad,
+      velocidadObjetivoMs: Number(velocidadObjetivo.toFixed(3)),
+      velRealMs: nuevaVelocidadReal,
+      velPitotMs: nuevaVelocidadPitot,
+      velFiltradaMs: nuevaVelocidad,
       tempC: nuevaTemperatura,
       frecHz: nuevaFrecuencia,
       corrA: nuevaCorriente,
-      motorKw: nuevaPotenciaMotor,
+      cargaAerodinamicaRelativaPct: nuevaCargaAerodinamica,
       rpm: nuevasRpm,
-      estadoVar: tunelEncendido ? "En marcha" : "Disponible",
+      presionPa: nuevaPresionPa,
+      presionSensorPa: nuevaPresionPa,
+      presionDinamicaPa: nuevaPresionDinamicaPa,
+      densidadKgM3: magnitudes.densidadKgM3,
+      caudalM3s: magnitudes.caudalM3s,
+      caudalM3h: magnitudes.caudalM3h,
+      caudalMasicoKgS: magnitudes.caudalMasicoKgS,
+      reynolds: magnitudes.reynolds,
+      velocidadesPorSeccion: magnitudes.velocidadesPorSeccion,
+      estabilidadFlujoSeg: tunelEncendido ? nuevaEstabilidadFlujoSeg : 0,
+      flujoEstable: tunelEncendido ? nuevoFlujoEstable : false,
+      estadoTunel: estadoListoTrasParada ? "READY" : estado.estadoTunel,
+      estadoVar: estadoVariador,
       medSeg: nuevoTiempoMedicion,
       muestrasMedicion: nuevasMuestrasMedicion,
-      tiempoSeg:
-        estado.tiempoSeg + (tunelEncendido ? 1 : 0),
+      semillaRuido: generadorRuido.obtenerSemilla(),
+      tiempoSeg: estado.tiempoSeg + (tunelEncendido || tunelParando ? intervaloVisibleS : 0),
     };
 
-    if (tunelEncendido && nuevaTemperatura >= 29.5) {
+    if (tunelEncendido && nuevaTemperatura >= 30) {
       const yaExiste = estado.alarmas.some(
         (alarma) =>
           alarma.nivel === "advertencia" &&
@@ -233,12 +349,23 @@ function crearTunelSimulado() {
     temporizador = window.setInterval(recalcularTelemetria, 1000);
   }
 
+  function detener() {
+    if (temporizador !== null) {
+      window.clearInterval(temporizador);
+      temporizador = null;
+    }
+  }
+
   function suscribirse(suscriptor) {
     iniciar();
     suscriptores.add(suscriptor);
 
     return () => {
       suscriptores.delete(suscriptor);
+
+      if (suscriptores.size === 0) {
+        detener();
+      }
     };
   }
 
@@ -246,17 +373,28 @@ function crearTunelSimulado() {
     return estado;
   }
 
-  function actualizarPotencia(potencia) {
+  function calcularVelocidadObjetivoPorConsigna(potencia) {
+    return Number(calcularVelocidadPorConsigna(limitarValor(Number(potencia) || 0, 0, 100)).toFixed(1));
+  }
+
+  function actualizarConsigna(potencia) {
     const potenciaNormalizada = limitarValor(Number(potencia) || 0, 0, 100);
     publicarEstado(
-      { objPotPct: potenciaNormalizada },
-      `Consigna de potencia solicitada a ${potenciaNormalizada}%`
+      {
+        objPotPct: potenciaNormalizada,
+        consignaObjetivoPct: potenciaNormalizada,
+        objVelMs: calcularVelocidadObjetivoPorConsigna(potenciaNormalizada),
+        velocidadObjetivoMs: calcularVelocidadObjetivoPorConsigna(potenciaNormalizada),
+        estabilidadFlujoSeg: 0,
+        flujoEstable: false,
+      },
+      `Consigna del variador solicitada a ${potenciaNormalizada}%`
     );
   }
 
   function actualizarConsignaVelocidad(velocidad) {
     const velocidadNormalizada = Number(
-      limitarValor(Number(velocidad) || 0, 0, 25).toFixed(1)
+      limitarValor(Number(velocidad) || 0, 0, VELOCIDAD_MAXIMA_SIMULADA_MS).toFixed(1)
     );
 
     publicarEstado(
@@ -270,7 +408,7 @@ function crearTunelSimulado() {
 
     if (Object.hasOwn(objetivos, "objVelMs")) {
       cambios.objVelMs = Number(
-        limitarValor(Number(objetivos.objVelMs) || 0, 0, 25).toFixed(1)
+        limitarValor(Number(objetivos.objVelMs) || 0, 0, VELOCIDAD_MAXIMA_SIMULADA_MS).toFixed(1)
       );
     }
 
@@ -284,6 +422,11 @@ function crearTunelSimulado() {
       cambios.objPotPct = Math.round(
         limitarValor(Number(objetivos.objPotPct) || 0, 0, 100)
       );
+      cambios.consignaObjetivoPct = cambios.objPotPct;
+      cambios.objVelMs = calcularVelocidadObjetivoPorConsigna(cambios.objPotPct);
+      cambios.velocidadObjetivoMs = cambios.objVelMs;
+      cambios.estabilidadFlujoSeg = 0;
+      cambios.flujoEstable = false;
     }
 
     if (!Object.keys(cambios).length) {
@@ -291,7 +434,7 @@ function crearTunelSimulado() {
     }
 
     publicarEstado(cambios, "Objetivos de ensayo actualizados");
-    registrarEvento("info", "Objetivos de velocidad y potencia ajustados.", "Info");
+    registrarEvento("info", "Objetivos de velocidad y consigna ajustados.", "Info");
   }
 
   function cambiarModoControl(modo) {
@@ -491,6 +634,8 @@ function crearTunelSimulado() {
       {
         estadoTunel: "RUNNING",
         estadoVar: "En marcha",
+        estabilidadFlujoSeg: 0,
+        flujoEstable: false,
       },
       "Arranque solicitado al tunel"
     );
@@ -508,9 +653,11 @@ function crearTunelSimulado() {
 
     publicarEstado(
       {
-        estadoTunel: "READY",
+        estadoTunel: estado.potPct > 0 || estado.frecHz > 0 ? "PARANDO" : "READY",
         medActiva: false,
-        estadoVar: "Disponible",
+        estadoVar: estado.potPct > 0 || estado.frecHz > 0 ? "Parando" : "Disponible",
+        estabilidadFlujoSeg: 0,
+        flujoEstable: false,
         resumenUltMed,
         muestrasMedicion: [],
         eventosMedicion: [],
@@ -527,6 +674,15 @@ function crearTunelSimulado() {
       registrarEvento(
         "advertencia",
         "No se puede iniciar la medicion con el tunel detenido.",
+        "Advertencia"
+      );
+      return false;
+    }
+
+    if (!estado.flujoEstable) {
+      registrarEvento(
+        "advertencia",
+        `Espera a que el flujo se estabilice durante ${SEGUNDOS_ESTABILIDAD_REQUERIDOS} s antes de medir.`,
         "Advertencia"
       );
       return false;
@@ -597,15 +753,18 @@ function crearTunelSimulado() {
   return {
     modo: "simulado",
     iniciar,
+    detener,
     suscribirse,
     obtenerEstado,
-    actualizarPotencia,
+    actualizarConsigna,
+    actualizarPotencia: actualizarConsigna,
     actualizarConsignaVelocidad,
     actualizarObjetivos,
     cambiarModoControl,
     crearEnsayo: crearNuevoEnsayo,
     cargarEnsayosPersistidos,
     activarEnsayo,
+    actualizarEnsayo,
     eliminarEnsayo,
     renombrarMedicion,
     eliminarMedicion,

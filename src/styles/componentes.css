@@ -1,4 +1,4 @@
-﻿/* Componentes reutilizables entre paginas.
+/* Componentes reutilizables entre paginas.
    Aqui van piezas que se repiten: listas, tarjetas, botones y tablas. */
 
 :root {
@@ -881,6 +881,155 @@
 .page--docente .docmedicionescabecera {
   padding-bottom: 14px;
 }
+.appblanca .page--control2 .cont2popupfondo {
+  background-color: rgb(6 18 31 / 18%);
+}
 
+.appblanca .page--control2 .cont2popupfondo .cont2modalcomprobaciones {
+  background-color: #ffffff;
+  backdrop-filter: none;
+}
+/* Control: estados de botones sin escalado y con colores consistentes. */
+.page--control2 .cont2boton:hover:not(:disabled) {
+  transform: none;
+}
 
+.page--control2 :is(
+  .cont2botonmedicioniniciar,
+  .cont2potenciacontrol .cont2boton,
+  .cont2conexion .cont2botonprimario
+) {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #ffffff;
+}
+
+.page--control2 :is(
+  .cont2botonmedicioniniciar,
+  .cont2potenciacontrol .cont2boton,
+  .cont2conexion .cont2botonprimario
+):hover:not(:disabled) {
+  background: color-mix(in srgb, var(--primary) 78%, #ffffff);
+  border-color: color-mix(in srgb, var(--primary) 78%, #ffffff);
+  color: #ffffff;
+}
+
+.page--control2 :is(
+  .cont2botonmedicioniniciar,
+  .cont2potenciacontrol .cont2boton,
+  .cont2conexion .cont2botonprimario
+):disabled {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #ffffff;
+  opacity: 0.48;
+}
+
+.page--control2 .cont2botonmedicionparar:hover:not(:disabled) {
+  background: color-mix(in srgb, #8a3144 82%, #ffffff);
+  border-color: color-mix(in srgb, #8a3144 82%, #ffffff);
+  color: #ffffff;
+}
+
+.page--control2 .cont2conexion .cont2botonsecundario:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--danger) 12%, #ffffff);
+  border-color: color-mix(in srgb, var(--danger) 62%, #ffffff);
+  color: var(--danger);
+}
+.page--control2 .cont2potenciacontrol .cont2boton {
+  border-radius: 0;
+}
+
+/* Tabla real de lecturas principales de Control. */
+.page--control2 .cont2tabla-lecturas-maniobra {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid rgba(130, 151, 181, 0.34);
+  background: #101b2d;
+}
+
+.page--control2 .cont2tabla-lecturas-maniobra table {
+  width: 100%;
+  min-width: 0;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.page--control2 .cont2tabla-lecturas-maniobra th,
+.page--control2 .cont2tabla-lecturas-maniobra td {
+  border-right: 1px solid rgba(130, 151, 181, 0.34);
+  text-align: center;
+  vertical-align: middle;
+}
+
+.page--control2 .cont2tabla-lecturas-maniobra th:last-child,
+.page--control2 .cont2tabla-lecturas-maniobra td:last-child {
+  border-right: 0;
+}
+
+.page--control2 .cont2tabla-lecturas-maniobra th {
+  height: 46px;
+  padding: 7px 6px;
+  border-bottom: 1px solid rgba(130, 151, 181, 0.34);
+  background: rgba(130, 151, 181, 0.12);
+  color: #b9d9f4;
+  font-size: clamp(8.5px, 0.65vw, 10px);
+  font-weight: 700;
+  line-height: 1.12;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+.page--control2 .cont2tabla-lecturas-maniobra td {
+  height: 52px;
+  padding: 8px 10px 10px;
+  background: #101b2d;
+}
+
+.page--control2 .cont2tabla-lecturas-maniobra strong {
+  display: block;
+  color: #ffffff;
+  font-size: clamp(14px, 1vw, 17px);
+  font-weight: 400;
+  line-height: 1.15;
+  letter-spacing: 0;
+}
+
+.page--control2 .cont2tabla-lecturas-maniobra small {
+  display: block;
+  margin-top: 5px;
+  color: #aebdd2;
+  font-size: 11px;
+  line-height: 1.25;
+}
+
+.appblanca .page--control2 .cont2tabla-lecturas-maniobra {
+  border-color: #c6d4e2;
+  background: #ffffff;
+}
+
+.appblanca .page--control2 .cont2tabla-lecturas-maniobra th,
+.appblanca .page--control2 .cont2tabla-lecturas-maniobra td {
+  border-right-color: #c6d4e2;
+}
+
+.appblanca .page--control2 .cont2tabla-lecturas-maniobra th {
+  border-bottom-color: #c6d4e2;
+  background: #e9f1f7;
+  color: #24405e;
+}
+
+.appblanca .page--control2 .cont2tabla-lecturas-maniobra td {
+  background: #ffffff;
+}
+
+.appblanca .page--control2 .cont2tabla-lecturas-maniobra strong {
+  color: #001b3a;
+}
+
+.appblanca .page--control2 .cont2tabla-lecturas-maniobra small {
+  color: #4c6480;
+}
 

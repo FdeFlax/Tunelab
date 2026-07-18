@@ -488,14 +488,16 @@ sin barras internas extra. */
   font-weight: 650;
 }
 
-.grafmedpuntos circle {
-  stroke: #07111f;
-  stroke-width: 1.5;
-}/* Informe de medicion: la cuadricula solo queda dentro del area de ejes. *//* Informe de medicion: graficas solo con puntos medidos. */
-
-.grafmedpuntos circle {
-  cursor: default;
+.grafmedlinea {
+  fill: none;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
+
+.grafmedlineaunica {
+  stroke-width: 3;
+}/* Informe de medicion: la cuadricula solo queda dentro del area de ejes. */
 
 
 

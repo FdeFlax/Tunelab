@@ -1,4 +1,4 @@
-﻿import { Download, Trash2 } from "lucide-react";
+import { Download, Trash2 } from "lucide-react";
 
 function formatearNumero(valor, unidad = "", decimales = 1) {
   const numero = Number(valor || 0);
@@ -73,10 +73,6 @@ function calcularMedia(datos) {
   return suma / datos.length;
 }
 
-function esTarjetaRepetidaEnGrafica(tarjeta) {
-  const etiqueta = String(tarjeta?.etiqueta || "").toLowerCase().trim();
-  return etiqueta === "velocidad media" || etiqueta === "temperatura" || etiqueta === "temperatura media" || etiqueta === "potencia media";
-}
 
 function formatearTick(valor) {
   const numero = Number(valor);
@@ -90,6 +86,25 @@ function formatearTick(valor) {
   }
 
   return numero.toFixed(2);
+}
+
+function prepararDatosGraficaDesdeCero(datos) {
+  if (!Array.isArray(datos) || datos.length === 0) {
+    return [];
+  }
+
+  return [
+    { segundo: 0, valor: 0 },
+    ...datos.map((dato, indice) => {
+      const segundoOriginal = Number(dato.segundo ?? indice + 1);
+      const segundo = Number.isFinite(segundoOriginal) && segundoOriginal > 0 ? segundoOriginal : indice + 1;
+
+      return {
+        ...dato,
+        segundo,
+      };
+    }),
+  ];
 }
 
 function construirPuntosGrafica(datos, ancho, alto, margen, objetivo, yDesdeCero = false) {
@@ -205,8 +220,8 @@ export function GraficaMedicion({
     datosGrafica = datos;
   }
 
-  const puntosGrafica = construirPuntosGrafica(datosGrafica, ancho, alto, margen, objetivo, yDesdeCero);
-  const linea = puntosGrafica.linea;
+  const datosLinea = prepararDatosGraficaDesdeCero(datosGrafica);
+  const puntosGrafica = construirPuntosGrafica(datosLinea, ancho, alto, margen, objetivo, yDesdeCero);
   const minimo = puntosGrafica.minimo;
   const maximo = puntosGrafica.maximo;
   const yTicks = puntosGrafica.yTicks;
@@ -226,6 +241,8 @@ export function GraficaMedicion({
   const textoMinimo = formatearNumero(minimo, unidad);
   const textoMaximo = formatearNumero(maximo, unidad);
   const textoMuestras = datosGrafica.length + " muestras";
+  const lineaMedicion = puntosGrafica.linea;
+  const puntoUnico = puntos.length === 1 ? puntos[0] : null;
 
   const bloqueObjetivo = null;
   const lineaObjetivo = null;
@@ -271,13 +288,23 @@ export function GraficaMedicion({
         </g>
 
         {lineaObjetivo}
-        <g className="grafmedpuntos" fill={color}>
-          {puntos.map((punto, indice) => (
-            <circle key={idTitulo + "-p-" + indice} cx={punto.x} cy={punto.y} r="3.5">
-              <title>{punto.segundo + " s | " + formatearNumero(punto.valor, unidad)}</title>
-            </circle>
-          ))}
-        </g>
+        {lineaMedicion ? (
+          <path className="grafmedlinea" d={lineaMedicion} stroke={color}>
+            <title>{titulo + " | media " + valorActual}</title>
+          </path>
+        ) : null}
+        {puntoUnico ? (
+          <line
+            className="grafmedlinea grafmedlineaunica"
+            x1={Math.max(xEje, puntoUnico.x - 8)}
+            x2={Math.min(xFinal, puntoUnico.x + 8)}
+            y1={puntoUnico.y}
+            y2={puntoUnico.y}
+            stroke={color}
+          >
+            <title>{puntoUnico.segundo + " s | " + formatearNumero(puntoUnico.valor, unidad)}</title>
+          </line>
+        ) : null}
       </svg>
 
       <div className={estilos.graficaPie}>
@@ -305,8 +332,12 @@ function TablaMuestrasComun({ muestras }) {
           <tr>
             <th>T (s)</th>
             <th>Velocidad (m/s)</th>
-            <th>Temperatura (C)</th>
-            <th>Potencia (%)</th>
+            <th>Caudal (m³/s)</th>
+            <th>Consigna (%)</th>
+            <th>Presion dinamica (Pa)</th>
+            <th>Hz</th>
+            <th>A</th>
+            <th>RPM</th>
           </tr>
         </thead>
         <tbody>
@@ -314,8 +345,12 @@ function TablaMuestrasComun({ muestras }) {
             <tr key={muestra.id || indice}>
               <td>{muestra.segundo ?? indice}</td>
               <td>{muestra.velMs}</td>
-              <td>{muestra.tempC}</td>
+              <td>{muestra.caudalM3s ?? "-"}</td>
               <td>{muestra.potPct}</td>
+              <td>{muestra.presionPa ?? "-"}</td>
+              <td>{muestra.frecHz ?? "-"}</td>
+              <td>{muestra.corrA ?? "-"}</td>
+              <td>{muestra.rpm ?? "-"}</td>
             </tr>
           ))}
         </tbody>
@@ -344,7 +379,6 @@ function EventoMedicionComun({ evento }) {
 
 export function InformeMedicionComun({
   medicion,
-  tarjetas = [],
   estilos,
   titulo = "Informe de medicion",
   subtitulo = "",
@@ -380,7 +414,6 @@ export function InformeMedicionComun({
   const eventos = medicion.eventos || [];
   const trazas = medicion.trazas || {};
   const textoEventos = eventos.length ? `${eventos.length} eventos` : "Sin incidencias";
-  const tarjetasVisibles = tarjetas.filter((tarjeta) => !esTarjetaRepetidaEnGrafica(tarjeta));
 
   return (
     <section className="reg2detalle informemed">
@@ -440,15 +473,16 @@ export function InformeMedicionComun({
           yDesdeCero
         />
         <GraficaMedicion
-          titulo="Temperatura"
-          color="#f2b24d"
-          unidad=" C"
+          titulo="Caudal"
+          color="#0f6b8d"
+          unidad=" m³/s"
           objetivo={null}
-          datos={trazas.temperatura || []}
+          datos={trazas.caudal || []}
           estilos={estilos}
+          yDesdeCero
         />
         <GraficaMedicion
-          titulo="Potencia"
+          titulo="Consigna variador"
           color="#82d15f"
           unidad="%"
           objetivo={medicion.objPotPct}

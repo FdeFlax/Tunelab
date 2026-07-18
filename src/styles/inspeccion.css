@@ -650,3 +650,127 @@
   border-color: #b9c8d5;
 }
 
+
+
+/* Informacion enriquecida de la pagina de inspeccion. */
+.page--inspeccion .inspactivo {
+  gap: 16px;
+  padding: 24px 26px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.025), rgba(255, 255, 255, 0)),
+    #101b2d;
+}
+
+.page--inspeccion .inspactivocabecera {
+  padding-bottom: 14px;
+  border-bottom-color: rgba(130, 151, 181, 0.2);
+}
+
+
+.page--inspeccion .inspactivocuerpo {
+  display: grid;
+  gap: 15px;
+}
+
+.page--inspeccion .inspactivoresumen {
+  max-width: none;
+  width: 100%;
+  font-size: clamp(16px, 1.15vw, 19px);
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.page--inspeccion .inspactivotexto {
+  max-width: none;
+  width: 100%;
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.page--inspeccion .inspchips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.page--inspeccion .inspchip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 7px 10px;
+  border: 1px solid rgba(130, 151, 181, 0.25);
+  background: rgba(220, 230, 239, 0.06);
+  color: #dbe8f7;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.page--inspeccion .inspdetalles {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.page--inspeccion .inspdetalle {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  min-height: 126px;
+  padding: 14px;
+  border: 1px solid rgba(130, 151, 181, 0.22);
+  background: rgba(7, 16, 27, 0.36);
+}
+
+.page--inspeccion .inspdetalle span {
+  color: #91b7d1;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.9px;
+  text-transform: uppercase;
+}
+
+.page--inspeccion .inspdetalle p {
+  margin: 0;
+  color: #d4e1f1;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+.appblanca .page--inspeccion .inspactivo {
+  background:
+    linear-gradient(180deg, rgba(0, 74, 111, 0.025), rgba(0, 74, 111, 0)),
+    #ffffff;
+}
+
+.appblanca .page--inspeccion .inspchip {
+  background: #eef4f8;
+  border-color: #c4d2de;
+  color: #294962;
+}
+
+.appblanca .page--inspeccion .inspdetalle {
+  background: #f3f7fa;
+  border-color: #c8d5df;
+}
+
+.appblanca .page--inspeccion .inspdetalle span {
+  color: #004a6f;
+}
+
+.appblanca .page--inspeccion .inspdetalle p {
+  color: #2d4860;
+}
+
+@media (max-width: 1180px) {
+  .page--inspeccion .inspdetalles {
+    grid-template-columns: 1fr;
+  }
+
+  .page--inspeccion .inspdetalle {
+    min-height: 0;
+  }
+}

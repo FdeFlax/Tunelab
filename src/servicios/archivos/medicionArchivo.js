@@ -26,6 +26,10 @@ const RANGOS_NUMERICOS = {
   velMs: { min: 0, max: 60 },
   tempC: { min: -20, max: 80 },
   potPct: { min: 0, max: 100 },
+  frecHz: { min: 0, max: 500 },
+  corrA: { min: 0, max: 500 },
+  rpm: { min: 0, max: 20000 },
+  presionPa: { min: 0, max: 5000 },
   durSeg: { min: 0, max: 24 * 60 * 60 },
   objVelMs: { min: 0, max: 60 },
   objPotPct: { min: 0, max: 100 },
@@ -44,6 +48,11 @@ function normalizarNombreArchivo(texto) {
 
 function redondear(valor, decimales = 1) {
   return Number(valor.toFixed(decimales));
+}
+
+function calcularPresionPitotPa(velocidadMs) {
+  const velocidad = Math.max(0, Number(velocidadMs) || 0);
+  return Number((0.5 * 1.225 * velocidad * velocidad).toFixed(1));
 }
 
 function calcularMedia(valores) {
@@ -94,6 +103,14 @@ function validarNumero({ valor, campo, rango }) {
   return valor;
 }
 
+function validarNumeroOpcional({ valor, campo, rango }) {
+  if (valor == null) {
+    return null;
+  }
+
+  return validarNumero({ valor, campo, rango });
+}
+
 function obtenerValorTraza(traza, indice) {
   return traza?.[indice]?.valor ?? 0;
 }
@@ -106,6 +123,10 @@ function calcularResumenDesdeMuestras({
   const velocidades = muestras.map((muestra) => muestra.velMs);
   const temperaturas = muestras.map((muestra) => muestra.tempC);
   const potencias = muestras.map((muestra) => muestra.potPct);
+  const frecuencias = muestras.map((muestra) => muestra.frecHz).filter((valor) => Number.isFinite(Number(valor)));
+  const corrientes = muestras.map((muestra) => muestra.corrA).filter((valor) => Number.isFinite(Number(valor)));
+  const rpm = muestras.map((muestra) => muestra.rpm).filter((valor) => Number.isFinite(Number(valor)));
+  const presiones = muestras.map((muestra) => muestra.presionPa).filter((valor) => Number.isFinite(Number(valor)));
   const maxVelocidad = Math.max(...velocidades);
   const minVelocidad = Math.min(...velocidades);
   const muestrasEnObjetivo = velocidades.filter(
@@ -132,6 +153,12 @@ function calcularResumenDesdeMuestras({
       maxima: redondear(Math.max(...potencias)),
       minima: redondear(Math.min(...potencias)),
       objetivo: objPotPct,
+    },
+    tecnicos: {
+      frecuenciaMedia: frecuencias.length ? redondear(calcularMedia(frecuencias)) : null,
+      corrienteMedia: corrientes.length ? redondear(calcularMedia(corrientes)) : null,
+      rpmMedia: rpm.length ? Math.round(calcularMedia(rpm)) : null,
+      presionMediaPa: presiones.length ? redondear(calcularMedia(presiones)) : null,
     },
   };
 }
@@ -203,6 +230,27 @@ function validarMuestra(muestra, indice) {
       campo: `muestras[${indice}].potPct`,
       rango: RANGOS_NUMERICOS.potPct,
     }),
+    frecHz: validarNumeroOpcional({
+      valor: muestra.frecHz,
+      campo: `muestras[${indice}].frecHz`,
+      rango: RANGOS_NUMERICOS.frecHz,
+    }),
+    corrA: validarNumeroOpcional({
+      valor: muestra.corrA,
+      campo: `muestras[${indice}].corrA`,
+      rango: RANGOS_NUMERICOS.corrA,
+    }),
+    rpm: validarNumeroOpcional({
+      valor: muestra.rpm,
+      campo: `muestras[${indice}].rpm`,
+      rango: RANGOS_NUMERICOS.rpm,
+    }),
+    presionPa: validarNumeroOpcional({
+      valor: muestra.presionPa ?? calcularPresionPitotPa(muestra.velMs),
+      campo: `muestras[${indice}].presionPa`,
+      rango: RANGOS_NUMERICOS.presionPa,
+    }),
+    fuente: typeof muestra.fuente === "string" ? limitarTexto(muestra.fuente, 30) : "",
   };
 }
 
@@ -344,6 +392,10 @@ function construirTrazasDesdeMuestras(muestras) {
       segundo: muestra.segundo,
       valor: muestra.potPct,
     })),
+    presion: muestras.map((muestra) => ({
+      segundo: muestra.segundo,
+      valor: muestra.presionPa ?? calcularPresionPitotPa(muestra.velMs),
+    })),
   };
 }
 
@@ -351,12 +403,14 @@ export function crearMuestrasDesdeMedicion(medicion) {
   const velocidades = medicion?.trazas?.velocidad || [];
   const temperaturas = medicion?.trazas?.temperatura || [];
   const potencias = medicion?.trazas?.potencia || [];
+  const presiones = medicion?.trazas?.presion || [];
 
   return velocidades.map((punto, indice) => ({
     segundo: punto.segundo,
     velMs: punto.valor,
     tempC: obtenerValorTraza(temperaturas, indice),
     potPct: obtenerValorTraza(potencias, indice),
+    presionPa: obtenerValorTraza(presiones, indice) || calcularPresionPitotPa(punto.valor),
   }));
 }
 
@@ -399,6 +453,7 @@ export function crearDocumentoMedicionTunelab({
         velocidad: medicion.velocidad,
         temperatura: medicion.temperatura,
         potencia: medicion.potencia,
+        tecnicos: medicion.tecnicos,
       },
     },
     muestras,
@@ -626,6 +681,7 @@ export function normalizarDocumentoMedicionTunelab(documento, nombreArchivo = ""
       velocidad: resumenCalculado.velocidad,
       temperatura: resumenCalculado.temperatura,
       potencia: resumenCalculado.potencia,
+      tecnicos: resumenCalculado.tecnicos,
       trazas: construirTrazasDesdeMuestras(muestras),
       eventos,
       muestras,

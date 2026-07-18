@@ -1,6 +1,10 @@
-﻿import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Power } from "lucide-react";
 import { InformeMedicionComun } from "../ResumenMedicion";
+import {
+  SEGUNDOS_ESTABILIDAD_REQUERIDOS,
+  obtenerEstadoOperativoTunel,
+} from "../../servicios/tunel/estadoTunel";
 
 const estilosRecap = {
   tarjeta: "cont2recaptarjeta",
@@ -71,7 +75,8 @@ export function CabeceraControl2({ estadoTunel: tunel, ensayoActivo: ensayo, eti
   let textoMedicion = "Detenida";
   let medicionOk = false;
   let nombreEnsayo = tunel.etiquetaEnsayo;
-  const tunelOk = tunel.estadoTunel === "RUNNING";
+  const estadoOperativo = obtenerEstadoOperativoTunel(tunel);
+  const tunelOk = ["EN_MARCHA", "MIDIENDO", "PREPARADO"].includes(estadoOperativo.codigo);
 
   if (tunel.medActiva) {
     textoMedicion = "Activa";
@@ -93,7 +98,7 @@ export function CabeceraControl2({ estadoTunel: tunel, ensayoActivo: ensayo, eti
       </div>
 
       <div className="cont2cabecerapanel">
-        <Indicador etiqueta="Tunel" valor={tunel.estadoTunel} ok={tunelOk} />
+        <Indicador etiqueta="Tunel" valor={estadoOperativo.etiqueta} ok={tunelOk} />
         <Indicador etiqueta="Medicion" valor={textoMedicion} ok={medicionOk} />
         <Indicador etiqueta="Ensayo" valor={nombreEnsayo} />
         <Indicador etiqueta="Fuente" valor={etiquetaFuente} />
@@ -113,6 +118,10 @@ export function PanelManiobraControl2({
 }) {
   const [valorPot, setValorPot] = useState(consigna.valor);
 
+  useEffect(() => {
+    setValorPot(consigna.valor);
+  }, [consigna.valor]);
+
   let objetivo = Number(valorPot);
   if (!Number.isFinite(objetivo)) {
     objetivo = Number(consigna.valor || 0);
@@ -130,29 +139,17 @@ export function PanelManiobraControl2({
   }
 
   const estiloBarra = { "--cont2progresopotencia": progresoBarra + "%" };
-  const textoConsigna = objetivo + "%";
   const textoAplicada = aplicada + "% aplicada";
-  const bloqueoEncender = !puedeOperar || tunel.estadoTunel === "RUNNING";
-  const bloqueoApagar = !puedeOperar || tunel.estadoTunel !== "RUNNING";
+  const tunelEnMarcha = tunel.estadoTunel === "RUNNING";
+  const tunelParando = tunel.estadoTunel === "PARANDO";
+  const controlPotenciaBloqueado = !puedeOperar || Boolean(tunel.medActiva);
+  const bloqueoEncender = !puedeOperar || tunelEnMarcha || tunelParando;
+  const bloqueoApagar = !puedeOperar || !tunelEnMarcha;
   const accionApagar = onApagarTunel || acciones.apagarTunel;
   const accionEncender = onSolicitarEncendido || acciones.encenderTunel;
-  let textoControl = "Bloqueado";
-  if (puedeOperar) {
-    textoControl = "Habilitado";
-  } else if (tunel.permiteCtrl) {
-    textoControl = "Conectar primero";
-  }
 
 
-  const listaLecturas = lecturasMed.map((lectura) => (
-    <article key={lectura.etiqueta} className="cont2lectura">
-      <span>{lectura.etiqueta}</span>
-      <strong>{lectura.valor}</strong>
-      <small>{lectura.apoyo}</small>
-    </article>
-  ));
-
-  function limitarPotencia(valor) {
+  function limitarConsigna(valor) {
     let numero = Number(valor || 0);
 
     if (!Number.isFinite(numero)) {
@@ -170,16 +167,16 @@ export function PanelManiobraControl2({
     return Math.round(numero);
   }
 
-  function cambiarPotencia(evento) {
+  function cambiarConsigna(evento) {
     setValorPot(evento.target.value);
   }
 
-  function aplicarPotencia() {
-    if (!puedeOperar) {
+  function aplicarConsigna() {
+    if (controlPotenciaBloqueado) {
       return;
     }
 
-    const potenciaFinal = limitarPotencia(valorPot);
+    const potenciaFinal = limitarConsigna(valorPot);
     setValorPot(potenciaFinal);
 
     if (potenciaFinal !== Number(consigna.valor)) {
@@ -190,12 +187,12 @@ export function PanelManiobraControl2({
   function comprobarTecla(evento) {
     if (evento.key === "Enter") {
       evento.preventDefault();
-      aplicarPotencia();
+      aplicarConsigna();
     }
   }
 
   function solicitarEncendido() {
-    accionEncender?.(limitarPotencia(valorPot));
+    accionEncender?.(limitarConsigna(valorPot));
   }
 
   return (
@@ -206,11 +203,11 @@ export function PanelManiobraControl2({
         <div className="cont2accionespower">
           <button
             type="button"
-            className={"cont2botonpower " + (tunel.estadoTunel === "RUNNING" ? "cont2botonpowerapagado" : "cont2botonpowerencendido")}
-            onClick={tunel.estadoTunel === "RUNNING" ? accionApagar : solicitarEncendido}
-            disabled={tunel.estadoTunel === "RUNNING" ? bloqueoApagar : bloqueoEncender}
-            aria-label={tunel.estadoTunel === "RUNNING" ? "Apagar tunel" : "Encender tunel"}
-            title={tunel.estadoTunel === "RUNNING" ? "Apagar tunel" : "Encender tunel"}
+            className={"cont2botonpower " + (tunelEnMarcha || tunelParando ? "cont2botonpowerapagado" : "cont2botonpowerencendido")}
+            onClick={tunelEnMarcha ? accionApagar : solicitarEncendido}
+            disabled={tunelEnMarcha ? bloqueoApagar : bloqueoEncender}
+            aria-label={tunelEnMarcha ? "Apagar tunel" : tunelParando ? "Tunel parando" : "Encender tunel"}
+            title={tunelEnMarcha ? "Apagar tunel" : tunelParando ? "Tunel parando" : "Encender tunel"}
           >
             <Power size={18} strokeWidth={2.4} aria-hidden="true" />
           </button>
@@ -218,8 +215,28 @@ export function PanelManiobraControl2({
         }
       />
 
-      <div className="cont2lecturas cont2lecturasmaniobra">
-        {listaLecturas}
+      <div className="cont2tabla-lecturas-maniobra" role="region" aria-label="Lecturas principales del tunel">
+        <table>
+          <thead>
+            <tr>
+              {lecturasMed.map((lectura) => (
+                <th key={lectura.etiqueta} scope="col">
+                  {lectura.etiqueta}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              {lecturasMed.map((lectura) => (
+                <td key={lectura.etiqueta}>
+                  <strong>{lectura.valor}</strong>
+                  {lectura.apoyo ? <small>{lectura.apoyo}</small> : null}
+                </td>
+              ))}
+            </tr>
+          </tbody>
+        </table>
       </div>
 
       <div className="cont2potencia">
@@ -234,10 +251,10 @@ export function PanelManiobraControl2({
                 max={consigna.max}
                 step={consigna.paso}
                 value={valorPot}
-                onChange={cambiarPotencia}
+                onChange={cambiarConsigna}
                 onKeyDown={comprobarTecla}
-                onBlur={aplicarPotencia}
-                disabled={!puedeOperar}
+                onBlur={aplicarConsigna}
+                disabled={controlPotenciaBloqueado}
               />
               <small>{consigna.unidad}</small>
             </div>
@@ -246,8 +263,8 @@ export function PanelManiobraControl2({
           <button
             type="button"
             className="cont2boton cont2botonsecundario"
-            onClick={aplicarPotencia}
-            disabled={!puedeOperar}
+            onClick={aplicarConsigna}
+            disabled={controlPotenciaBloqueado}
           >
             Aplicar
           </button>
@@ -262,6 +279,7 @@ export function PanelManiobraControl2({
           <span>{textoAplicada}</span>
           <span>100%</span>
         </div>
+
       </div>
     </section>
   );
@@ -277,7 +295,8 @@ export function PanelMedicionControl2({
   onDetenerMed,
   iniciandoMed,
 }) {
-  let disponibilidad = "Esperando arranque";
+  const estadoOperativo = obtenerEstadoOperativoTunel(tunel, { conectado: puedeOperar });
+  let disponibilidad = estadoOperativo.detalle || "Esperando arranque";
   let estadoLectura = "Sin captura";
   let ensayoTexto = tunel.etiquetaEnsayo;
 
@@ -287,6 +306,10 @@ export function PanelMedicionControl2({
 
   if (!puedeOperar) {
     disponibilidad = "Conecta el tunel antes de medir";
+  }
+
+  if (puedeOperar && tunel.estadoTunel === "RUNNING" && !tunel.flujoEstable) {
+    disponibilidad = `Esperando estabilidad del flujo (${tunel.estabilidadFlujoSeg || 0} s)`;
   }
 
   if (puedeMed) {
@@ -340,9 +363,21 @@ export function PanelMedicionControl2({
         </div>
       </div>
 
-      <div className="cont2lineasestado">
+      <div className="cont2lineasestado cont2tablasistema">
         <Dato etiqueta="Estado de lectura" valor={estadoLectura} />
         <Dato etiqueta="Disponibilidad" valor={disponibilidad} />
+        <Dato
+          etiqueta="Estabilidad de flujo"
+          valor={
+            tunel.estadoTunel !== "RUNNING"
+              ? "Sin flujo"
+              : tunel.flujoEstable
+                ? "Estable"
+                : `${tunel.estabilidadFlujoSeg || 0} s / ${SEGUNDOS_ESTABILIDAD_REQUERIDOS} s`
+          }
+        />
+        <Dato etiqueta="Presion dinamica" valor={`${tunel.presionDinamicaPa ?? tunel.presionPa ?? 0} Pa`} />
+        <Dato etiqueta="Fuente de datos" valor={tunel.fuenteDatos || "simulado"} />
         <Dato etiqueta="Ensayo asociado" valor={ensayoTexto} />
       </div>
     </section>
@@ -391,6 +426,41 @@ export function PanelEstadoSistemaControl2({ datosSistema }) {
       <CabeceraPanel titulo="Diagnostico" />
 
       <div className="cont2tablasistema">{listaDatos}</div>
+    </section>
+  );
+}
+
+export function PanelRangosOperacionControl2({ rangos }) {
+  return (
+    <section className="cont2panel cont2panelrangos">
+      <CabeceraPanel titulo="Rangos de operacion" />
+
+      <div className="cont2rangostablaenvoltorio">
+        <table className="cont2rangostabla">
+          <thead>
+            <tr>
+              <th>Parametro</th>
+              <th>Minimo</th>
+              <th>Maximo</th>
+              <th>Actual</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rangos.map((rango) => (
+              <tr key={rango.parametro}>
+                <th scope="row">{rango.parametro}</th>
+                <td>{rango.minimo}</td>
+                <td>{rango.maximo}</td>
+                <td>{rango.actual}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <p className="cont2rangosnota">
+        Rangos usados como referencia para control, simulacion y validacion de mediciones.
+      </p>
     </section>
   );
 }

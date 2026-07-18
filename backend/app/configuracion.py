@@ -1,4 +1,4 @@
-from functools import lru_cache
+﻿from functools import lru_cache
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -20,7 +20,7 @@ class Configuracion(BaseSettings):
 
     # Limites de uso para evitar que un usuario llene la base de datos sin control.
     limite_ensayos_por_usuario: int = 20
-    limite_mediciones_por_ensayo: int = 20
+    limite_mediciones_por_ensayo: int = 15
 
     # Indica que la configuracion tambien se puede leer desde un archivo .env.
     # Esto evita poner contrasenas o rutas reales directamente en el codigo.
@@ -42,3 +42,4 @@ def obtener_configuracion() -> Configuracion:
 
 # Objeto de configuracion que importan otros archivos del backend.
 configuracion = obtener_configuracion()
+

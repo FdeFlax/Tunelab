@@ -845,22 +845,12 @@ sin barras internas extra. */
 }
 
 .appblanca .grafmedlinea {
-  opacity: 0.86;
+  opacity: 0.9;
+  stroke-width: 2.4;
 }
-
-.appblanca .grafmedpuntos circle {
-  stroke: var(--claro-fondo);
-  stroke-width: 1.5;
-}/* Informe claro: la cuadricula solo queda dentro del area de ejes. */
+/* Informe claro: la cuadricula solo queda dentro del area de ejes. */
 .appblanca .grafmedsvg {
   background: transparent;
-}/* Informe claro: graficas solo con puntos medidos. */
-.appblanca .grafmedlinea {
-  display: none;
-}
-
-.appblanca .grafmedpuntos circle {
-  cursor: default;
 }
 
 .appblanca .inspselector {
@@ -1693,6 +1683,14 @@ body.body--tema-claro {
   color: var(--claro-texto);
 }
 
+.appblanca .cont2conexionmensaje {
+  color: #5d7186;
+}
+
+.appblanca .cont2conexionmensajeocupado {
+  color: #7b531b;
+}
+
 .appblanca .cont2conexion .cont2botonprimario {
   background: #2184b4;
   border-color: #2184b4;
@@ -1911,9 +1909,44 @@ body.body--tema-claro {
   opacity: 1;
 }
 
+/* Rangos de operacion en Control, modo claro */
+.appblanca .page--control2 .cont2rangostabla {
+  border-color: #cfd8e3;
+}
 
+.appblanca .page--control2 .cont2rangostabla thead th {
+  color: var(--primary);
+  background: #e7eef3;
+}
 
-.appblanca .cont2modalfondoflotante {
-  background: transparent;
-  backdrop-filter: none;
+.appblanca .page--control2 .cont2rangostabla tbody th,
+.appblanca .page--control2 .cont2rangostabla tbody td {
+  color: var(--text-main);
+  background: #f8fafc;
+  border-bottom-color: #d7e0e9;
+}
+
+.appblanca .page--control2 .cont2rangosnota {
+  color: var(--text-soft);
+}
+/* Ensayos creados: mismo tono seleccionado que Registro y Docente */
+.appblanca .page--ensayo2 .ens2itemactivo,
+.appblanca .page--ensayo2 .ens2itemseleccionado,
+.appblanca .page--ensayo2 .ens2itemactivo .ens2itemcontenido,
+.appblanca .page--ensayo2 .ens2itemseleccionado .ens2itemcontenido,
+.appblanca .page--ensayo2 .ens2itemactivo .ens2itemacciones,
+.appblanca .page--ensayo2 .ens2itemseleccionado .ens2itemacciones {
+  background: #e9eff4;
+  border-color: #b8c6d2;
+  color: var(--text-main);
+}
+
+.appblanca .page--ensayo2 .ens2itemactivo:hover,
+.appblanca .page--ensayo2 .ens2itemseleccionado:hover,
+.appblanca .page--ensayo2 .ens2itemactivo:hover .ens2itemcontenido,
+.appblanca .page--ensayo2 .ens2itemseleccionado:hover .ens2itemcontenido,
+.appblanca .page--ensayo2 .ens2itemactivo:hover .ens2itemacciones,
+.appblanca .page--ensayo2 .ens2itemseleccionado:hover .ens2itemacciones {
+  background: #e9eff4;
+  border-color: #b8c6d2;
 }

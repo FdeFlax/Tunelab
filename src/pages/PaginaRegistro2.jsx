@@ -19,6 +19,7 @@ import {
   leerArchivoMedicionTunelab,
 } from "../servicios/archivos/medicionArchivo";
 import { formatearTiempoFuncionamiento } from "../servicios/tunel/estadoTunel";
+import { calcularMagnitudesDerivadas } from "../servicios/tunel/fichaTunel";
 
 const estilosResumenRegistro2 = {
   tarjeta: "reg2resumentarjeta",
@@ -107,12 +108,12 @@ function crearTarjetasResumen(medicion) {
       apoyo: "Diferencia max-min",
     },
     {
-      etiqueta: "Temperatura",
-      valor: `${medicion.temperatura.media} C`,
-      apoyo: `Min ${medicion.temperatura.minima} C`,
+      etiqueta: "Caudal medio",
+      valor: `${medicion.tecnicos?.caudalMedioM3s ?? 0} m³/s`,
+      apoyo: "Derivado de velocidad",
     },
     {
-      etiqueta: "Potencia media",
+      etiqueta: "Consigna media",
       valor: `${medicion.potencia.media}%`,
       apoyo: `Objetivo ${medicion.objPotPct}%`,
     },
@@ -174,12 +175,23 @@ function crearMedicionDesdeApi(medicion, muestrasApi = [], eventosApi = []) {
     return null;
   }
 
-  const muestras = muestrasApi.map((muestra, indice) => ({
-    segundo: indice + 1,
-    velMs: redondear(muestra.velocidad_ms),
-    tempC: redondear(muestra.temperatura_c),
-    potPct: redondear(muestra.potencia_porcentaje),
-  }));
+  const muestras = muestrasApi.map((muestra, indice) => {
+    const velMs = redondear(muestra.velocidad_ms);
+    const magnitudes = calcularMagnitudesDerivadas({ velocidadMs: velMs });
+
+    return {
+      segundo: indice + 1,
+      velMs,
+      tempC: redondear(muestra.temperatura_c),
+      potPct: redondear(muestra.potencia_porcentaje),
+      caudalM3s: muestra.caudal_m3s == null ? magnitudes.caudalM3s : redondear(muestra.caudal_m3s),
+      frecHz: muestra.frecuencia_hz == null ? null : redondear(muestra.frecuencia_hz),
+      corrA: muestra.corriente_a == null ? null : redondear(muestra.corriente_a),
+      rpm: muestra.rpm ?? null,
+      presionPa: muestra.presion_pa == null ? magnitudes.presionDinamicaPa : redondear(muestra.presion_pa),
+      fuente: "api",
+    };
+  });
   const velocidades = muestras.map((muestra) => muestra.velMs);
   const temperaturas = muestras.map((muestra) => muestra.tempC);
   const potencias = muestras.map((muestra) => muestra.potPct);
@@ -189,6 +201,11 @@ function crearMedicionDesdeApi(medicion, muestrasApi = [], eventosApi = []) {
   const temperaturaMinima = temperaturas.length ? Math.min(...temperaturas) : 0;
   const potenciaMaxima = potencias.length ? Math.max(...potencias) : 0;
   const potenciaMinima = potencias.length ? Math.min(...potencias) : 0;
+  const frecuencias = muestras.map((muestra) => muestra.frecHz).filter((valor) => Number.isFinite(Number(valor)));
+  const corrientes = muestras.map((muestra) => muestra.corrA).filter((valor) => Number.isFinite(Number(valor)));
+  const rpms = muestras.map((muestra) => muestra.rpm).filter((valor) => Number.isFinite(Number(valor)));
+  const presiones = muestras.map((muestra) => muestra.presionPa).filter((valor) => Number.isFinite(Number(valor)));
+  const caudales = muestras.map((muestra) => muestra.caudalM3s).filter((valor) => Number.isFinite(Number(valor)));
 
   return {
     id: `api-medicion-${medicion.id}`,
@@ -215,10 +232,21 @@ function crearMedicionDesdeApi(medicion, muestrasApi = [], eventosApi = []) {
       maxima: redondear(potenciaMaxima),
       minima: redondear(potenciaMinima),
     },
+    tecnicos: {
+      frecuenciaMedia: frecuencias.length ? redondear(calcularMedia(frecuencias)) : null,
+      corrienteMedia: corrientes.length ? redondear(calcularMedia(corrientes)) : null,
+      rpmMedia: rpms.length ? Math.round(calcularMedia(rpms)) : null,
+      presionMediaPa: presiones.length ? redondear(calcularMedia(presiones)) : null,
+      caudalMedioM3s: caudales.length ? redondear(calcularMedia(caudales)) : null,
+    },
     trazas: {
       velocidad: muestras.map((muestra) => ({
         segundo: muestra.segundo,
         valor: muestra.velMs,
+      })),
+      caudal: muestras.map((muestra) => ({
+        segundo: muestra.segundo,
+        valor: muestra.caudalM3s,
       })),
       temperatura: muestras.map((muestra) => ({
         segundo: muestra.segundo,
@@ -227,6 +255,10 @@ function crearMedicionDesdeApi(medicion, muestrasApi = [], eventosApi = []) {
       potencia: muestras.map((muestra) => ({
         segundo: muestra.segundo,
         valor: muestra.potPct,
+      })),
+      presion: muestras.map((muestra) => ({
+        segundo: muestra.segundo,
+        valor: muestra.presionPa,
       })),
     },
     eventos: eventosApi.map((evento) => ({
@@ -248,8 +280,12 @@ function TablaMuestras({ muestras }) {
           <tr>
             <th>t (s)</th>
             <th>Velocidad (m/s)</th>
-            <th>Temperatura (C)</th>
-            <th>Potencia (%)</th>
+            <th>Caudal (m³/s)</th>
+            <th>Consigna (%)</th>
+            <th>Presion dinamica (Pa)</th>
+            <th>Hz</th>
+            <th>A</th>
+            <th>RPM</th>
           </tr>
         </thead>
         <tbody>
@@ -257,8 +293,12 @@ function TablaMuestras({ muestras }) {
             <tr key={`${muestra.segundo}-${indice}`}>
               <td>{muestra.segundo}</td>
               <td>{muestra.velMs}</td>
-              <td>{muestra.tempC}</td>
+              <td>{muestra.caudalM3s ?? "-"}</td>
               <td>{muestra.potPct}</td>
+              <td>{muestra.presionPa ?? "-"}</td>
+              <td>{muestra.frecHz ?? "-"}</td>
+              <td>{muestra.corrA ?? "-"}</td>
+              <td>{muestra.rpm ?? "-"}</td>
             </tr>
           ))}
         </tbody>

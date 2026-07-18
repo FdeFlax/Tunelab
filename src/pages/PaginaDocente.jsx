@@ -13,6 +13,7 @@ import {
 import { desconectarTunelDocenteApi, verConexionTunelApi } from "../servicios/api/tunelConexionApi";
 import { escucharEventosTunel } from "../servicios/api/tunelEventosApi";
 import { descargarArchivoMed } from "../servicios/archivos/medicionArchivo";
+import { calcularMagnitudesDerivadas } from "../servicios/tunel/fichaTunel";
 
 function formatearFechaHora(fecha) {
   if (!fecha) {
@@ -79,15 +80,24 @@ function calcularMedia(valores) {
 }
 
 function crearDetalleMedicion(medicion, muestrasApi = [], eventosApi = []) {
-  const muestras = muestrasApi.map((muestra, indice) => ({
-    segundo: indice + 1,
-    velMs: redondear(muestra.velocidad_ms),
-    tempC: redondear(muestra.temperatura_c),
-    potPct: redondear(muestra.potencia_porcentaje),
-  }));
+  const muestras = muestrasApi.map((muestra, indice) => {
+    const velMs = redondear(muestra.velocidad_ms);
+    const magnitudes = calcularMagnitudesDerivadas({ velocidadMs: velMs });
+
+    return {
+      segundo: indice + 1,
+      velMs,
+      tempC: redondear(muestra.temperatura_c),
+      potPct: redondear(muestra.potencia_porcentaje),
+      caudalM3s: muestra.caudal_m3s == null ? magnitudes.caudalM3s : redondear(muestra.caudal_m3s),
+      presionPa: muestra.presion_pa == null ? magnitudes.presionDinamicaPa : redondear(muestra.presion_pa),
+    };
+  });
   const velocidades = muestras.map((muestra) => muestra.velMs);
   const temperaturas = muestras.map((muestra) => muestra.tempC);
   const potencias = muestras.map((muestra) => muestra.potPct);
+  const caudales = muestras.map((muestra) => muestra.caudalM3s).filter((valor) => Number.isFinite(Number(valor)));
+  const presiones = muestras.map((muestra) => muestra.presionPa).filter((valor) => Number.isFinite(Number(valor)));
   const velMax = velocidades.length ? Math.max(...velocidades) : 0;
   const velMin = velocidades.length ? Math.min(...velocidades) : 0;
   const tempMax = temperaturas.length ? Math.max(...temperaturas) : 0;
@@ -119,10 +129,16 @@ function crearDetalleMedicion(medicion, muestrasApi = [], eventosApi = []) {
       maxima: redondear(potMax),
       minima: redondear(potMin),
     },
+    tecnicos: {
+      caudalMedioM3s: caudales.length ? redondear(calcularMedia(caudales)) : null,
+      presionMediaPa: presiones.length ? redondear(calcularMedia(presiones)) : null,
+    },
     trazas: {
       velocidad: muestras.map((muestra) => ({ segundo: muestra.segundo, valor: muestra.velMs })),
+      caudal: muestras.map((muestra) => ({ segundo: muestra.segundo, valor: muestra.caudalM3s })),
       temperatura: muestras.map((muestra) => ({ segundo: muestra.segundo, valor: muestra.tempC })),
       potencia: muestras.map((muestra) => ({ segundo: muestra.segundo, valor: muestra.potPct })),
+      presion: muestras.map((muestra) => ({ segundo: muestra.segundo, valor: muestra.presionPa })),
     },
     eventos: eventosApi.map((evento) => ({
       id: evento.id,
@@ -139,8 +155,8 @@ function tarjetasDetalleMedicion(detalle) {
     { etiqueta: "Duracion", valor: `${detalle.durSeg} s`, apoyo: `${detalle.totalMuestras} muestras` },
     { etiqueta: "Velocidad media", valor: `${detalle.velocidad.media} m/s`, apoyo: `Max ${detalle.velocidad.maxima} m/s` },
     { etiqueta: "Estabilidad", valor: `${detalle.velocidad.estabilidad} m/s`, apoyo: "Diferencia max-min" },
-    { etiqueta: "Temperatura", valor: `${detalle.temperatura.media} C`, apoyo: `Min ${detalle.temperatura.minima} C` },
-    { etiqueta: "Potencia media", valor: `${detalle.potencia.media}%`, apoyo: `Objetivo ${detalle.objPotPct}%` },
+    { etiqueta: "Caudal medio", valor: `${detalle.tecnicos?.caudalMedioM3s ?? 0} m³/s`, apoyo: "Derivado de velocidad" },
+    { etiqueta: "Consigna media", valor: `${detalle.potencia.media}%`, apoyo: `Objetivo ${detalle.objPotPct}%` },
     { etiqueta: "Incidencias", valor: `${detalle.eventos.length}`, apoyo: detalle.eventos.length ? "Eventos registrados" : "Sin incidencias" },
   ];
 }
@@ -153,8 +169,8 @@ function TablaMuestrasDocente({ muestras }) {
           <tr>
             <th>t (s)</th>
             <th>Velocidad (m/s)</th>
-            <th>Temperatura (C)</th>
-            <th>Potencia (%)</th>
+            <th>Caudal (m³/s)</th>
+            <th>Consigna (%)</th>
           </tr>
         </thead>
         <tbody>
@@ -162,7 +178,7 @@ function TablaMuestrasDocente({ muestras }) {
             <tr key={muestra.segundo}>
               <td>{muestra.segundo}</td>
               <td>{muestra.velMs}</td>
-              <td>{muestra.tempC}</td>
+              <td>{muestra.caudalM3s ?? "-"}</td>
               <td>{muestra.potPct}</td>
             </tr>
           ))}
@@ -359,10 +375,6 @@ function PaginaDocente() {
     void cargarMediciones(ensayoSeleccionado?.id);
   }, [ensayoSeleccionado?.id]);
 
-  const totalMediciones = ensayos.reduce(
-    (total, ensayo) => total + Number(ensayo.total_mediciones || 0),
-    0
-  );
 
   const medicionesFiltradas = useMemo(() => {
     const texto = normalizarTexto(busqueda);

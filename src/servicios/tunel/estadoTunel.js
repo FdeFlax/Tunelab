@@ -1,3 +1,10 @@
+import {
+  FICHA_TUNEL_ACTIVO,
+  calcularMagnitudesDerivadas,
+  calcularVelocidadPorConsigna,
+  obtenerVelocidadMaximaCalibrada,
+} from "./fichaTunel";
+
 function crearHoraEvento(fecha = new Date()) {
   return fecha.toLocaleTimeString("es-ES", {
     hour: "2-digit",
@@ -19,6 +26,19 @@ function crearIdentificador() {
 
 export const MAX_EVENTOS_ALERTA = 30;
 export const MAX_EVENTOS_INFO = 30;
+export const VELOCIDAD_MAXIMA_SIMULADA_MS = obtenerVelocidadMaximaCalibrada(FICHA_TUNEL_ACTIVO);
+export const FRECUENCIA_NOMINAL_SIMULADA_HZ = FICHA_TUNEL_ACTIVO.variador.frecuenciaNominalHz;
+export const RAMPA_VARIADOR_SIMULADA_S = 100 / FICHA_TUNEL_ACTIVO.variador.rampaSubidaPctS;
+export const RPM_MAXIMAS_SIMULADAS = FICHA_TUNEL_ACTIVO.variador.rpmNominal;
+export const CORRIENTE_MAXIMA_SIMULADA_A = FICHA_TUNEL_ACTIVO.estimaciones.corriente.corrienteMaximaA;
+export const DENSIDAD_AIRE_KG_M3 = FICHA_TUNEL_ACTIVO.ambiente.densidadReferenciaKgM3;
+export const TOLERANCIA_ESTABILIDAD_MS = FICHA_TUNEL_ACTIVO.modelo.toleranciaEstabilidadMs;
+export const SEGUNDOS_ESTABILIDAD_REQUERIDOS = FICHA_TUNEL_ACTIVO.modelo.segundosEstabilidadRequeridos;
+
+export function calcularPresionPitotPa(velocidadMs) {
+  const velocidad = Math.max(0, Number(velocidadMs) || 0);
+  return Number((0.5 * DENSIDAD_AIRE_KG_M3 * velocidad * velocidad).toFixed(1));
+}
 
 export function crearEvento({ nivel, mensaje, etiqueta }) {
   return {
@@ -105,20 +125,37 @@ export function crearEstadoTunelBase() {
     bloqSeg: false,
     medActiva: false,
     medSeg: 0,
+    estabilidadFlujoSeg: 0,
+    flujoEstable: false,
     muestrasMedicion: [],
     eventosMedicion: [],
     resumenUltMed: null,
-    consignaVelocidadMs: 13.0,
+    consignaVelocidadMs: 0,
     potPct: 0,
+    consignaPct: 0,
+    consignaVariadorPct: 0,
     tempC: 21.2,
     objTempC: 23.5,
     velMs: 0,
-    objVelMs: 13.0,
-    objPotPct: 70,
+    velRealMs: 0,
+    velPitotMs: 0,
+    velFiltradaMs: 0,
+    presionPa: 0,
+    presionSensorPa: 0,
+    densidadKgM3: DENSIDAD_AIRE_KG_M3,
+    caudalM3s: 0,
+    caudalM3h: 0,
+    caudalMasicoKgS: 0,
+    reynolds: 0,
+    objVelMs: 0,
+    velocidadObjetivoMs: 0,
+    objPotPct: 0,
+    consignaObjetivoPct: 0,
     frecHz: 0,
     corrA: 0,
-    motorKw: 0,
+    cargaAerodinamicaRelativaPct: 0,
     rpm: 0,
+    semillaRuido: FICHA_TUNEL_ACTIVO.sensor.transductorPresion.semillaAleatoria,
     tiempoSeg: 0,
     alarmas: [
       crearEvento({
@@ -147,12 +184,26 @@ export function crearMuestraMedicion({
   velMs,
   tempC,
   potPct,
+  frecHz = null,
+  corrA = null,
+  rpm = null,
+  presionPa = null,
+  caudalM3s = null,
+  fuente = "simulado",
 }) {
+  const magnitudes = calcularMagnitudesDerivadas({ velocidadMs: velMs });
+
   return {
     segundo,
     velMs,
     tempC,
     potPct,
+    frecHz,
+    corrA,
+    rpm,
+    presionPa: presionPa ?? magnitudes.presionDinamicaPa,
+    caudalM3s: caudalM3s ?? magnitudes.caudalM3s,
+    fuente,
   };
 }
 
@@ -170,6 +221,27 @@ export function calcularResumenMedicion({
   const velocidades = muestras.map((muestra) => muestra.velMs);
   const temperaturas = muestras.map((muestra) => muestra.tempC);
   const potencias = muestras.map((muestra) => muestra.potPct);
+  const frecuencias = muestras
+    .map((muestra) => muestra.frecHz)
+    .filter((valor) => Number.isFinite(Number(valor)));
+  const corrientes = muestras
+    .map((muestra) => muestra.corrA)
+    .filter((valor) => Number.isFinite(Number(valor)));
+  const rpm = muestras
+    .map((muestra) => muestra.rpm)
+    .filter((valor) => Number.isFinite(Number(valor)));
+  const presiones = muestras
+    .map((muestra) => muestra.presionPa)
+    .filter((valor) => Number.isFinite(Number(valor)));
+  const magnitudesMuestras = muestras.map((muestra) =>
+    calcularMagnitudesDerivadas({ velocidadMs: muestra.velMs })
+  );
+  const caudales = magnitudesMuestras
+    .map((magnitud) => magnitud.caudalM3s)
+    .filter((valor) => Number.isFinite(Number(valor)));
+  const reynolds = magnitudesMuestras
+    .map((magnitud) => magnitud.reynolds)
+    .filter((valor) => Number.isFinite(Number(valor)));
   const maxVelocidad = Math.max(...velocidades);
   const minVelocidad = Math.min(...velocidades);
   const muestrasEnObjetivo = velocidades.filter(
@@ -200,6 +272,14 @@ export function calcularResumenMedicion({
       minima: redondear(Math.min(...potencias)),
       objetivo: objPotPct,
     },
+    tecnicos: {
+      frecuenciaMedia: frecuencias.length ? redondear(calcularMedia(frecuencias)) : null,
+      corrienteMedia: corrientes.length ? redondear(calcularMedia(corrientes)) : null,
+      rpmMedia: rpm.length ? Math.round(calcularMedia(rpm)) : null,
+      presionMediaPa: presiones.length ? redondear(calcularMedia(presiones)) : null,
+      caudalMedioM3s: caudales.length ? Number(calcularMedia(caudales).toFixed(3)) : null,
+      reynoldsMedio: reynolds.length ? Math.round(calcularMedia(reynolds)) : null,
+    },
     muestras,
     trazas: {
       velocidad: muestras.map((muestra) => ({
@@ -210,9 +290,17 @@ export function calcularResumenMedicion({
         segundo: muestra.segundo,
         valor: muestra.tempC,
       })),
+      caudal: muestras.map((muestra) => ({
+        segundo: muestra.segundo,
+        valor: muestra.caudalM3s ?? calcularMagnitudesDerivadas({ velocidadMs: muestra.velMs }).caudalM3s,
+      })),
       potencia: muestras.map((muestra) => ({
         segundo: muestra.segundo,
         valor: muestra.potPct,
+      })),
+      presion: muestras.map((muestra) => ({
+        segundo: muestra.segundo,
+        valor: muestra.presionPa ?? calcularPresionPitotPa(muestra.velMs),
       })),
     },
     eventos: eventos.slice(0, 6),
@@ -224,11 +312,14 @@ export function crearRegistroMedicion({ resumen, estadoTunel }) {
     return null;
   }
 
-  const muestras = resumen.trazas.velocidad.map((punto, indice) => ({
+  const muestras = (resumen.muestras || resumen.trazas.velocidad.map((punto, indice) => ({
     segundo: punto.segundo,
     velMs: punto.valor,
     tempC: resumen.trazas.temperatura[indice]?.valor ?? 0,
     potPct: resumen.trazas.potencia[indice]?.valor ?? 0,
+  }))).map((muestra) => ({
+    ...muestra,
+    presionPa: muestra.presionPa ?? calcularPresionPitotPa(muestra.velMs),
   }));
 
   return {
@@ -237,12 +328,15 @@ export function crearRegistroMedicion({ resumen, estadoTunel }) {
     hora: resumen.horaFin,
     durSeg: resumen.durSeg,
     totalMuestras: resumen.totalMuestras,
-    potConsPct: estadoTunel.potPct,
-    objVelMs: estadoTunel.objVelMs,
-    objPotPct: estadoTunel.objPotPct,
+    potConsPct: estadoTunel.consignaPct ?? estadoTunel.potPct,
+    consignaPct: estadoTunel.consignaPct ?? estadoTunel.potPct,
+    objVelMs: estadoTunel.velocidadObjetivoMs ?? estadoTunel.objVelMs,
+    objPotPct: estadoTunel.consignaObjetivoPct ?? estadoTunel.objPotPct,
+    consignaObjetivoPct: estadoTunel.consignaObjetivoPct ?? estadoTunel.objPotPct,
     velocidad: resumen.velocidad,
     temperatura: resumen.temperatura,
     potencia: resumen.potencia,
+    tecnicos: resumen.tecnicos,
     trazas: resumen.trazas,
     eventos: resumen.eventos,
     muestras,
@@ -261,6 +355,7 @@ export function convertirMedicionAResumen(medicion) {
     velocidad: medicion.velocidad,
     temperatura: medicion.temperatura,
     potencia: medicion.potencia,
+    tecnicos: medicion.tecnicos,
     trazas: medicion.trazas,
     eventos: medicion.eventos || [],
     muestras: medicion.muestras || [],
@@ -391,6 +486,119 @@ export function contarAlarmasActivas(alarmas) {
   ).length;
 }
 
+export function obtenerEstadoOperativoTunel(
+  estadoTunel,
+  {
+    conectado = true,
+    comprobacionPendiente = false,
+    apagando = false,
+    mantenimientoRequerido = false,
+  } = {}
+) {
+  const alarmas = estadoTunel?.alarmas || [];
+  const avisosActivos = contarAlarmasActivas(alarmas);
+  const hayEmergencia = alarmas.some((alarma) => {
+    const texto = `${alarma.etiqueta || ""} ${alarma.mensaje || ""}`.toLowerCase();
+    return alarma.nivel === "critica" && (texto.includes("emergencia") || texto.includes("parada"));
+  });
+
+  if (!conectado || estadoTunel?.estadoTunel === "DESCONECTADO") {
+    return {
+      codigo: "SIN_CONEXION",
+      etiqueta: "Sin conectar",
+      detalle: "Conecta el tunel para poder operar",
+      tono: "gris",
+    };
+  }
+
+  if (mantenimientoRequerido || estadoTunel?.mantenimientoReq) {
+    return {
+      codigo: "MANTENIMIENTO",
+      etiqueta: "Mantenimiento requerido",
+      detalle: "Revisar el equipo antes de continuar",
+      tono: "ambar",
+    };
+  }
+
+  if (estadoTunel?.estadoTunel === "EMERGENCIA" || hayEmergencia) {
+    return {
+      codigo: "EMERGENCIA",
+      etiqueta: "Emergencia",
+      detalle: "Parada o bloqueo critico activo",
+      tono: "rojo",
+    };
+  }
+
+  if (estadoTunel?.bloqSeg) {
+    return {
+      codigo: "COMPROBACION_PENDIENTE",
+      etiqueta: "Comprobacion pendiente",
+      detalle: "Revisar seguridad antes de operar",
+      tono: "ambar",
+    };
+  }
+
+  if (avisosActivos > 0) {
+    return {
+      codigo: "ALARMA",
+      etiqueta: "Error / alarma",
+      detalle: resumirAlarmas(alarmas),
+      tono: "ambar",
+    };
+  }
+
+  if (comprobacionPendiente) {
+    return {
+      codigo: "COMPROBACION_PENDIENTE",
+      etiqueta: "Comprobacion pendiente",
+      detalle: "Completa la lista de seguridad para encender",
+      tono: "ambar",
+    };
+  }
+
+  if (estadoTunel?.medActiva) {
+    return {
+      codigo: "MIDIENDO",
+      etiqueta: "Midiendo",
+      detalle: "Captura de datos en curso",
+      tono: "verde",
+    };
+  }
+
+  if (apagando || estadoTunel?.estadoTunel === "PARANDO" || estadoTunel?.estadoTunel === "STOPPING") {
+    return {
+      codigo: "PARANDO",
+      etiqueta: "Parando",
+      detalle: "Deteniendo la turbomaquina de forma controlada",
+      tono: "ambar",
+    };
+  }
+
+  if (estadoTunel?.estadoTunel === "RUNNING") {
+    return {
+      codigo: "EN_MARCHA",
+      etiqueta: "En marcha",
+      detalle: "Tunel encendido y flujo activo",
+      tono: "verde",
+    };
+  }
+
+  if (estadoTunel?.estadoTunel === "READY") {
+    return {
+      codigo: "PREPARADO",
+      etiqueta: "Preparado / Ready",
+      detalle: "Listo para iniciar el procedimiento",
+      tono: "verde",
+    };
+  }
+
+  return {
+    codigo: "CONECTADO",
+    etiqueta: "Conectado",
+    detalle: "Sistema conectado, pendiente de preparacion",
+    tono: "azul",
+  };
+}
 export function resumirAlarmas(alarmas) {
   const advertencias = alarmas.filter((alarma) => alarma.nivel === "advertencia").length;
   const criticas = alarmas.filter((alarma) => alarma.nivel === "critica").length;

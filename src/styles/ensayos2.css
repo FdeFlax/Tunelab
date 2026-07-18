@@ -1,4 +1,4 @@
-﻿.ens2gridprincipal {
+.ens2gridprincipal {
   display: grid;
   grid-template-columns: minmax(0, 1.08fr) minmax(360px, 0.92fr);
   gap: 10px;
@@ -55,6 +55,20 @@
   display: grid;
   gap: 6px;
   align-content: start;
+}
+
+.page--ensayo2 .ens2itemacciones {
+  top: 50%;
+  right: 10px;
+  width: 170px;
+  gap: 7px;
+  align-content: center;
+  transform: translateY(-50%);
+}
+
+.page--ensayo2 .ens2itemacciones .ens2boton {
+  width: 100%;
+  min-height: 32px;
 }
 
 @media (max-width: 1260px) {

@@ -3,26 +3,18 @@ const CLAVE_IDENTIDAD_API = "tunelab_identidad_api";
 
 function guardarIdentidadApi(identidad) {
   const datos = JSON.stringify(identidad);
-  window.localStorage.setItem(CLAVE_IDENTIDAD_API, datos);
   window.sessionStorage.setItem(CLAVE_IDENTIDAD_API, datos);
+  window.localStorage.removeItem(CLAVE_IDENTIDAD_API);
 }
 
 function cargarIdentidadApi() {
-  const datosPersistentes = window.localStorage.getItem(CLAVE_IDENTIDAD_API);
-  const datosSesion = window.sessionStorage.getItem(CLAVE_IDENTIDAD_API);
-  const datos = datosPersistentes || datosSesion;
+  const datos = window.sessionStorage.getItem(CLAVE_IDENTIDAD_API);
 
   if (!datos) {
     return null;
   }
 
-  const identidad = JSON.parse(datos);
-
-  if (!datosPersistentes) {
-    guardarIdentidadApi(identidad);
-  }
-
-  return identidad;
+  return JSON.parse(datos);
 }
 
 export class ErrorApi extends Error {
