@@ -1,5 +1,5 @@
-"""Calcula con XLB el flujo usando una lectura de la sección de ensayo.
-Las unidades físicas se convierten a red; el resultado requiere validación experimental.
+"""Calcula con XLB un campo de rapidez relativa para los cortes de la web.
+Las unidades del fluido todavía no están calibradas al aire del laboratorio.
 """
 import argparse
 import base64
@@ -10,37 +10,35 @@ from pathlib import Path
 import sys
 import tempfile
 from time import perf_counter
+from flujo3d_geometria import preparar_solido
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "backend"))
 from app.flujo3d_datos import (
     MODELO, MALLA, PASOS, VISCOSIDAD, FORMATO_CAMPO,
     VELOCIDAD_RED_BASE, PASO_CM, SECCION_CM, ORIGEN_CM,
-    AIRE, validar_geometria,
+    VELOCIDAD_RELATIVA, validar_geometria,
 )
-
 
 def evento(**datos):
     mensaje = json.dumps(datos, ensure_ascii=True, allow_nan=False)
     print("TUNELAB_FLOW " + mensaje, flush=True)
 
 
-def calcular(ruta_entrada, ruta_salida):
+def calcular(ruta_entrada, ruta_salida, velocidad_relativa):
     inicio = perf_counter()
     evento(fase="preparando", paso=0, mensaje="Preparando el motor 3D…")
     cache = preparar_entorno()
-    from flujo3d_geometria import preparar_solido
 
     datos = ruta_entrada.read_bytes()
     medidas = validar_geometria(datos)
-    evento(fase="geometria", paso=0,
-           mensaje="Convirtiendo el objeto en un sólido para el cálculo…")
+    evento(fase="geometria", paso=0,mensaje="Convirtiendo el objeto en un sólido para el cálculo…")
     puntos, geometria = preparar_solido(datos, MALLA)
-    velocidad_entrada = VELOCIDAD_RED_BASE
+    velocidad_entrada = VELOCIDAD_RED_BASE * velocidad_relativa
 
     motor, id_objeto = preparar_simulacion(cache, puntos, velocidad_entrada)
     resultado = ejecutar_simulacion(motor, id_objeto, puntos, velocidad_entrada, inicio)
-    guardar_resultado(ruta_salida, medidas, geometria, resultado, inicio)
+    guardar_resultado(ruta_salida, medidas, geometria, resultado, velocidad_relativa, inicio)
     evento(fase="completado", paso=PASOS, mensaje="Mapas calculados.")
 
 
@@ -108,7 +106,7 @@ def preparar_simulacion(cache, puntos_solidos, velocidad_entrada):
     malla = grid_factory(MALLA, compute_backend=backend)
     condiciones, id_objeto = crear_contorno(malla, puntos_solidos, velocidad_entrada)
     motor = IncompressibleNavierStokesStepper(
-        grid=malla, boundary_conditions=condiciones, collision_type="SmagorinskyLESBGK",
+        grid=malla, boundary_conditions=condiciones, collision_type="KBC",
     )
     return motor, id_objeto
 
@@ -194,28 +192,24 @@ def crear_volumen(rapidez, solidos, velocidad_entrada):
     }
 
 
-def guardar_resultado(ruta, medidas, geometria, resultado, inicio):
+def guardar_resultado(ruta, medidas, geometria, resultado, velocidad_relativa, inicio):
     resultado.update({
         "modelo": MODELO,
         "pasos": PASOS,
         "malla": MALLA,
         "seccion_cm": SECCION_CM,
         "medidas_objeto_cm": medidas,
+        "velocidad_relativa": velocidad_relativa,
         "viscosidad_red": VISCOSIDAD,
-        "modelo_turbulencia": "SmagorinskyLESBGK",
-        "coeficiente_smagorinsky": 0.17,
-        "condiciones_aire": dict(AIRE, velocidadEntradaMs=AIRE['velocidadMs']),
-        "tiempo_simulado_s": PASOS * AIRE['segundosPorPaso'],
         "reynolds_lado_mayor": round(
             resultado["velocidad_red"] * (max(medidas) / PASO_CM) / VISCOSIDAD, 1
         ),
         "total_s": round(perf_counter() - inicio, 2),
         "geometria": geometria,
         "aviso": (
-            "Flujo 3D transitorio con condiciones medidas en la sección. "
-            "La entrada uniforme usa la lectura GUST; no reproduce las rachas en el tiempo. "
-            "Sin validación experimental ni estudio de convergencia. La malla de "
-            f"{PASO_CM:g} cm no resuelve todos los detalles ni las escalas de turbulencia."
+            "Flujo docente 3D transitorio. No es aire calibrado del túnel, "
+            "no son fuerzas validadas y los detalles menores de la celda de "
+            f"{PASO_CM:g} cm pueden desaparecer."
         ),
     })
     ruta.write_text(json.dumps(resultado, ensure_ascii=True, allow_nan=False), encoding="utf-8")
@@ -225,6 +219,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--input", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--velocidad", type=float, default=VELOCIDAD_RELATIVA["inicial"])
     parser.add_argument("--modelo-esperado")
     args = parser.parse_args()
     os.environ.setdefault("OMP_NUM_THREADS", "2")
@@ -234,7 +229,12 @@ if __name__ == "__main__":
             raise ValueError(
                 "La configuración del túnel ha cambiado. Reinicia el servidor antes de calcular."
             )
-        calcular(args.input, args.output)
+        if not VELOCIDAD_RELATIVA["min"] <= args.velocidad <= VELOCIDAD_RELATIVA["max"]:
+            raise ValueError(
+                f"La velocidad relativa debe estar entre {VELOCIDAD_RELATIVA['min']:g} "
+                f"y {VELOCIDAD_RELATIVA['max']:g}."
+            )
+        calcular(args.input, args.output, args.velocidad)
     except ValueError as error:
         evento(fase="error", mensaje=str(error))
         raise SystemExit(2)
