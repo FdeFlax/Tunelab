@@ -4,13 +4,16 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "start": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File ./scripts/iniciar-tunelab.ps1",
+    "diagnostico": "npm run start -- -Diagnostico",
+    "dev": "npm run start",
+    "dev:web": "vite",
     "build": "vite build",
     "lint": "eslint .",
+    "test": "node --experimental-vm-modules --test tests/*.test.mjs",
     "preview": "vite preview"
   },
   "dependencies": {
-    "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.5.0",
     "lucide-react": "^1.22.0",
     "react": "^19.2.4",

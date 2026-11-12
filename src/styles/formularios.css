@@ -1,0 +1,498 @@
+.ens2campo {
+  display: grid;
+}
+
+.app-shell .page :is(.ens2campo input,.ens2campo textarea,.ens2busqueda,.reg2buscar,.docbuscarcentral input,.cont2campo input,.cont2programatabla input) {
+  min-height: var(--control-alto);
+  border: 1px solid var(--control-borde);
+  border-radius: var(--control-radio);
+  background: var(--claro-fondo);
+  color: var(--text-main);
+  font: inherit;
+  padding: 9px 12px;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.app-shell .page :is(.ens2campo input,.ens2campo textarea,.ens2busqueda,.reg2buscar,.docbuscarcentral input,.cont2campo input,.cont2programatabla input):focus-visible {
+  border-color: var(--primary);
+  outline-offset: 2px;
+  outline: 2px solid #d7e2eb;
+}
+
+.cont2campo {
+  gap: 8px;
+  display: grid;
+}
+
+:is(.ens2campo input,.ens2campo textarea),
+.cont2campo input {
+  outline: none;
+  width: 100%;
+}
+
+:is(.ens2campo input,.ens2campo textarea):focus,
+.cont2campo input:focus {
+  border-color: color-mix(in srgb, var(--primary) 62%, transparent);
+}
+
+.cont2campo input:disabled {
+  cursor: not-allowed;
+  opacity: .58;
+}
+
+.app-shell :is(.page--control2,.page--dashboard2) .cont2checkitem:has(input:checked) {
+  color: #27573a;
+  background: #edf7ef;
+  border-color: #a9cdb2;
+}
+
+.app-shell :is(.page--control2,.page--dashboard2) .cont2checkitem:has(input:focus-visible) {
+  outline-offset: 2px;
+  outline: 2px solid #80aa90;
+}
+
+.app-shell :is(.page--control2,.page--dashboard2) .cont2checkitem input {
+  accent-color: #398356;
+  width: 19px;
+  height: 19px;
+  margin: 0;
+}
+
+.app-shell .page--control2 .cont2programaresumen .cont2campo input {
+  height: var(--control-alto);
+  min-height: var(--control-alto);
+  padding: 9px 12px;
+}
+
+.page--control2 .cont2programaresumen .cont2campo span {
+  color: var(--text-main);
+  letter-spacing: 0;
+  text-transform: none;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.app-shell .page--control2 .cont2programatabla input {
+  border: 1px solid var(--claro-borde);
+  border-radius: var(--control-radio);
+  width: 100%;
+  max-width: 160px;
+  min-height: var(--control-alto);
+  color: var(--text-main);
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  background: #fff;
+  padding: 8px 12px;
+}
+
+.cont2programatabla input:disabled {
+  opacity: .72;
+}
+
+.ens2campoarea {
+  grid-column: 1/-1;
+}
+
+.ens2campo textarea {
+  resize: vertical;
+}
+
+@media (width<=820px) {
+  .ens2campoarea {
+    grid-column: auto;
+  }
+}
+
+.ens2campocontador {
+  justify-self: end;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.app-shell .page--ensayo2 .ens2campo {
+  align-content: start;
+  gap: 8px;
+  min-width: 0;
+}
+
+.app-shell .page--ensayo2 .ens2campoarea {
+  grid-template-rows: auto 1fr;
+}
+
+.app-shell .page--ensayo2 .ens2campocabecera {
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  display: flex;
+}
+
+.app-shell .page--ensayo2 .ens2campo span {
+  color: #324a63;
+  letter-spacing: 0;
+  text-transform: none;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.app-shell .page--ensayo2 .ens2campocontador {
+  color: #748294;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 400;
+}
+
+.app-shell .page--ensayo2 .ens2campo :is(input,textarea) {
+  min-width: 0;
+  min-height: var(--control-alto);
+  border: 1px solid var(--control-borde);
+  border-radius: var(--control-radio);
+  color: var(--text-main);
+  font: inherit;
+  background: #fff;
+  padding: 9px 12px;
+  font-size: 14px;
+  line-height: 1.5;
+  transition: border-color .15s;
+}
+
+.app-shell .page--ensayo2 .ens2campo textarea {
+  min-height: 128px;
+}
+
+.app-shell .page--ensayo2 .ens2campo :is(input,textarea)::placeholder,
+.app-shell .page--ensayo2 .ens2busqueda::placeholder {
+  color: #7b8a9a;
+  opacity: 1;
+}
+
+.app-shell .page--ensayo2 .ens2campo :is(input,textarea):hover:not(:disabled),
+.app-shell .page--ensayo2 .ens2busqueda:hover {
+  border-color: #94aabe;
+}
+
+.app-shell .page--ensayo2 .ens2campo :is(input,textarea):focus-visible {
+  outline-offset: 2px;
+  border-color: #497495;
+  outline: 2px solid #c8dce9;
+}
+
+.app-shell .page--ensayo2 :is(.ens2busqueda,.ens2contadorlista) {
+  box-sizing: border-box;
+  height: var(--control-alto);
+  border: 1px solid var(--control-borde);
+  border-radius: var(--control-radio);
+  background: #fff;
+  align-self: center;
+  padding: 10px 12px;
+}
+
+.app-shell .page--ensayo2 .ens2busqueda {
+  width: 100%;
+  min-width: 0;
+  transition: border-color .15s;
+}
+
+.ens2busquedavacia {
+  margin-top: 8px;
+}
+
+.reg2importador input[type=file] {
+  display: none;
+}
+
+.app-shell .page--registro2 .reg2buscar {
+  min-width: 0;
+}
+
+.page--docente>.docbuscadorarriba .docbuscarcentral {
+  width: min(480px,100%);
+}
+
+.page--docente>.docbuscadorarriba .docbuscarcentral input {
+  width: 100%;
+  min-height: var(--control-alto);
+  border-radius: var(--control-radio);
+  font: inherit;
+  padding: 9px 12px;
+}
+
+.page--docente>.docbuscadorarriba .docbuscarcentral input:focus {
+  outline: 1px solid #3fb4e8b3;
+}
+
+.ens2campo input:focus,
+.ens2campo textarea:focus,
+.cont2campo input:focus {
+  box-shadow: none;
+}
+
+.app-shell .page--docente>.docbuscadorarriba .docbuscarcentral input {
+  background: var(--claro-fondo);
+  color: var(--text-main);
+  border: 1px solid #bdc9d5;
+}
+
+.app-shell .page--docente>.docbuscadorarriba .docbuscarcentral input::placeholder {
+  color: #6c7f93;
+}
+
+.app-shell .page--control2 .cont2campo input {
+  min-height: var(--control-alto);
+  height: var(--control-alto);
+  padding: 9px 14px;
+}
+
+.page--control2 .cont2campo span {
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.app-shell .page :is(.dash2boton,.ens2boton,.reg2boton,.cont2boton,.docbtn,.docdesconectar) {
+  min-height: var(--control-alto);
+  border: 1px solid var(--control-borde);
+  border-radius: var(--control-radio);
+  background: var(--claro-fondo);
+  color: var(--text-main);
+  box-shadow: none;
+  letter-spacing: 0;
+  text-align: center;
+  text-transform: none;
+  cursor: pointer;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+  transition: background-color .15s,border-color .15s;
+  display: inline-flex;
+}
+
+.app-shell .page :is(.dash2boton,.ens2boton,.reg2boton,.cont2boton,.docbtn):hover:not(:disabled) {
+  background: var(--hover-recuadro-claro);
+  border-color: var(--hover-borde-recuadro-claro);
+  transform: none;
+}
+
+.app-shell .page :is(.dash2botonprimario,.ens2botonprimario,.reg2botonprimario,.cont2botonprimario) {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+
+.app-shell .page :is(.dash2botonprimario,.ens2botonprimario,.reg2botonprimario,.cont2botonprimario):hover:not(:disabled) {
+  background: var(--primary-hover);
+  border-color: var(--primary-hover);
+  color: #fff;
+}
+
+.app-shell .page :is(.cont2botonmedicionparar,.reg2botonpeligro,.docbtnpeligro,.docdesconectar) {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #fff;
+}
+
+.app-shell .page :is(.cont2botonmedicionparar,.reg2botonpeligro,.docbtnpeligro,.docdesconectar):hover:not(:disabled) {
+  color: #fff;
+  background: #963641;
+  border-color: #963641;
+}
+
+.app-shell .page .cont2botonmedicioniniciar {
+  color: #fff;
+  background: #2f855a;
+  border-color: #276749;
+}
+
+.app-shell .page .cont2botonmedicioniniciar:hover:not(:disabled) {
+  background: #256c49;
+  border-color: #256c49;
+}
+
+.app-shell .page :is(.dash2boton,.ens2boton,.reg2boton,.cont2boton,.docbtn,.docdesconectar):disabled {
+  cursor: not-allowed;
+  opacity: .5;
+}
+
+.app-shell .page .cont2accionmedicion {
+  min-width: 172px;
+  min-height: 44px;
+  font-size: 14px;
+}
+
+.app-shell .page :is(.botondescargar,.botonborrar,.cont2programaaccionesfila .cont2boton,.docacciones .docbtn) {
+  border-radius: var(--control-radio);
+  width: 34px;
+  min-width: 34px;
+  height: 34px;
+  min-height: 34px;
+  padding: 0;
+}
+
+.app-shell .page .ens2tablaacciones .ens2boton {
+  min-height: 32px;
+  padding: 5px 8px;
+  font-size: 12px;
+}
+
+@media (prefers-reduced-motion:reduce) {
+  .app-shell .page :is(.dash2boton,.ens2boton,.reg2boton,.cont2boton,.docbtn) {
+    transition: none;
+  }
+}
+
+.app-shell :is(.page--control2,.page--dashboard2) .cont2modalcomprobaciones .cont2boton {
+  border-radius: var(--control-radio);
+  min-height: 42px;
+  padding: 10px 18px;
+}
+
+@media (width<=520px) {
+  .app-shell :is(.page--control2,.page--dashboard2) .cont2modalcomprobaciones .cont2boton {
+    flex: auto;
+  }
+}
+
+@media (width<=720px) {
+  .cont2conexion .cont2boton {
+    width: 100%;
+  }
+}
+
+.app-shell .page--ensayo2 .ens2gridprincipal .ens2boton {
+  width: 100%;
+  padding: 10px 20px;
+}
+
+.app-shell .page--ensayo2 .ens2gridprincipal .ens2boton:disabled {
+  opacity: .55;
+}
+
+.ens2tablaacciones .ens2boton {
+  white-space: nowrap;
+  width: 100%;
+}
+
+.app-shell .page--registro2 .reg2importador>.reg2boton {
+  min-width: 145px;
+}
+
+.app-shell .docdesconectar:hover {
+  background: #8f2638;
+}
+
+.app-shell .page--docente .docbtn {
+  background: var(--claro-fondo);
+  border-color: var(--control-borde);
+  color: var(--text-main);
+}
+
+.app-shell .page--docente .docbtn svg {
+  color: currentColor;
+  stroke: currentColor;
+}
+
+.app-shell .page--docente .docbtnpeligro,
+.app-shell .page--docente .botonborrar {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: var(--claro-fondo);
+}
+
+.app-shell .page--docente .docbtnpeligro svg,
+.app-shell .page--docente .botonborrar svg {
+  color: var(--claro-fondo);
+  stroke: var(--claro-fondo);
+}
+
+.app-shell .cont2conexion .cont2boton:disabled {
+  opacity: .48;
+}
+
+.app-shell .cont2conexion .cont2botonsecundario {
+  border-color: #c5d2de;
+}
+
+.reg2itemacciones .botondescargar,
+.reg2itemacciones .botonborrar,
+.reg2itemacciones .reg2boton {
+  width: 32px;
+  min-width: 32px;
+}
+
+:is(.botondescargar,.botonborrar,.reg2importador .reg2boton) {
+  place-items: center;
+  display: inline-grid;
+}
+
+:is(.botondescargar,.botonborrar,.docacciones .docbtn,.reg2itemacciones .reg2boton) svg {
+  width: 14px;
+  height: 14px;
+}
+
+.page--control2 :is(.cont2conexion .cont2botonprimario) {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+
+.page--control2 :is(.cont2conexion .cont2botonprimario):hover:not(:disabled) {
+  background: var(--primary-hover);
+  border-color: var(--primary-hover);
+  color: #fff;
+}
+
+.page--control2 :is(.cont2conexion .cont2botonprimario):disabled {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+  opacity: .48;
+}
+
+.page--control2 .cont2conexion .cont2botonsecundario:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--danger) 12%, #fff);
+  border-color: color-mix(in srgb, var(--danger) 62%, #fff);
+  color: var(--danger);
+}
+
+.page--control2 .cont2conexion .cont2boton svg {
+  flex: none;
+}
+
+.app-shell .page--control2 .cont2conexion .cont2botonsecundario {
+  color: #5b6f84;
+  background: #fff;
+}
+
+.page--control2 .cont2conexion .cont2boton {
+  min-width: 132px;
+  height: var(--control-alto);
+  gap: 10px;
+}
+
+@media (width<=760px) {
+  .page--control2 .cont2conexion .cont2boton {
+    width: 100%;
+  }
+}
+
+.dash2ultimaver {
+  border-radius: var(--control-radio);
+  letter-spacing: 0;
+  text-transform: none;
+  min-height: 34px;
+  padding: 7px 14px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.app-shell .page--dashboard2 .dash2ultimaver {
+  border-color: var(--claro-borde-suave);
+  color: var(--text-main);
+  background: #f5f9fc;
+}

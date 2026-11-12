@@ -1,187 +1,89 @@
-<<<<<<< HEAD
-﻿# Tunelab
+# Tunelab
 
-Aplicacion React para preparar ensayos, operar el tunel de viento, inspeccionar el
-modelo 3D y revisar mediciones mediante archivos importables.
+Aplicación docente para preparar ensayos del túnel de viento, utilizar el simulador del servidor, consultar mediciones e inspeccionar modelos 3D. Interfaz con React y Vite; API con FastAPI y datos en MySQL.
 
-Esta copia del proyecto usa un enfoque preparado para laboratorio:
+## Arranque local en Windows
 
-- El frontend esta hecho con React y Vite.
-- El backend esta hecho con FastAPI.
-- Los ensayos y mediciones se guardan en MySQL.
-- La pagina Ensayo permite crear y editar fichas de ensayo.
-- La pagina Control usa la ficha activa para operar el tunel y registrar mediciones.
-- La pagina Registro consulta los ensayos y mediciones guardados y tambien permite cargar archivos descargados.
-- La pagina Docente permite revisar ensayos de usuarios y ver el uso actual del tunel.
-- El acceso de usuarios queda preparado para integrarse en el futuro con UACloud/eServices.
-
-## Como arrancar despues de reiniciar el PC
-
-Necesitas abrir tres PowerShell distintos: uno para MySQL, otro para el backend y otro para el frontend.
-
-### 1. Arrancar MySQL
-
-En un PowerShell, ejecuta:
+Con las dependencias instaladas y MySQL configurado, haz doble clic en [iniciar-tunelab.cmd](iniciar-tunelab.cmd) o ejecuta desde esta carpeta:
 
 ```powershell
-Start-Process -FilePath "C:\Program Files\MySQL\MySQL Server 8.4\bin\mysqld.exe" -ArgumentList "--defaults-file=`"C:\ProgramData\MySQL\MySQL Server 8.4\my.ini`"" -WindowStyle Hidden
+npm start
 ```
 
-Para comprobar que MySQL esta escuchando:
+Comprueba MySQL, aplica migraciones antes de iniciar una API nueva y arranca la API y la web en <http://127.0.0.1:5173/>. Reutiliza los procesos de esta instalación. Cerrar el navegador no los detiene.
+
+| Comando | Uso |
+| --- | --- |
+| `npm start` / `npm run dev` | Arranque completo. |
+| `npm run diagnostico` | Comprueba el estado sin arrancar servicios ni modificar la base de datos. |
+| `npm run dev:web` | Solo Vite; necesita la API por separado. |
+| `npm run build` | Genera la web compilada en `dist/`. |
+
+La instalación inicial y la solución de errores están en [Arranque local](docs/ARRANQUE_LOCAL.md). Los registros se guardan en `logs/`.
+
+## Distribución del proyecto
+
+| Carpeta | Contenido |
+| --- | --- |
+| `src/` | Páginas, componentes, estilos y comunicación con la API. |
+| `backend/app/` | API, simulador del túnel y guardado de datos. |
+| `backend/alembic/` | Migraciones de la base de datos. |
+| `shared/` | Parámetros del túnel compartidos por la web y el servidor. |
+| `scripts/` | Arranque, preparación de MySQL, cálculo XLB y herramientas. |
+| `public/` | Modelos GLB y recursos públicos. |
+| `tests/`, `backend/tests/` | Pruebas de la web y del servidor. |
+| `docs/` | Guías, referencias, notas pendientes y [licencias de terceros](docs/licencias/README.md). |
+
+`src/paginas/` contiene una pantalla por archivo: Dashboard, Inspección, Control, Ensayos, Registro, Docente y Aerodinámica. `App.jsx` elige cuál mostrar. Las pequeñas piezas exclusivas de una pantalla permanecen en su archivo; las piezas compartidas están en `src/components/`. Aerodinámica carga su interfaz desde `src/aerodinamica/` al abrirse.
+
+`src/components/` se organiza por función: `interfaz/` (acceso y menú), `control/` (medición y estado del túnel), `mediciones/` (informes, comparación y controles de Registro) y `visor/` (modelo 3D, cámara e iluminación). La lectura y preparación de GLB se comparte en `src/servicios/modelos3d.js`.
+
+`src/logicaPantallas/` coordina los datos y acciones de las pantallas: carga y selección de ensayos y mediciones, importación de archivos en Registro, conexión del túnel y edición de formularios. Sus funciones empiezan por `use` porque son hooks de React.
+
+`src/servicios/` agrupa operaciones compartidas:
+
+| Archivo o carpeta | Responsabilidad |
+| --- | --- |
+| `api/clienteApi.js`, `api/disponibilidadApi.js` | Peticiones, identidad local y comprobación del servidor. |
+| `api/registroApi.js` | Consultas y cambios de ensayos y mediciones, incluidos los accesos de Docente. |
+| `api/controlApi.js` | Conexión del túnel, órdenes, programas de etapas y eventos del servidor. |
+| `mediciones/adaptarRegistros.js` | Convierte los registros de la API al formato utilizado por las pantallas. |
+| `mediciones/analisisMedicion.js` | Estadísticas, etapas y preparación de gráficas. |
+| `archivos/` | Importación y exportación de mediciones, ZIP y almacenamiento temporal. |
+| `tunel/` | Estado compartido del túnel, sincronización, ficha de parámetros y autoguardado. |
+| `formato.js`, `modelos3d.js` | Formato de números y fechas; carga y preparación de GLB. |
+
+`api/controlApi.js` envía las peticiones; `tunel/tunelApi.js` mantiene el estado que reciben las pantallas y coordina las respuestas y las órdenes. El simulador está en el backend.
+
+`node_modules/` y `backend/.venv/` contienen dependencias instaladas. `tmp/evaluacion-xlb/.venv/` contiene el motor activo de Aerodinámica: **no borrar `tmp/` entero**. `dist/`, `logs/` y `output/` guardan compilaciones, registros y resultados auxiliares; no son código propio.
+
+## Configuración y acceso
+
+- **Servidor:** `backend/.env`, a partir de `backend/.env.example`, contiene la conexión a MySQL y las opciones del backend. No subirlo con contraseñas al repositorio.
+- **Web:** el `.env` de la raíz es opcional. La dirección local de la API ya está definida por defecto. `.env.example` sirve para configurar otra dirección; en producción se puede usar `.env.production`. Las variables `VITE_` son públicas.
+- **Perfiles:** Alumno Demo y Profesor Demo son para desarrollo local. El acceso de producción permanece bloqueado hasta integrar la autenticación universitaria. [Detalles de acceso](docs/ACCESO_Y_AUTENTICACION.md).
+
+El servidor actual simula el túnel; la integración con el equipo físico sigue pendiente. El lanzador utiliza Vite para desarrollo y demostración local: todavía no es un despliegue universitario.
+
+## Cambiar medidas y parámetros del túnel
+
+Editar [shared/tunel.json](shared/tunel.json): contiene dimensiones, referencias de Control, las cinco lecturas de Aerodinámica y ajustes del cálculo. `aerodinamica.medicionActiva` elige la lectura; Python calcula sus propiedades y la web las recibe del servidor. Las cámaras y etiquetas están en [ajustesTunel.js](src/components/visor/ajustesTunel.js). La [guía de configuración](docs/FLUJO_3D.md#configuración-compartida) explica unidades y cómo aplicar los cambios. Cambiar las medidas no reconstruye el GLB ni valida automáticamente la simulación.
+
+## Aerodinámica
+
+Permite importar un GLB y calcular un flujo 3D con XLB/Warp en el servidor. Usa una lectura de velocidad, temperatura, presión y humedad tomada en la sección de ensayo, seleccionable en `aerodinamica.medicionActiva` del JSON. Los resultados se consultan mediante tres mapas de rapidez relativa con posiciones independientes. La simulación utiliza condiciones medidas, pero todavía requiere validación experimental y de resolución.
+
+El cálculo necesita una GPU NVIDIA compatible y el entorno Python indicado en `backend/.env`. Consulta [Flujo 3D](docs/FLUJO_3D.md) y la [revisión de licencias](docs/REVISION_LICENCIAS_Y_GRAFICAS.md).
+
+## Comprobaciones
 
 ```powershell
-Test-NetConnection 127.0.0.1 -Port 3306
-```
-
-Si aparece `TcpTestSucceeded : True`, MySQL esta arrancado.
-
-### 2. Arrancar el backend
-
-En otro PowerShell:
-
-```powershell
-cd C:\app\nuevo_tunelviento_app\backend
-Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-.\.venv\Scripts\Activate.ps1
-uvicorn app.main:app --reload --host 127.0.0.1 --port 8010
-```
-
-Deja esa ventana abierta. Para comprobar que el backend funciona, abre en el navegador:
-
-```text
-http://127.0.0.1:8010/api/salud
-```
-
-Debe responder algo tipo `ok`.
-
-### 3. Arrancar el frontend
-
-En otro PowerShell:
-
-```powershell
-cd C:\app\nuevo_tunelviento_app
-npm run dev
-```
-
-Vite mostrara una direccion parecida a esta:
-
-```text
-http://localhost:5173/
-```
-
-Abre esa direccion en el navegador. Si el puerto 5173 esta ocupado, Vite puede usar 5174 u otro; usa siempre la URL que te muestre la terminal.
-
-### Orden recomendado
-
-1. MySQL.
-2. Backend.
-3. Frontend.
-
-Si no se guardan ensayos o mediciones, casi siempre falta MySQL o falta el backend.
-
-## Modos de fuente del tunel
-
-La app tiene una capa de servicio para que la interfaz no dependa directamente de
-si los datos vienen de una simulacion o del tunel real.
-
-Archivo principal:
-
-```text
-C:\app\nuevo_tunelviento_app\src\servicios\tunel\index.js
-```
-
-Por defecto usa:
-
-```text
-VITE_FUENTE_TUNEL=simulado
-```
-
-Si en el futuro se configura:
-
-```text
-VITE_FUENTE_TUNEL=real
-```
-
-la app usara:
-
-```text
-C:\app\nuevo_tunelviento_app\src\servicios\tunel\tunelReal.js
-```
-
-Ese archivo es ahora un adaptador preparado, no una conexion final al hardware.
-Cuando se conozca la forma real de comunicacion con DAQ, variador o MATLAB, se
-debe completar ahi, manteniendo las mismas funciones que ya consume la interfaz.
-
-## Flujo principal
-
-1. En `Ensayo`, se rellena nombre, objetivo y descripcion.
-2. La ficha se mantiene temporalmente en memoria.
-3. En `Control`, se arranca el tunel, se ajustan consignas y se inicia una medicion.
-4. Al detener la medicion, se genera un resumen.
-5. Desde el recap de Control se descarga el archivo `.tunelab.json`.
-6. En `Registro`, se importa ese archivo para revisar los datos.
-
-## Seguridad actual
-
-La version simplificada reduce superficie de ataque porque no incluye backend,
-base de datos propia ni contrasenas internas. Aun asi, aplica varias defensas en
-la importacion de archivos de medicion:
-
-- limite de tamano por archivo
-- limite de archivos cargados a la vez
-- limite de muestras y eventos
-- validacion de formato y version
-- validacion de tipos numericos
-- validacion de rangos de velocidad, temperatura y potencia
-- recalculo del resumen desde la tabla de muestras importada
-
-Limitacion importante: un archivo `.tunelab.json` puede ser editado manualmente
-por el usuario. Para que el archivo sirva como prueba oficial antifraude haria
-falta anadir firma digital, hash verificable o validacion desde un sistema externo.
-
-## Carpetas importantes
-
-- `src/pages`: pantallas principales de la aplicacion.
-- `src/components`: componentes reutilizados, visor 3D, barra lateral y barra superior.
-- `src/components/control`: paneles visuales de la pantalla Control.
-- `src/servicios/tunel`: estado del tunel, simulador y adaptador real futuro.
-- `src/servicios/archivos`: exportacion e importacion de archivos de medicion.
-- `src/styles`: estilos CSS por pantalla y estilos comunes.
-- `public`: recursos estaticos, incluido el modelo 3D si se sirve desde ahi.
-- `docs`: documentos de estudio y decisiones tecnicas.
-
-## Archivos que conviene dominar
-
-- `src/App.jsx`: decide que pantalla se muestra.
-- `src/servicios/tunel/useTunel.js`: conecta React con el servicio del tunel.
-- `src/servicios/tunel/tunelSimulado.js`: simula telemetria y acciones de control.
-- `src/servicios/tunel/tunelReal.js`: punto futuro para conectar el tunel real.
-- `src/servicios/tunel/estadoTunel.js`: estructura del estado, ensayos y mediciones.
-- `src/servicios/archivos/medicionArchivo.js`: formato descargable/importable.
-- `src/pages/PaginaEnsayos2.jsx`: ficha temporal del ensayo.
-- `src/pages/PaginaControl2.jsx`: operacion, captura y descarga de medicion.
-- `src/pages/PaginaRegistro2.jsx`: importacion y revision de archivos.
-- `src/pages/PaginaInspeccion.jsx`: vista 3D e inspeccion del tunel.
-
-## Comandos utiles
-
-```powershell
-npm run dev
-npm run build
 npm run lint
+node --experimental-vm-modules --test --test-isolation=none tests/*.test.mjs
+npm run build
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests/arranque-local.Tests.ps1
 ```
 
-## Nota de diseno
+Para las pruebas del servidor, desde `backend/`: `.venv/Scripts/python.exe -m unittest discover -s tests -v`. Utilizan bases temporales, no los ensayos guardados.
 
-Esta version reduce backend y dependencias para que el alcance sea defendible:
-la conservacion de resultados se delega en archivos descargables. Si mas adelante
-la universidad exige historico centralizado, usuarios propios o auditoria completa,
-se puede recuperar el enfoque con backend y base de datos desde la copia:
-
-```text
-C:\app\copiabd_tunelviento_app
-```
-
-=======
-# TFG_TunelViento
->>>>>>> e3961f54d1364e0f03a2ad995671b2af97c06358
+Las [cuestiones pendientes y copias de trabajo](docs/COSAS_A_REVISAR.md) y las [tareas del modelo 3D](docs/TAREAS_PENDIENTES.md) se mantienen en `docs/`.

@@ -1,9 +1,4 @@
-import {
-  FICHA_TUNEL_ACTIVO,
-  calcularMagnitudesDerivadas,
-  calcularVelocidadPorConsigna,
-  obtenerVelocidadMaximaCalibrada,
-} from "./fichaTunel";
+import { FICHA_TUNEL_ACTIVO } from "./fichaTunel.js";
 
 function crearHoraEvento(fecha = new Date()) {
   return fecha.toLocaleTimeString("es-ES", {
@@ -26,19 +21,7 @@ function crearIdentificador() {
 
 export const MAX_EVENTOS_ALERTA = 30;
 export const MAX_EVENTOS_INFO = 30;
-export const VELOCIDAD_MAXIMA_SIMULADA_MS = obtenerVelocidadMaximaCalibrada(FICHA_TUNEL_ACTIVO);
-export const FRECUENCIA_NOMINAL_SIMULADA_HZ = FICHA_TUNEL_ACTIVO.variador.frecuenciaNominalHz;
-export const RAMPA_VARIADOR_SIMULADA_S = 100 / FICHA_TUNEL_ACTIVO.variador.rampaSubidaPctS;
-export const RPM_MAXIMAS_SIMULADAS = FICHA_TUNEL_ACTIVO.variador.rpmNominal;
-export const CORRIENTE_MAXIMA_SIMULADA_A = FICHA_TUNEL_ACTIVO.estimaciones.corriente.corrienteMaximaA;
 export const DENSIDAD_AIRE_KG_M3 = FICHA_TUNEL_ACTIVO.ambiente.densidadReferenciaKgM3;
-export const TOLERANCIA_ESTABILIDAD_MS = FICHA_TUNEL_ACTIVO.modelo.toleranciaEstabilidadMs;
-export const SEGUNDOS_ESTABILIDAD_REQUERIDOS = FICHA_TUNEL_ACTIVO.modelo.segundosEstabilidadRequeridos;
-
-export function calcularPresionPitotPa(velocidadMs) {
-  const velocidad = Math.max(0, Number(velocidadMs) || 0);
-  return Number((0.5 * DENSIDAD_AIRE_KG_M3 * velocidad * velocidad).toFixed(1));
-}
 
 export function crearEvento({ nivel, mensaje, etiqueta }) {
   return {
@@ -62,10 +45,6 @@ export function crearEnsayo({ codigo, nombre, objetivo, descripcion = "" }) {
     estado: "Preparado",
     mediciones: [],
   };
-}
-
-export function generarNombreMedicion(mediciones = []) {
-  return `Medicion ${String((mediciones?.length || 0) + 1).padStart(2, "0")}`;
 }
 
 export function generarCodigoEnsayo(ensayos = []) {
@@ -130,18 +109,12 @@ export function crearEstadoTunelBase() {
     muestrasMedicion: [],
     eventosMedicion: [],
     resumenUltMed: null,
-    consignaVelocidadMs: 0,
     potPct: 0,
     consignaPct: 0,
     consignaVariadorPct: 0,
-    tempC: 21.2,
-    objTempC: 23.5,
+    tempC: FICHA_TUNEL_ACTIVO.simulador.temperaturaInicialC,
     velMs: 0,
-    velRealMs: 0,
-    velPitotMs: 0,
-    velFiltradaMs: 0,
     presionPa: 0,
-    presionSensorPa: 0,
     densidadKgM3: DENSIDAD_AIRE_KG_M3,
     caudalM3s: 0,
     caudalM3h: 0,
@@ -155,7 +128,6 @@ export function crearEstadoTunelBase() {
     corrA: 0,
     cargaAerodinamicaRelativaPct: 0,
     rpm: 0,
-    semillaRuido: FICHA_TUNEL_ACTIVO.sensor.transductorPresion.semillaAleatoria,
     tiempoSeg: 0,
     alarmas: [
       crearEvento({
@@ -164,182 +136,6 @@ export function crearEstadoTunelBase() {
         mensaje: "Panel de simulacion cargado y listo para operar.",
       }),
     ],
-  };
-}
-
-function redondear(valor, decimales = 1) {
-  return Number(valor.toFixed(decimales));
-}
-
-function calcularMedia(valores) {
-  if (!valores.length) {
-    return 0;
-  }
-
-  return valores.reduce((acumulado, valor) => acumulado + valor, 0) / valores.length;
-}
-
-export function crearMuestraMedicion({
-  segundo,
-  velMs,
-  tempC,
-  potPct,
-  frecHz = null,
-  corrA = null,
-  rpm = null,
-  presionPa = null,
-  caudalM3s = null,
-  fuente = "simulado",
-}) {
-  const magnitudes = calcularMagnitudesDerivadas({ velocidadMs: velMs });
-
-  return {
-    segundo,
-    velMs,
-    tempC,
-    potPct,
-    frecHz,
-    corrA,
-    rpm,
-    presionPa: presionPa ?? magnitudes.presionDinamicaPa,
-    caudalM3s: caudalM3s ?? magnitudes.caudalM3s,
-    fuente,
-  };
-}
-
-export function calcularResumenMedicion({
-  muestras = [],
-  eventos = [],
-  objVelMs = 0,
-  objTempC = 0,
-  objPotPct = 0,
-}) {
-  if (!muestras.length) {
-    return null;
-  }
-
-  const velocidades = muestras.map((muestra) => muestra.velMs);
-  const temperaturas = muestras.map((muestra) => muestra.tempC);
-  const potencias = muestras.map((muestra) => muestra.potPct);
-  const frecuencias = muestras
-    .map((muestra) => muestra.frecHz)
-    .filter((valor) => Number.isFinite(Number(valor)));
-  const corrientes = muestras
-    .map((muestra) => muestra.corrA)
-    .filter((valor) => Number.isFinite(Number(valor)));
-  const rpm = muestras
-    .map((muestra) => muestra.rpm)
-    .filter((valor) => Number.isFinite(Number(valor)));
-  const presiones = muestras
-    .map((muestra) => muestra.presionPa)
-    .filter((valor) => Number.isFinite(Number(valor)));
-  const magnitudesMuestras = muestras.map((muestra) =>
-    calcularMagnitudesDerivadas({ velocidadMs: muestra.velMs })
-  );
-  const caudales = magnitudesMuestras
-    .map((magnitud) => magnitud.caudalM3s)
-    .filter((valor) => Number.isFinite(Number(valor)));
-  const reynolds = magnitudesMuestras
-    .map((magnitud) => magnitud.reynolds)
-    .filter((valor) => Number.isFinite(Number(valor)));
-  const maxVelocidad = Math.max(...velocidades);
-  const minVelocidad = Math.min(...velocidades);
-  const muestrasEnObjetivo = velocidades.filter(
-    (valor) => Math.abs(valor - objVelMs) <= 0.5
-  ).length;
-
-  return {
-    horaFin: crearHoraEvento(),
-    durSeg: muestras[muestras.length - 1]?.segundo || 0,
-    totalMuestras: muestras.length,
-    velocidad: {
-      media: redondear(calcularMedia(velocidades)),
-      maxima: redondear(maxVelocidad),
-      minima: redondear(minVelocidad),
-      estabilidad: redondear(maxVelocidad - minVelocidad),
-      objetivo: objVelMs,
-      porcentajeEnRango: Math.round((muestrasEnObjetivo / muestras.length) * 100),
-    },
-    temperatura: {
-      media: redondear(calcularMedia(temperaturas)),
-      maxima: redondear(Math.max(...temperaturas)),
-      minima: redondear(Math.min(...temperaturas)),
-      objetivo: objTempC,
-    },
-    potencia: {
-      media: redondear(calcularMedia(potencias)),
-      maxima: redondear(Math.max(...potencias)),
-      minima: redondear(Math.min(...potencias)),
-      objetivo: objPotPct,
-    },
-    tecnicos: {
-      frecuenciaMedia: frecuencias.length ? redondear(calcularMedia(frecuencias)) : null,
-      corrienteMedia: corrientes.length ? redondear(calcularMedia(corrientes)) : null,
-      rpmMedia: rpm.length ? Math.round(calcularMedia(rpm)) : null,
-      presionMediaPa: presiones.length ? redondear(calcularMedia(presiones)) : null,
-      caudalMedioM3s: caudales.length ? Number(calcularMedia(caudales).toFixed(3)) : null,
-      reynoldsMedio: reynolds.length ? Math.round(calcularMedia(reynolds)) : null,
-    },
-    muestras,
-    trazas: {
-      velocidad: muestras.map((muestra) => ({
-        segundo: muestra.segundo,
-        valor: muestra.velMs,
-      })),
-      temperatura: muestras.map((muestra) => ({
-        segundo: muestra.segundo,
-        valor: muestra.tempC,
-      })),
-      caudal: muestras.map((muestra) => ({
-        segundo: muestra.segundo,
-        valor: muestra.caudalM3s ?? calcularMagnitudesDerivadas({ velocidadMs: muestra.velMs }).caudalM3s,
-      })),
-      potencia: muestras.map((muestra) => ({
-        segundo: muestra.segundo,
-        valor: muestra.potPct,
-      })),
-      presion: muestras.map((muestra) => ({
-        segundo: muestra.segundo,
-        valor: muestra.presionPa ?? calcularPresionPitotPa(muestra.velMs),
-      })),
-    },
-    eventos: eventos.slice(0, 6),
-  };
-}
-
-export function crearRegistroMedicion({ resumen, estadoTunel }) {
-  if (!resumen) {
-    return null;
-  }
-
-  const muestras = (resumen.muestras || resumen.trazas.velocidad.map((punto, indice) => ({
-    segundo: punto.segundo,
-    velMs: punto.valor,
-    tempC: resumen.trazas.temperatura[indice]?.valor ?? 0,
-    potPct: resumen.trazas.potencia[indice]?.valor ?? 0,
-  }))).map((muestra) => ({
-    ...muestra,
-    presionPa: muestra.presionPa ?? calcularPresionPitotPa(muestra.velMs),
-  }));
-
-  return {
-    id: crearIdentificador(),
-    fecha: crearFechaCorta(),
-    hora: resumen.horaFin,
-    durSeg: resumen.durSeg,
-    totalMuestras: resumen.totalMuestras,
-    potConsPct: estadoTunel.consignaPct ?? estadoTunel.potPct,
-    consignaPct: estadoTunel.consignaPct ?? estadoTunel.potPct,
-    objVelMs: estadoTunel.velocidadObjetivoMs ?? estadoTunel.objVelMs,
-    objPotPct: estadoTunel.consignaObjetivoPct ?? estadoTunel.objPotPct,
-    consignaObjetivoPct: estadoTunel.consignaObjetivoPct ?? estadoTunel.objPotPct,
-    velocidad: resumen.velocidad,
-    temperatura: resumen.temperatura,
-    potencia: resumen.potencia,
-    tecnicos: resumen.tecnicos,
-    trazas: resumen.trazas,
-    eventos: resumen.eventos,
-    muestras,
   };
 }
 
@@ -362,50 +158,6 @@ export function convertirMedicionAResumen(medicion) {
   };
 }
 
-export function guardarMedicionEnEnsayo(ensayos, ensayoActivoId, medicion) {
-  if (!medicion) {
-    return ensayos;
-  }
-
-  return ensayos.map((ensayo) => {
-    if (ensayo.id !== ensayoActivoId) {
-      return ensayo;
-    }
-
-    return {
-      ...ensayo,
-      estado: "Con mediciones",
-      mediciones: [
-        {
-          ...medicion,
-          nombre: medicion.nombre || generarNombreMedicion(ensayo.mediciones),
-        },
-        ...(ensayo.mediciones || []),
-      ],
-    };
-  });
-}
-
-export function renombrarMedicionEnEnsayos(ensayos, ensayoActivoId, medicionId, nombre) {
-  return ensayos.map((ensayo) => {
-    if (ensayo.id !== ensayoActivoId) {
-      return ensayo;
-    }
-
-    return {
-      ...ensayo,
-      mediciones: (ensayo.mediciones || []).map((medicion) =>
-        medicion.id === medicionId
-          ? {
-              ...medicion,
-              nombre,
-            }
-          : medicion
-      ),
-    };
-  });
-}
-
 export function eliminarMedicionDeEnsayos(ensayos, ensayoActivoId, medicionId) {
   return ensayos.map((ensayo) => {
     if (ensayo.id !== ensayoActivoId) {
@@ -424,7 +176,6 @@ export function eliminarMedicionDeEnsayos(ensayos, ensayoActivoId, medicionId) {
   });
 }
 
-
 export function actualizarEnsayoEnLista(ensayos, ensayoId, cambios) {
   return ensayos.map((ensayo) => {
     if (ensayo.id !== ensayoId) {
@@ -439,26 +190,23 @@ export function actualizarEnsayoEnLista(ensayos, ensayoId, cambios) {
     };
   });
 }
-export function eliminarEnsayoDeLista(ensayos, ensayoId) {
-  return ensayos.filter((ensayo) => ensayo.id !== ensayoId);
-}
-
 export function obtenerEnsayoActivo(estadoTunel) {
   return estadoTunel.ensayos.find((ensayo) => ensayo.id === estadoTunel.ensayoActivoId) || null;
 }
 
-export function limitarValor(valor, minimo, maximo) {
-  return Math.max(minimo, Math.min(maximo, valor));
+export function motivoBloqueoMedicion(tunel, ensayo, puedeOperar) {
+  if (!ensayo) return "Selecciona un ensayo antes de medir.";
+  if (!puedeOperar || !tunel.permiteCtrl) return "Conecta el túnel para iniciar la medición.";
+  if (tunel.bloqSeg) return "Revisa los avisos de seguridad antes de medir.";
+  if (tunel.programa?.activo || tunel.medActiva) return "Ya hay una medición en curso.";
+  if (!["READY", "RUNNING"].includes(tunel.estadoTunel)) return "El túnel no está disponible para iniciar la medición.";
+  const limite = Number(tunel.limitesUso?.medicionesPorEnsayo || 15);
+  if ((ensayo.mediciones?.length || 0) >= limite) return "Este ensayo ha alcanzado el límite de mediciones.";
+  return "";
 }
 
-export function aproximarValor(actual, objetivo, pasoMaximo) {
-  const diferencia = objetivo - actual;
-
-  if (Math.abs(diferencia) <= pasoMaximo) {
-    return objetivo;
-  }
-
-  return actual + Math.sign(diferencia) * pasoMaximo;
+export function limitarValor(valor, minimo, maximo) {
+  return Math.max(minimo, Math.min(maximo, valor));
 }
 
 export function formatearTiempoFuncionamiento(segundosTotales) {
@@ -621,6 +369,3 @@ export function resumirAlarmas(alarmas) {
 
   return partes.join(", ");
 }
-
-
-

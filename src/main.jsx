@@ -1,18 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
-import "./styles/global.css";
-import "./styles/layout.css";
-import "./styles/pages.css";
-import "./styles/dashboard2.css";
-import "./styles/control2.css";
-import "./styles/ensayos2.css";
-import "./styles/registro2.css";
-import "./styles/docente.css";
-import "./styles/inspeccion.css";
-import "./styles/lab-theme.css";
-import "./styles/lab-light-theme.css";
-import "./styles/componentes.css";
+import "./styles/index.css";
 
 class ErrorBoundaryRaiz extends React.Component {
   constructor(props) {
@@ -37,8 +26,8 @@ class ErrorBoundaryRaiz extends React.Component {
             padding: "32px",
             display: "grid",
             placeItems: "center",
-            background: "#09101b",
-            color: "#edf4ff",
+            background: "#eef3f7",
+            color: "#162235",
             fontFamily: '"Trebuchet MS", "Segoe UI", sans-serif',
           }}
         >
@@ -46,19 +35,19 @@ class ErrorBoundaryRaiz extends React.Component {
             style={{
               width: "min(760px, 100%)",
               padding: "28px",
-              borderRadius: "20px",
-              background: "rgba(23, 34, 53, 0.92)",
-              border: "1px solid rgba(141, 160, 188, 0.2)",
-              boxShadow: "0 24px 48px rgba(3, 8, 17, 0.35)",
+              borderRadius: "var(--tarjeta-radio)",
+              background: "#ffffff",
+              border: "1px solid #c8d3df",
+              boxShadow: "0 16px 44px rgba(58, 76, 96, 0.1)",
             }}
           >
-            <p style={{ margin: "0 0 12px", color: "#4dc6ff", fontWeight: 700 }}>
+            <p style={{ margin: "0 0 12px", color: "#003e69", fontWeight: 700 }}>
               Error al cargar la app
             </p>
             <h1 style={{ margin: "0 0 16px", fontSize: "28px" }}>
               La interfaz se ha roto al renderizar
             </h1>
-            <p style={{ margin: "0 0 18px", color: "#c7d4e8", lineHeight: 1.6 }}>
+            <p style={{ margin: "0 0 18px", color: "#5b6b7e", lineHeight: 1.6 }}>
               Copiame este mensaje y lo arreglamos. Ya no deberia quedarse la pantalla
               completamente vacia.
             </p>
@@ -67,9 +56,9 @@ class ErrorBoundaryRaiz extends React.Component {
                 margin: 0,
                 padding: "16px",
                 overflowX: "auto",
-                borderRadius: "14px",
-                background: "rgba(8, 15, 26, 0.88)",
-                color: "#ffb4ac",
+                borderRadius: "var(--control-radio)",
+                background: "#f6f9fb",
+                color: "#8d2e35",
                 whiteSpace: "pre-wrap",
                 wordBreak: "break-word",
               }}

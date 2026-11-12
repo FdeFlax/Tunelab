@@ -1,0 +1,289 @@
+.reg2listaensayos,
+.reg2listamediciones {
+  --lista-altura-natural: clamp(330px, 48vh, 560px);
+}
+
+.doclista {
+  --lista-altura-natural: clamp(300px, 44vh, 480px);
+}
+
+@media (width>=1351px) {
+  .docgrid>.docpanel:first-child .doclista {
+    --lista-altura-natural: clamp(180px, 42vh, 480px);
+  }
+}
+
+:root {
+  --bg-main: #f1f4f7;
+  --text-main: #1c2b3a;
+  --text-soft: #627286;
+  --text-light: #162235;
+  --primary: #1b4563;
+  --primary-hover: #13364f;
+  --danger: #b5444d;
+  --claro-fondo: #fff;
+  --claro-suave: #f6f8fa;
+  --claro-relleno: var(--bg-main);
+  --claro-borde: #d6e0e8;
+  --claro-borde-suave: #e1e7ed;
+  --claro-linea: #e1e7ed;
+  --control-borde: #cbd5df;
+  --control-radio: 2px;
+  --control-alto: 40px;
+  --tarjeta-borde: var(--claro-borde);
+  --tarjeta-radio: 4px;
+  --tabla-radio: 0;
+  --tarjeta-espacio: 24px;
+  --seccion-gap: 20px;
+  --titulo-panel: 20px;
+  --titulo-pagina: 24px;
+  --titulo-interior: 16px;
+  --hover-recuadro-claro: #f0f2f4;
+  --hover-borde-recuadro-claro: #bac6d1;
+  --seleccion-recuadro-claro: #e5e9ed;
+  --seleccion-borde-recuadro-claro: #a8b5c2;
+  --tarjeta-lista-fondo: var(--claro-fondo);
+  --tarjeta-lista-borde: var(--claro-borde);
+  --lista-scroll-pista: transparent;
+  --tarjeta-lista-texto: var(--text-main);
+  --tarjeta-lista-secundario: var(--text-soft);
+}
+
+@media (width<=520px) {
+  :root {
+    --tarjeta-espacio: 18px;
+    --seccion-gap: 16px;
+  }
+}
+
+.analisis-ui {
+  --analisis-borde: var(--claro-borde);
+  --analisis-suave: var(--claro-suave);
+  --analisis-secundario: var(--text-soft);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Segoe UI,Arial,sans-serif;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+:where(button,a[href],summary,select,[role=button],[role=tab],input[type=button],input[type=submit],input[type=reset],input[type=checkbox],input[type=radio],input[type=range],input[type=file]):not(:disabled):not([aria-disabled=true]) {
+  cursor: pointer;
+}
+
+:where(button,select,input,[role=button],[role=tab]):where(:disabled,[aria-disabled=true]) {
+  cursor: not-allowed;
+}
+
+:is(button,input,textarea,select,summary,a,[tabindex]):focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 3px;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.app-content {
+  width: 100%;
+  max-width: 1336px;
+  margin-inline: auto;
+  padding: 22px 28px 28px;
+}
+
+@keyframes aviso-global-entrada-salida {
+  to {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}
+
+@media (width<=780px) {
+  .app-content {
+    padding: 18px;
+  }
+}
+
+.page {
+  gap: var(--seccion-gap);
+  min-width: 0;
+  display: grid;
+}
+
+:is(.ens2panel h3,.reg2panel h3,.dash2seccioncabecera h2,.dash2seccioncabecera h3,.dash2paneleventoscabecera h4) {
+  margin: 0;
+}
+
+:is(.ens2panel,.reg2panel) {
+  align-content: start;
+}
+
+:is(.ens2vacio p,.reg2vacio p) {
+  margin: 0;
+  line-height: 1.6;
+}
+
+@media (width<=820px) {
+  :is(.ens2panelcabecera,.reg2panelcabecera,.dash2seccioncabecera,.dash2paneleventoscabecera) {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+.page--docente {
+  font-size: 12px;
+  display: grid;
+}
+
+.page--inspeccion {
+  gap: var(--seccion-gap);
+  margin: 0;
+}
+
+.page--control2 {
+  position: relative;
+  gap: var(--seccion-gap);
+}
+
+body,
+.app-shell .page--inspeccion {
+  background: var(--claro-relleno);
+  color: var(--text-main);
+}
+
+.app-shell [class^=cont2],
+.app-shell [class*=\ cont2],
+.app-shell [class^=ens2],
+.app-shell [class*=\ ens2],
+.app-shell [class^=reg2],
+.app-shell [class*=\ reg2],
+.app-shell [class^=doc],
+.app-shell [class*=\ doc],
+.app-shell [class^=dash2],
+.app-shell [class*=\ dash2],
+.app-shell [class^=insp],
+.app-shell [class*=\ insp] {
+  color: var(--text-main);
+  box-shadow: none;
+}
+
+.app-shell div[class^=cont2],
+.app-shell section[class^=cont2],
+.app-shell article[class^=cont2],
+.app-shell section[class^=ens2],
+.app-shell article[class^=ens2],
+.app-shell div[class^=reg2],
+.app-shell section[class^=reg2],
+.app-shell article[class^=reg2],
+.app-shell div[class^=doc],
+.app-shell section[class^=doc],
+.app-shell article[class^=doc],
+.app-shell div[class^=dash2],
+.app-shell section[class^=dash2],
+.app-shell article[class^=dash2] {
+  background-color: var(--claro-fondo);
+  border-color: var(--claro-borde);
+}
+
+.app-shell .page--docente {
+  color: var(--text-main);
+  background: var(--claro-relleno);
+}
+
+.app-shell .page :is(.cont2grid,.ens2gridprincipal,.reg2navegador,.docgrid,.dash2operacion,.dash2inferior) {
+  background: 0 0;
+}
+
+:is(.dash2seccioncabecera h2,.dash2seccioncabecera h3,.dash2paneleventoscabecera h4,.dash2panelprincipal h2,.ens2panel h3,.reg2panel h3,.docpanelcabecera h3,.dochistorialcabecera h3,.insppuntoscabecera h3,.inspactivotitulo) {
+  font-weight: 700;
+}
+
+:is(.dash2estadoflotante span,.dash2tarjeta span,.ens2campo span,.docpanelcabecera span,.inspselectoretiqueta) {
+  letter-spacing: .02em;
+  font-size: 11px;
+}
+
+:is(.cont2panelcabecera,.ens2panelcabecera,.reg2panelcabecera,.docpanelcabecera,.dochistorialcabecera,.dash2seccioncabecera,.dash2paneleventoscabecera,.inspactivocabecera,.insppuntoscabecera) {
+  border-bottom: 0;
+  gap: 16px;
+  padding-bottom: 0;
+}
+
+:is(.page--ensayo2 .ens2panelcabecera,.page--registro2 .reg2panelcabecera,.page--docente .docpanelcabecera,.page--docente .dochistorialcabecera) {
+  border-bottom: 0;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin: 0;
+  padding-bottom: 0;
+  display: flex;
+}
+
+:is(.dash2card,.cont2panel,.ens2panel,.reg2panel,.docpanel) {
+  display: grid;
+}
+
+.app-shell .page :is(.dash2card,.cont2panel,.ens2panel,.reg2panel,.docpanel,.docinforme,.dochistorial,.inspactivo,.insppuntos) {
+  gap: var(--seccion-gap);
+  min-width: 0;
+  padding: var(--tarjeta-espacio);
+  border: 1px solid var(--tarjeta-borde);
+  border-radius: var(--tarjeta-radio);
+  background: var(--claro-fondo);
+  box-shadow: none;
+}
+
+.app-shell .page .dash2ultimamedicion {
+  padding: 16px var(--tarjeta-espacio);
+  gap: 12px;
+}
+
+@media (max-width: 520px) {
+  .app-shell .page--ensayo2 .ens2panel {
+    gap: 20px;
+  }
+}
+
+.app-shell .page :is(.cont2conexion,.docusotunel) {
+  padding: 16px var(--tarjeta-espacio);
+  border-radius: var(--tarjeta-radio);
+  box-shadow: none;
+}
+
+.app-shell .page :is(.cont2conexion:not(.cont2conexionocupada),.docusotunel:not(.docusotunelactivo)) {
+  border-color: var(--tarjeta-borde);
+  background: var(--claro-fondo);
+}
+
+.app-shell .page :is(.cont2panel h3,.cont2modal h3,.ens2panel h3,.reg2panel h3,.docpanelcabecera h3,.dochistorialcabecera h3,.dash2seccioncabecera h2,.dash2seccioncabecera h3,.inspactivotitulo,.insppuntoscabecera h3) {
+  font-size: var(--titulo-panel);
+  letter-spacing: -.02em;
+  margin: 0;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.reg2panelcontador {
+  margin-left: auto;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.app-shell .reg2panelcontador {
+  background: var(--claro-fondo);
+  color: #243246;
+  border-color: #bdc9d5;
+}

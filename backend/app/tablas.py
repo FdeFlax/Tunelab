@@ -1,13 +1,14 @@
 ﻿from datetime import datetime
 from enum import Enum
 
-from sqlalchemy import Boolean, DateTime, DECIMAL, Enum as SqlEnum, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, DateTime, DECIMAL, Enum as SqlEnum, ForeignKey, Integer, JSON, String, Text
+from sqlalchemy.dialects.mysql import DATETIME
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.base_datos import Base
 
+fecha_precisa = DateTime().with_variant(DATETIME(fsp=6), "mysql", "mariadb")
 
-# Cada clase de este archivo representa una tabla de MySQL.
 class RolUsuario(str, Enum):
     alumno = "alumno"
     profesor = "profesor"
@@ -68,11 +69,15 @@ class Medicion(Base):
     ensayo_id: Mapped[int] = mapped_column(ForeignKey("ensayos.id"), nullable=False)
     nombre: Mapped[str] = mapped_column(String(80), nullable=False)
     estado: Mapped[EstadoMedicion] = mapped_column(SqlEnum(EstadoMedicion), default=EstadoMedicion.preparada)
+    captura_clave: Mapped[str | None] = mapped_column(String(36), unique=True)
+    fuente: Mapped[str | None] = mapped_column(String(30))
+    calibracion_version: Mapped[int | None] = mapped_column(Integer)
+    programa: Mapped[dict | None] = mapped_column(JSON)
     velocidad_objetivo: Mapped[float | None] = mapped_column(DECIMAL(6, 2))
     potencia_objetivo: Mapped[float | None] = mapped_column(DECIMAL(5, 2))
     temperatura_objetivo: Mapped[float | None] = mapped_column(DECIMAL(5, 2))
-    fecha_inicio: Mapped[datetime | None] = mapped_column(DateTime)
-    fecha_fin: Mapped[datetime | None] = mapped_column(DateTime)
+    fecha_inicio: Mapped[datetime | None] = mapped_column(fecha_precisa)
+    fecha_fin: Mapped[datetime | None] = mapped_column(fecha_precisa)
     duracion_segundos: Mapped[int | None] = mapped_column(Integer)
     velocidad_media: Mapped[float | None] = mapped_column(DECIMAL(6, 2))
     velocidad_maxima: Mapped[float | None] = mapped_column(DECIMAL(6, 2))
@@ -85,18 +90,39 @@ class Medicion(Base):
     muestras: Mapped[list["MuestraMedicion"]] = relationship(back_populates="medicion")
 
 
+class ProgramaEtapas(Base):
+    __tablename__ = "programas_etapas"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    ensayo_id: Mapped[int] = mapped_column(ForeignKey("ensayos.id"), unique=True, nullable=False)
+    nombre: Mapped[str] = mapped_column(String(40), nullable=False)
+    etapas: Mapped[list] = mapped_column(JSON, nullable=False)
+    estado: Mapped[str] = mapped_column(String(20), default="borrador", nullable=False)
+    clave: Mapped[str | None] = mapped_column(String(36))
+    indice_etapa: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    mediciones: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
+    fase_desde: Mapped[datetime | None] = mapped_column(fecha_precisa)
+    iniciado_en: Mapped[datetime | None] = mapped_column(DateTime)
+    finalizado_en: Mapped[datetime | None] = mapped_column(DateTime)
+    mensaje: Mapped[str | None] = mapped_column(String(250))
+
+
 class MuestraMedicion(Base):
     __tablename__ = "muestras_medicion"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     medicion_id: Mapped[int] = mapped_column(ForeignKey("mediciones.id"), nullable=False)
-    instante: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    instante: Mapped[datetime] = mapped_column(fecha_precisa, nullable=False)
     velocidad_ms: Mapped[float | None] = mapped_column(DECIMAL(8, 3))
     temperatura_c: Mapped[float | None] = mapped_column(DECIMAL(6, 2))
     potencia_porcentaje: Mapped[float | None] = mapped_column(DECIMAL(5, 2))
+    consigna_objetivo: Mapped[float | None] = mapped_column(DECIMAL(5, 2))
+    flujo_estable: Mapped[bool | None] = mapped_column(Boolean)
     frecuencia_hz: Mapped[float | None] = mapped_column(DECIMAL(6, 2))
     corriente_a: Mapped[float | None] = mapped_column(DECIMAL(6, 2))
     rpm: Mapped[int | None] = mapped_column(Integer)
+    presion_pa: Mapped[float | None] = mapped_column(DECIMAL(10, 4))
+    caudal_m3s: Mapped[float | None] = mapped_column(DECIMAL(10, 4))
 
     medicion: Mapped[Medicion] = relationship(back_populates="muestras")
 

@@ -1,0 +1,165 @@
+{
+  "id": "ua-tunel-real-medido",
+  "version": 2,
+  "nombre": "Tunel de viento UA",
+  "geometria": {
+    "seccionEnsayo": {
+      "anchoM": 0.7,
+      "altoM": 0.7,
+      "longitudM": 1
+    },
+    "camaraEstabilizacion": {
+      "anchoM": 1.4,
+      "altoM": 1.4,
+      "longitudM": 0.07,
+      "honeycomb": true
+    },
+    "contraccion": {
+      "longitudM": 1.68,
+      "perfilGeometrico": "smoothstep"
+    },
+    "difusor": {
+      "activo": true,
+      "envolvente": {
+        "longitudM": 1.15,
+        "anchoM": 0.78,
+        "altoM": 0.78
+      },
+      "entrada": {
+        "forma": "rectangular"
+      },
+      "salida": {
+        "forma": "desconocida",
+        "anchoM": null,
+        "altoM": null,
+        "diametroM": null
+      },
+      "usarSalidaEnCalculos": false
+    }
+  },
+  "ambiente": {
+    "temperaturaC": 20,
+    "presionAtmosfericaPa": 101325,
+    "constanteGasAireJKgK": 287.05,
+    "viscosidadDinamicaPaS": 1.81e-05,
+    "usarDensidadConstante": false,
+    "densidadReferenciaKgM3": 1.204
+  },
+  "sensor": {
+    "intervaloCapturaSegundos": 1,
+    "visualizacion": {
+      "decimalesCaudal": 3
+    }
+  },
+  "modelo": {
+    "toleranciaVelocidadDetenidoMs": 0.02,
+    "toleranciaConsignaDetenidoPct": 0.1
+  },
+  "calibracion": {
+    "version": 2,
+    "toleranciaEstabilidadMs": 0.03,
+    "segundosEstabilidadRequeridos": 4,
+    "velocidad": {
+      "variableEntrada": "consigna_porcentual_variador",
+      "metodo": "interpolacion_lineal_por_tramos",
+      "extrapolacion": "limitar_a_extremos",
+      "puntos": [
+        {
+          "consignaPct": 0,
+          "velocidadMs": 0,
+          "medido": false
+        },
+        {
+          "consignaPct": 50,
+          "velocidadMs": 5.121,
+          "medido": true
+        },
+        {
+          "consignaPct": 75,
+          "velocidadMs": 8.18,
+          "medido": true
+        },
+        {
+          "consignaPct": 100,
+          "velocidadMs": 11.119,
+          "medido": true
+        }
+      ]
+    }
+  },
+  "simulador": {
+    "consignaInicialPct": 10,
+    "consignasRapidasPct": [
+      10,
+      25,
+      50,
+      100
+    ],
+    "temperaturaInicialC": 21.2,
+    "aumentoTemperaturaPorPct": 0.035,
+    "rampaPctPorSegundo": 20,
+    "frecuenciaMaximaHz": 50,
+    "corrienteMaximaA": 12,
+    "rpmMaximas": 3000
+  },
+  "aerodinamica": {
+    "medicionActiva": "foto-1",
+    "mediciones": [
+      {
+        "id": "foto-1",
+        "consignaPct": null,
+        "velocidadMs": 19.8,
+        "velocidadMediaMs": 19.3,
+        "temperaturaC": 22.2,
+        "presionAbsolutaPa": 100760,
+        "humedadRelativaPct": 56
+      },
+      {
+        "id": "foto-2",
+        "consignaPct": null,
+        "velocidadMs": 14.5,
+        "velocidadMediaMs": 14,
+        "temperaturaC": 21.9,
+        "presionAbsolutaPa": 100760,
+        "humedadRelativaPct": 57
+      },
+      {
+        "id": "foto-3",
+        "consignaPct": null,
+        "velocidadMs": 9.2,
+        "velocidadMediaMs": 9,
+        "temperaturaC": 21.7,
+        "presionAbsolutaPa": 100750,
+        "humedadRelativaPct": 58
+      },
+      {
+        "id": "foto-4",
+        "consignaPct": null,
+        "velocidadMs": 4,
+        "velocidadMediaMs": 0.9,
+        "temperaturaC": 21.4,
+        "presionAbsolutaPa": 100750,
+        "humedadRelativaPct": 60
+      },
+      {
+        "id": "foto-5",
+        "consignaPct": null,
+        "velocidadMs": 0,
+        "velocidadMediaMs": 0,
+        "temperaturaC": 21.2,
+        "presionAbsolutaPa": 100780,
+        "humedadRelativaPct": 60
+      }
+    ],
+    "pasoCm": 1,
+    "pasos": 6000,
+    "velocidadRedBase": 0.04,
+    "objeto": {
+      "minimoCeldas": 2,
+      "maximoCm": 60,
+      "separacionParedCeldas": 2
+    },
+    "bloqueoMaximo": 0.25
+  },
+  "modeloGlb": "/models/tuneloptimizado.glb"
+}

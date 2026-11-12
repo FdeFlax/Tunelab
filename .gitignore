@@ -8,6 +8,7 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
+backend/.tunel.lock
 dist
 dist-ssr
 *.local
@@ -18,6 +19,7 @@ coverage
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
+!.vscode/settings.json
 .idea
 .DS_Store
 *.suo
@@ -35,3 +37,11 @@ backend/tunelab_local.db
 backend_php/
 __pycache__/
 *.pyc
+
+# Archivos locales de trabajo, capturas y copias recuperables.
+# tmp/evaluacion-xlb contiene el motor activo: ignorarlo no significa borrarlo.
+/tmp/
+/output/
+/tmp_pdf*/
+/tmp_pdf*.txt
+/_rescate_css_*/

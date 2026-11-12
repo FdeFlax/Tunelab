@@ -9,6 +9,10 @@ export default defineConfig([
     'dist',
     'coverage',
     'node_modules',
+    'tmp/**',
+    'tmp_*/**',
+    'output/**',
+    '_rescate_css_*/**',
   ]),
   {
     files: ['**/*.{js,jsx}'],

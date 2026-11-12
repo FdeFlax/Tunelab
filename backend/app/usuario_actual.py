@@ -1,39 +1,52 @@
-from fastapi import Depends, Header, HTTPException, status
+from ipaddress import ip_address
+from urllib.parse import urlsplit
+
+from fastapi import Depends, HTTPException, Request, status
+from starlette.requests import HTTPConnection
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.base_datos import obtener_sesion
+from app.configuracion import configuracion
 from app.tablas import Ensayo, Medicion, RolUsuario, Usuario
 
 
-# En local simulamos el usuario de UACloud mediante cabeceras HTTP.
-# En eServices esta parte debera adaptarse al sistema real de autenticacion.
-def obtener_usuario_actual(
-    identificador_uacloud: str | None = Header(default=None, alias="X-Usuario-Uacloud"),  # Lee la cabecera HTTP X-Usuario-Uacloud; si no viene, vale None.
-    nombre: str | None = Header(default=None, alias="X-Usuario-Nombre"),  # Lee la cabecera HTTP X-Usuario-Nombre; puede venir vacia.
-    email: str | None = Header(default=None, alias="X-Usuario-Email"),  # Lee la cabecera HTTP X-Usuario-Email; sirve para guardar el correo del usuario.
-    rol: str | None = Header(default=None, alias="X-Usuario-Rol"),  # Lee la cabecera HTTP X-Usuario-Rol; por ejemplo alumno o profesor.
-    sesion: Session = Depends(obtener_sesion),  # FastAPI crea/abre una sesion de base de datos usando obtener_sesion.
-    ) -> Usuario:  # La funcion devuelve un objeto Usuario.
-    # Esta funcion intenta saber quien esta usando la aplicacion.
-    # Ahora mismo, como todavia no estamos dentro de eServices real,
-    # usamos cabeceras HTTP para simular los datos del usuario.
-    #
-    # Ejemplo de cabeceras:
-    # X-Usuario-Uacloud: jasg25
-    # X-Usuario-Nombre: Jose Angel
-    # X-Usuario-Email: jasg25@alu.ua.es
+PERFILES_DEMO = {
+    "alu_demo": {"nombre": "Alumno Demo", "email": "alu_demo@alu.ua.es", "rol": RolUsuario.alumno},
+    "prof_demo": {"nombre": "Profesor Demo", "email": "prof_demo@ua.es", "rol": RolUsuario.profesor},
+}
 
-    # Si no llega ningun identificador, usamos "usuario-local".
-    # Esto permite probar la app en local sin login real.
-    identificador = (identificador_uacloud or "usuario-local").strip()
 
-    # Buscamos en MySQL si ya existe un usuario con ese identificador.
+def obtener_usuario_demo(conexion: HTTPConnection, identificador: str | None, sesion: Session) -> Usuario:
+    # Selector exclusivo de desarrollo local directo; no autentica en produccion.
+    if configuracion.autenticacion_modo != "demo" or configuracion.entorno != "desarrollo":
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                            detail="Acceso bloqueado hasta configurar la autenticacion de UACloud.")
+    try:
+        es_local = conexion.client is not None and ip_address(conexion.client.host).is_loopback
+    except ValueError:
+        es_local = False
+    tiene_proxy = any(nombre == "forwarded" or nombre.startswith("x-forwarded-")
+                      or nombre == "x-real-ip" for nombre in conexion.headers)
+    origen = conexion.headers.get("origin")
+    try:
+        origen_local = not origen or (
+            origen in configuracion.cors_origins_lista
+            and urlsplit(origen).hostname in {"localhost", "127.0.0.1", "::1"}
+        )
+    except ValueError:
+        origen_local = False
+    if not es_local or tiene_proxy or not origen_local:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
+                            detail="Los perfiles demo solo admiten acceso local directo.")
+    perfil = PERFILES_DEMO.get(identificador)
+    if perfil is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                            detail="Selecciona un perfil de pruebas valido.")
+
     usuario = sesion.scalar(
         select(Usuario).where(Usuario.identificador_uacloud == identificador)
     )
-
-    # Si el usuario ya existe, lo reutilizamos.
     if usuario:
         # Si el usuario esta desactivado, no se le permite usar la API.
         if not usuario.activo:
@@ -42,25 +55,26 @@ def obtener_usuario_actual(
                 detail="Usuario deshabilitado",
             )
 
+        if usuario.rol != perfil["rol"]:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
+                                detail="El rol del perfil demo no coincide con el configurado en el servidor.")
         return usuario
 
-    # Si el usuario no existe, lo creamos automaticamente.
-    # Esto es util en local y tambien puede servir cuando entre un usuario nuevo
-    # desde eServices por primera vez.
-    usuario = Usuario(
-        identificador_uacloud=identificador,
-        nombre=(nombre or "Usuario UACloud").strip(),
-        email=email or None,
-        rol=(rol or "alumno").strip() or "alumno",
-    )
-
-    # Guardamos el usuario nuevo en MySQL.
+    # No se aceptan nombres, correos ni roles elegidos por el cliente.
+    usuario = Usuario(identificador_uacloud=identificador, **perfil)
     sesion.add(usuario)
     sesion.commit()
 
     # Refrescamos para obtener datos generados por MySQL, como el id.
     sesion.refresh(usuario)
     return usuario
+
+
+def obtener_usuario_actual(
+    request: Request,
+    sesion: Session = Depends(obtener_sesion),
+) -> Usuario:
+    return obtener_usuario_demo(request, request.headers.get("X-Usuario-Uacloud"), sesion)
 
 
 def obtener_ensayo_del_usuario(

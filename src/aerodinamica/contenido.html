@@ -1,0 +1,74 @@
+<div class="laboratorio">
+  <section class="configuracion" aria-label="Configuración del cálculo">
+    <input id="archivo-glb" type="file" accept=".glb,model/gltf-binary" hidden>
+    <div class="acciones-laboratorio" role="group" aria-label="Acciones de aerodinámica">
+      <button id="importar" type="button">Importar GLB</button>
+      <div class="acciones-calculo">
+        <button id="calcular-flujo" class="primario" type="button" aria-describedby="detalle-bloqueo-flujo estado-flujo" aria-busy="false" disabled><span id="indicador-calculo" class="indicador-calculo" aria-hidden="true" hidden></span><span id="texto-calcular">Calcular flujo</span></button>
+        <button id="cancelar-flujo" type="button" hidden>Cancelar</button>
+        <button id="reintentar-flujo" type="button" hidden>Reintentar conexión</button>
+      </div>
+    </div>
+    <p id="archivo-info" class="archivo-info"><span id="nombre-archivo">Ningún objeto cargado</span></p>
+    <p id="condiciones-aire" class="archivo-info" aria-label="Condiciones de entrada del cálculo"></p>
+    <p id="estado-carga" role="status" class="ayuda"></p>
+    <div id="bloqueo-flujo" class="bloqueo-flujo" role="status" hidden>
+      <strong id="titulo-bloqueo-flujo"></strong>
+      <p id="detalle-bloqueo-flujo"></p>
+      <p id="detalle-limites-flujo" hidden></p>
+    </div>
+    <div class="estado-calculo">
+      <p id="estado-flujo" class="ayuda" role="status">Conectando…</p>
+      <p id="acceso-flujo" class="ayuda" hidden><a href="/">Iniciar sesión</a></p>
+    </div>
+  </section>
+  <section class="resultados" aria-label="Objeto y mapas de flujo">
+    <div id="vacio" class="vacio">
+      <div id="vista-objeto" class="vista-objeto" hidden></div>
+      <p>Carga un objeto y calcula para ver el flujo.</p>
+    </div>
+    <div id="mapas-flujo" hidden>
+      <div class="planos-flujo">
+        <section class="plano-flujo" aria-labelledby="titulo-vertical">
+          <h3 id="titulo-vertical">Vertical <span class="direccion-viento" role="img" aria-label="Viento de izquierda a derecha" title="Viento de izquierda a derecha">→</span></h3>
+          <figure class="mapa">
+            <div class="superficie-mapa"><canvas id="mapa-vertical" role="img" aria-label="Mapa de rapidez relativa: plano vertical"></canvas></div>
+          </figure>
+          <div class="control">
+            <label for="posicion-vertical">Posición en el ancho (cm)</label>
+            <div class="rango-con-valor">
+              <input id="posicion-vertical" type="range" min="-35" max="35" step="1" value="0">
+              <output id="valor-vertical" for="posicion-vertical">0 cm</output>
+            </div>
+          </div>
+        </section>
+        <section class="plano-flujo" aria-labelledby="titulo-horizontal">
+          <h3 id="titulo-horizontal">Horizontal <span class="direccion-viento" role="img" aria-label="Viento de izquierda a derecha" title="Viento de izquierda a derecha">→</span></h3>
+          <figure class="mapa">
+            <div class="superficie-mapa"><canvas id="mapa-horizontal" role="img" aria-label="Mapa de rapidez relativa: plano horizontal"></canvas></div>
+          </figure>
+          <div class="control">
+            <label for="posicion-horizontal">Altura (cm)</label>
+            <div class="rango-con-valor">
+              <input id="posicion-horizontal" type="range" min="-35" max="35" step="1" value="0">
+              <output id="valor-horizontal" for="posicion-horizontal">0 cm</output>
+            </div>
+          </div>
+        </section>
+        <section class="plano-flujo" aria-labelledby="titulo-transversal">
+          <h3 id="titulo-transversal">Transversal <span class="direccion-viento" role="img" aria-label="Viento hacia el fondo del plano" title="Viento hacia el fondo del plano">⊗</span></h3>
+          <figure class="mapa">
+            <div class="superficie-mapa"><canvas id="mapa-transversal" role="img" aria-label="Mapa de rapidez relativa: plano transversal"></canvas></div>
+          </figure>
+          <div class="control">
+            <label for="posicion-transversal">Posición a lo largo (cm)</label>
+            <div class="rango-con-valor">
+              <input id="posicion-transversal" type="range" min="-50" max="50" step="1" value="0">
+              <output id="valor-transversal" for="posicion-transversal">0 cm</output>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </section>
+</div>

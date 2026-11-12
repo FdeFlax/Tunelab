@@ -1,6 +1,8 @@
 from datetime import datetime
+from uuid import UUID
 
 from pydantic import BaseModel, Field
+from app.datos_programa import ProgramaRespuesta
 
 
 # Estos modelos definen los datos que entran y salen por la API.
@@ -26,6 +28,7 @@ class EnsayoRespuesta(BaseModel):
     usuario_id: int
     estado: str
     creado_en: datetime
+    total_mediciones: int = 0
 
     model_config = {"from_attributes": True}
 
@@ -58,8 +61,19 @@ class MedicionRespuesta(BaseModel):
     temperatura_media: float | None
     potencia_media: float | None
     creado_en: datetime
+    fecha_inicio: datetime | None = None
+    fecha_fin: datetime | None = None
+    captura_clave: str | None = None
+    fuente: str | None = None
+    calibracion_version: int | None = None
+    programa: dict | None = None
 
     model_config = {"from_attributes": True}
+
+
+class UltimaMedicionUsuarioRespuesta(BaseModel):
+    ensayo: EnsayoRespuesta
+    medicion: MedicionRespuesta
 
 
 class UsuarioCrear(BaseModel):
@@ -97,6 +111,10 @@ class MuestraCrear(BaseModel):
     rpm: int | None = Field(default=None, ge=0)
 
 
+class MedicionFinalizar(MedicionCrear):
+    muestras: list[MuestraCrear] = Field(min_length=1, max_length=20000)
+
+
 class EventoCrear(BaseModel):
     tipo: str = Field(default="info", min_length=1, max_length=30)
     mensaje: str = Field(min_length=1, max_length=500)
@@ -114,6 +132,10 @@ class MuestraRespuesta(BaseModel):
     frecuencia_hz: float | None
     corriente_a: float | None
     rpm: int | None
+    presion_pa: float | None = None
+    caudal_m3s: float | None = None
+    consigna_objetivo: float | None = None
+    flujo_estable: bool | None = None
 
     model_config = {"from_attributes": True}
 
@@ -156,6 +178,24 @@ class TunelEstadoRespuesta(BaseModel):
     rpm: int
     fuente: str
     actualizado_en: datetime
+    velocidad_objetivo_ms: float = 0
+    estabilidad_segundos: float = 0
+    flujo_estable: bool = False
+    tiempo_funcionamiento_segundos: int = 0
+    captura: MedicionRespuesta | None = None
+    total_muestras: int = 0
+    error_captura: str | None = None
+    programa: ProgramaRespuesta | None = None
+
+
+class CapturaIniciar(BaseModel):
+    ensayo_id: int = Field(gt=0)
+    clave: UUID
+    nombre: str = Field(min_length=1, max_length=80)
+
+
+class CapturaDetener(BaseModel):
+    medicion_id: int = Field(gt=0)
 
 
 class TunelMuestraRespuesta(BaseModel):

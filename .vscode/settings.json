@@ -1,0 +1,23 @@
+{
+  "files.exclude": {
+    "**/node_modules": true,
+    "**/.venv": true,
+    "**/__pycache__": true,
+    "**/.cache": true,
+    "**/*.pyc": true,
+    "dist": true,
+    "tmp": true,
+    "output": true,
+    "logs": true
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/.venv": true,
+    "**/__pycache__": true,
+    "**/.cache": true,
+    "dist": true,
+    "tmp": true,
+    "output": true,
+    "logs": true
+  }
+}

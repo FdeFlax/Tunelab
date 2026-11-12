@@ -42,29 +42,22 @@ function obtenerCabecerasIdentidad() {
     const identidad = cargarIdentidadApi() || {};
 
     return {
-      "X-Usuario-Uacloud": identidad.identificador || "usuario-local",
-      "X-Usuario-Nombre": identidad.nombre || "Usuario UACloud",
-      "X-Usuario-Email": identidad.email || "",
-      "X-Usuario-Rol": identidad.rol || "alumno",
+      ...(identidad.identificador ? { "X-Usuario-Uacloud": identidad.identificador } : {}),
     };
   } catch {
-    return {
-      "X-Usuario-Uacloud": "usuario-local",
-      "X-Usuario-Nombre": "Usuario UACloud",
-      "X-Usuario-Email": "",
-      "X-Usuario-Rol": "alumno",
-    };
+    return {};
   }
 }
 
 export async function pedirApi(ruta, opciones = {}) {
   const respuesta = await fetch(`${API_URL}${ruta}`, {
+    ...opciones,
+    signal: opciones.signal ?? globalThis.AbortSignal?.timeout?.(10000),
     headers: {
       "Content-Type": "application/json",
       ...obtenerCabecerasIdentidad(),
       ...(opciones.headers || {}),
     },
-    ...opciones,
   });
 
   if (!respuesta.ok) {
@@ -85,12 +78,6 @@ export async function pedirApi(ruta, opciones = {}) {
   return respuesta.json();
 }
 
-export function apiDisponible() {
-  return pedirApi("/salud")
-    .then(() => true)
-    .catch(() => false);
-}
-
 export function leerIdentidadApi() {
   try {
     return cargarIdentidadApi();
@@ -103,4 +90,3 @@ export function borrarIdentidadApi() {
   window.localStorage.removeItem(CLAVE_IDENTIDAD_API);
   window.sessionStorage.removeItem(CLAVE_IDENTIDAD_API);
 }
-

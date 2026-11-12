@@ -1,5 +1,8 @@
 ﻿from functools import lru_cache
 
+from typing import Literal
+
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -14,13 +17,27 @@ class Configuracion(BaseSettings):
     # Es obligatoria: debe venir desde .env para asegurar que siempre se usa MySQL.
     database_url: str
 
+    # Sin integracion con UACloud, produccion no admite identidades del cliente.
+    entorno: Literal["desarrollo", "produccion"] = "produccion"
+    autenticacion_modo: Literal["bloqueada", "demo"] = "bloqueada"
+
+    @model_validator(mode="after")
+    def validar_autenticacion(self):
+        if self.autenticacion_modo == "demo" and self.entorno != "desarrollo":
+            raise ValueError("La autenticacion demo solo se permite en desarrollo")
+        return self
+
     # Lista de webs que pueden llamar al backend.
     # Se guarda como texto separado por comas porque asi es facil ponerlo en .env.
-    cors_origins: str = "http://localhost:5173,http://localhost:5174"
+    cors_origins: str = "http://localhost:5173,http://localhost:5174,http://127.0.0.1:5173,http://127.0.0.1:5174"
 
     # Limites de uso para evitar que un usuario llene la base de datos sin control.
     limite_ensayos_por_usuario: int = 20
     limite_mediciones_por_ensayo: int = 15
+
+    # Servicio experimental opcional; no carga XLB dentro del servidor de control.
+    flujo3d_habilitado: bool = False
+    flujo3d_python: str = ""
 
     # Indica que la configuracion tambien se puede leer desde un archivo .env.
     # Esto evita poner contrasenas o rutas reales directamente en el codigo.

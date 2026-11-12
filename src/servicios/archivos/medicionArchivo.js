@@ -1,12 +1,17 @@
-const FORMATO_MEDICION_TUNELAB = "tunelab.medicion";
-const VERSION_FORMATO_MEDICION = "1.0";
+import { redondear } from "../formato.js";
+import { crearTrazas, resumirValores } from "../mediciones/analisisMedicion.js";
+import { crearZipSinCompresion } from "./zipSinCompresion.js";
 
-export const LIMITE_TAMANO_ARCHIVO_MEDICION_BYTES = 2 * 1024 * 1024;
+const FORMATO_MEDICION_TUNELAB = "tunelab.medicion";
+const VERSION_FORMATO_MEDICION = "1.2";
+
+export const LIMITE_TAMANO_ARCHIVO_MEDICION_BYTES = 32 * 1024 * 1024;
 export const LIMITE_ARCHIVOS_IMPORTACION = 20;
-export const LIMITE_MUESTRAS_MEDICION = 20000;
+export const LIMITE_MUESTRAS_MEDICION = 100000;
+export const LIMITE_MUESTRAS_IMPORTADAS = 250000;
 export const LIMITE_EVENTOS_MEDICION = 500;
 
-const FUENTES_TUNEL_VALIDAS = new Set(["simulado", "real"]);
+const FUENTES_TUNEL_VALIDAS = new Set(["simulado", "real", "desconocida"]);
 const NIVELES_EVENTO_VALIDOS = new Set(["info", "advertencia", "critica"]);
 const LIMITES_TEXTO = {
   codigo: 30,
@@ -30,6 +35,7 @@ const RANGOS_NUMERICOS = {
   corrA: { min: 0, max: 500 },
   rpm: { min: 0, max: 20000 },
   presionPa: { min: 0, max: 5000 },
+  caudalM3s: { min: 0, max: 100 },
   durSeg: { min: 0, max: 24 * 60 * 60 },
   objVelMs: { min: 0, max: 60 },
   objPotPct: { min: 0, max: 100 },
@@ -44,23 +50,6 @@ function normalizarNombreArchivo(texto) {
     .replace(/-+/g, "-")
     .replace(/^-|-$/g, "")
     .toLowerCase();
-}
-
-function redondear(valor, decimales = 1) {
-  return Number(valor.toFixed(decimales));
-}
-
-function calcularPresionPitotPa(velocidadMs) {
-  const velocidad = Math.max(0, Number(velocidadMs) || 0);
-  return Number((0.5 * 1.225 * velocidad * velocidad).toFixed(1));
-}
-
-function calcularMedia(valores) {
-  if (!valores.length) {
-    return 0;
-  }
-
-  return valores.reduce((acumulado, valor) => acumulado + valor, 0) / valores.length;
 }
 
 function esObjeto(valor) {
@@ -112,95 +101,100 @@ function validarNumeroOpcional({ valor, campo, rango }) {
 }
 
 function obtenerValorTraza(traza, indice) {
-  return traza?.[indice]?.valor ?? 0;
+  return traza?.[indice]?.valor ?? null;
 }
 
-function calcularResumenDesdeMuestras({
-  muestras,
-  objVelMs,
-  objPotPct,
-}) {
-  const velocidades = muestras.map((muestra) => muestra.velMs);
-  const temperaturas = muestras.map((muestra) => muestra.tempC);
-  const potencias = muestras.map((muestra) => muestra.potPct);
-  const frecuencias = muestras.map((muestra) => muestra.frecHz).filter((valor) => Number.isFinite(Number(valor)));
-  const corrientes = muestras.map((muestra) => muestra.corrA).filter((valor) => Number.isFinite(Number(valor)));
-  const rpm = muestras.map((muestra) => muestra.rpm).filter((valor) => Number.isFinite(Number(valor)));
-  const presiones = muestras.map((muestra) => muestra.presionPa).filter((valor) => Number.isFinite(Number(valor)));
-  const maxVelocidad = Math.max(...velocidades);
-  const minVelocidad = Math.min(...velocidades);
-  const muestrasEnObjetivo = velocidades.filter(
-    (valor) => Math.abs(valor - objVelMs) <= 0.5
-  ).length;
-
-  return {
-    velocidad: {
-      media: redondear(calcularMedia(velocidades)),
-      maxima: redondear(maxVelocidad),
-      minima: redondear(minVelocidad),
-      estabilidad: redondear(maxVelocidad - minVelocidad),
-      objetivo: objVelMs,
-      porcentajeEnRango: Math.round((muestrasEnObjetivo / muestras.length) * 100),
-    },
-    temperatura: {
-      media: redondear(calcularMedia(temperaturas)),
-      maxima: redondear(Math.max(...temperaturas)),
-      minima: redondear(Math.min(...temperaturas)),
-      objetivo: null,
-    },
-    potencia: {
-      media: redondear(calcularMedia(potencias)),
-      maxima: redondear(Math.max(...potencias)),
-      minima: redondear(Math.min(...potencias)),
-      objetivo: objPotPct,
-    },
-    tecnicos: {
-      frecuenciaMedia: frecuencias.length ? redondear(calcularMedia(frecuencias)) : null,
-      corrienteMedia: corrientes.length ? redondear(calcularMedia(corrientes)) : null,
-      rpmMedia: rpm.length ? Math.round(calcularMedia(rpm)) : null,
-      presionMediaPa: presiones.length ? redondear(calcularMedia(presiones)) : null,
-    },
+function calcularResumenDesdeMuestras({ muestras }) {
+  const serie = campo => resumirValores(muestras.map(m => m[campo]));
+  const resumen = campo => {
+    const { media, maxima, minima } = serie(campo);
+    return Object.fromEntries(Object.entries({ media, maxima, minima }).map(([k, v]) => [k, v == null ? null : redondear(v)]));
   };
+  const v = serie("velMs");
+  const media = campo => { const valor = serie(campo).media; return valor == null ? null : redondear(valor); };
+  return {
+    velocidad: { ...resumen("velMs"), estabilidad: v.n ? redondear(v.maxima - v.minima) : null },
+    temperatura: resumen("tempC"), potencia: resumen("potPct"),
+    tecnicos: { frecuenciaMedia: media("frecHz"), corrienteMedia: media("corrA"), rpmMedia: media("rpm"),
+      presionMediaPa: media("presionPa"), caudalMedioM3s: media("caudalM3s") },
+  };
+}
+
+function validarInstante(valor, campo) {
+  if (valor == null || valor === "") return null;
+  if (typeof valor !== "string" || valor.length > 40 || !/^\d{4}-\d{2}-\d{2}T/.test(valor) || !Number.isFinite(Date.parse(valor))) {
+    throw new Error(`El campo ${campo} no es una fecha ISO válida.`);
+  }
+  return valor;
+}
+
+function validarPrograma(programa) {
+  if (programa == null) return null;
+  if (!esObjeto(programa) || ![1, 2].includes(programa.version) || !Array.isArray(programa.etapas) || !programa.etapas.length || programa.etapas.length > 15) {
+    throw new Error("El programa de la medición no es válido.");
+  }
+  let finAnterior = -1;
+  const continua = programa.version === 2;
+  const tiempo = (valor, campo) => validarNumeroOpcional({ valor, campo, rango: RANGOS_NUMERICOS.segundo });
+  const etapas = programa.etapas.map((e, i) => {
+    if (!esObjeto(e)) throw new Error("Etapa no válida.");
+    const inicio = validarNumeroOpcional({valor:e.inicio_segundo,campo:`etapa ${i+1}: inicio`,rango:RANGOS_NUMERICOS.segundo});
+    const fin = validarNumeroOpcional({valor:e.fin_segundo,campo:`etapa ${i+1}: fin`,rango:RANGOS_NUMERICOS.segundo});
+    const cambio = continua ? tiempo(e.cambio_segundo, "cambio de consigna") : inicio;
+    if ((fin != null && (cambio == null || fin < cambio)) || (cambio != null && cambio < finAnterior) ||
+        (inicio != null && (cambio == null || inicio < cambio || (fin != null && inicio > fin)))) throw new Error("Intervalos de etapas incoherentes.");
+    if (fin != null) finAnterior = fin;
+    if (!["pendiente", "estabilizando", "registrando", "completada", "parcial"].includes(e.estado)) throw new Error("Estado de etapa no válido.");
+    let tramos;
+    if (continua) {
+      if (!Array.isArray(e.tramos_estables) || e.tramos_estables.length > 4000) throw new Error("Tramos estables no válidos.");
+      let anterior = cambio;
+      tramos = e.tramos_estables.map((t, j) => {
+        if (!esObjeto(t)) throw new Error("Tramo estable no válido.");
+        const a = tiempo(t.inicio, "inicio estable"), b = tiempo(t.fin, "fin estable");
+        if (a == null || anterior == null || a < anterior || (fin != null && (b == null || b > fin)) ||
+            (b != null && b < a) || (b == null && j < e.tramos_estables.length - 1)) throw new Error("Intervalos estables incoherentes.");
+        anterior = b;
+        return { inicio: a, fin: b };
+      });
+    }
+    return {consigna:validarNumero({valor:e.consigna,campo:"consigna",rango:{min:1,max:100}}),
+      duracion_segundos:validarNumero({valor:e.duracion_segundos,campo:"registro",rango:{min:1,max:3600}}),
+      inicio_segundo:inicio,fin_segundo:fin,estado:e.estado,
+      ...(continua ? { cambio_segundo: cambio, tramos_estables: tramos } : {})};
+  });
+  const criterio = programa.criterio_estabilidad;
+  return {version:programa.version,nombre:validarTexto({valor:programa.nombre,campo:"programa.nombre",maximo:40}),etapas,
+    ...(continua && criterio ? { criterio_estabilidad: {
+      tolerancia_ms: validarNumero({valor:criterio.tolerancia_ms,campo:"tolerancia",rango:{min:0,max:60}}),
+      segundos: validarNumero({valor:criterio.segundos,campo:"espera estable",rango:RANGOS_NUMERICOS.segundo}),
+    }} : {})};
+}
+
+function conservarResumen(original, calculado) {
+  if (!esObjeto(original)) return calculado;
+  return Object.fromEntries(Object.entries(calculado).map(([grupo, valores]) => [grupo,
+    Object.fromEntries(Object.entries(valores).map(([campo, valor]) => {
+      const guardado = original[grupo]?.[campo];
+      return [campo, guardado === null || (typeof guardado === "number" && Number.isFinite(guardado)) ? guardado : valor];
+    })),
+  ]));
 }
 
 function validarEnsayo(ensayo) {
   if (!esObjeto(ensayo)) {
     throw new Error("El archivo no incluye un ensayo valido.");
   }
-
+  const texto = (campo, maximo, requerido = false) => validarTexto({
+    valor: ensayo[campo], campo: `ensayo.${campo}`, maximo, requerido,
+  });
   return {
-    codigo: validarTexto({
-      valor: ensayo.codigo,
-      campo: "ensayo.codigo",
-      maximo: LIMITES_TEXTO.codigo,
-      requerido: true,
-    }),
-    nombre: validarTexto({
-      valor: ensayo.nombre,
-      campo: "ensayo.nombre",
-      maximo: LIMITES_TEXTO.nombreEnsayo,
-      requerido: true,
-    }),
-    objetivo: validarTexto({
-      valor: ensayo.objetivo,
-      campo: "ensayo.objetivo",
-      maximo: LIMITES_TEXTO.objetivo,
-    }),
-    descripcion: validarTexto({
-      valor: ensayo.descripcion,
-      campo: "ensayo.descripcion",
-      maximo: LIMITES_TEXTO.descripcion,
-    }),
-    fecha: validarTexto({
-      valor: ensayo.fecha,
-      campo: "ensayo.fecha",
-      maximo: LIMITES_TEXTO.fecha,
-    }),
-    hora: validarTexto({
-      valor: ensayo.hora,
-      campo: "ensayo.hora",
-      maximo: LIMITES_TEXTO.hora,
-    }),
+    codigo: texto("codigo", LIMITES_TEXTO.codigo, true),
+    nombre: texto("nombre", LIMITES_TEXTO.nombreEnsayo, true),
+    objetivo: texto("objetivo", LIMITES_TEXTO.objetivo),
+    descripcion: texto("descripcion", LIMITES_TEXTO.descripcion),
+    fecha: texto("fecha", LIMITES_TEXTO.fecha),
+    hora: texto("hora", LIMITES_TEXTO.hora),
   };
 }
 
@@ -208,48 +202,29 @@ function validarMuestra(muestra, indice) {
   if (!esObjeto(muestra)) {
     throw new Error(`La muestra ${indice + 1} no es valida.`);
   }
-
+  if (muestra.flujoEstable != null && typeof muestra.flujoEstable !== "boolean") {
+    throw new Error("La estabilidad de la muestra debe ser un booleano.");
+  }
+  const numero = campo => validarNumeroOpcional({
+    valor: muestra[campo], campo: `muestras[${indice}].${campo}`, rango: RANGOS_NUMERICOS[campo],
+  });
   return {
+    flujoEstable: muestra.flujoEstable ?? null,
+    consignaObjetivoPct: validarNumeroOpcional({valor:muestra.consignaObjetivoPct,campo:"consigna objetivo",rango:RANGOS_NUMERICOS.potPct}),
     segundo: validarNumero({
       valor: muestra.segundo,
       campo: `muestras[${indice}].segundo`,
       rango: RANGOS_NUMERICOS.segundo,
     }),
-    velMs: validarNumero({
-      valor: muestra.velMs,
-      campo: `muestras[${indice}].velMs`,
-      rango: RANGOS_NUMERICOS.velMs,
-    }),
-    tempC: validarNumero({
-      valor: muestra.tempC,
-      campo: `muestras[${indice}].tempC`,
-      rango: RANGOS_NUMERICOS.tempC,
-    }),
-    potPct: validarNumero({
-      valor: muestra.potPct,
-      campo: `muestras[${indice}].potPct`,
-      rango: RANGOS_NUMERICOS.potPct,
-    }),
-    frecHz: validarNumeroOpcional({
-      valor: muestra.frecHz,
-      campo: `muestras[${indice}].frecHz`,
-      rango: RANGOS_NUMERICOS.frecHz,
-    }),
-    corrA: validarNumeroOpcional({
-      valor: muestra.corrA,
-      campo: `muestras[${indice}].corrA`,
-      rango: RANGOS_NUMERICOS.corrA,
-    }),
-    rpm: validarNumeroOpcional({
-      valor: muestra.rpm,
-      campo: `muestras[${indice}].rpm`,
-      rango: RANGOS_NUMERICOS.rpm,
-    }),
-    presionPa: validarNumeroOpcional({
-      valor: muestra.presionPa ?? calcularPresionPitotPa(muestra.velMs),
-      campo: `muestras[${indice}].presionPa`,
-      rango: RANGOS_NUMERICOS.presionPa,
-    }),
+    velMs: numero("velMs"),
+    tempC: numero("tempC"),
+    potPct: numero("potPct"),
+    frecHz: numero("frecHz"),
+    corrA: numero("corrA"),
+    rpm: numero("rpm"),
+    presionPa: numero("presionPa"),
+    instante: validarInstante(muestra.instante, `muestras[${indice}].instante`),
+    caudalM3s: numero("caudalM3s"),
     fuente: typeof muestra.fuente === "string" ? limitarTexto(muestra.fuente, 30) : "",
   };
 }
@@ -285,13 +260,15 @@ function validarEventos(eventos) {
     }
 
     const nivel = validarTexto({
-      valor: evento.nivel || "info",
+      valor: evento.nivel || (evento.tipo === "error" ? "critica" : "info"),
       campo: `eventos[${indice}].nivel`,
       maximo: LIMITES_TEXTO.eventoEtiqueta,
     });
 
     return {
       id: limitarTexto(evento.id || `evento-${indice + 1}`, LIMITES_TEXTO.nombreArchivo),
+      instante: validarInstante(evento.instante || evento.creado_en, "evento.instante"),
+      tipo: validarTexto({valor:evento.tipo || evento.etiqueta,campo:"evento.tipo",maximo:40}),
       hora: validarTexto({
         valor: evento.hora,
         campo: `eventos[${indice}].hora`,
@@ -299,7 +276,7 @@ function validarEventos(eventos) {
       }),
       nivel: NIVELES_EVENTO_VALIDOS.has(nivel) ? nivel : "info",
       etiqueta: validarTexto({
-        valor: evento.etiqueta || "Info",
+        valor: evento.etiqueta || evento.tipo || "Info",
         campo: `eventos[${indice}].etiqueta`,
         maximo: LIMITES_TEXTO.eventoEtiqueta,
       }),
@@ -318,13 +295,13 @@ function validarMedicion(medicion, muestras) {
   }
 
   const objetivos = esObjeto(medicion.objetivos) ? medicion.objetivos : {};
-  const objVelMs = validarNumero({
-    valor: Number(objetivos.velocidadMs ?? 0),
+  const objVelMs = validarNumeroOpcional({
+    valor: objetivos.velocidadMs,
     campo: "medicion.objetivos.velocidadMs",
     rango: RANGOS_NUMERICOS.objVelMs,
   });
-  const objPotPct = validarNumero({
-    valor: Number(objetivos.potPct ?? 0),
+  const objPotPct = validarNumeroOpcional({
+    valor: objetivos.potPct,
     campo: "medicion.objetivos.potPct",
     rango: RANGOS_NUMERICOS.objPotPct,
   });
@@ -333,8 +310,8 @@ function validarMedicion(medicion, muestras) {
     campo: "medicion.durSeg",
     rango: RANGOS_NUMERICOS.durSeg,
   });
-  const potConsPct = validarNumero({
-    valor: Number(medicion.potConsPct ?? 0),
+  const potConsPct = validarNumeroOpcional({
+    valor: medicion.potConsPct,
     campo: "medicion.potConsPct",
     rango: RANGOS_NUMERICOS.potConsPct,
   });
@@ -358,6 +335,11 @@ function validarMedicion(medicion, muestras) {
     }),
     durSeg,
     totalMuestras: muestras.length,
+    estado: validarTexto({valor:medicion.estado,campo:"medicion.estado",maximo:30}) || null,
+    fechaInicio: validarInstante(medicion.fechaInicio,"medicion.fechaInicio"),
+    fechaFin: validarInstante(medicion.fechaFin,"medicion.fechaFin"),
+    calibracionVersion: validarNumeroOpcional({valor:medicion.calibracionVersion,campo:"calibracionVersion",rango:{min:1,max:1000000}}),
+    programa: validarPrograma(medicion.programa),
     potConsPct,
     objVelMs,
     objPotPct,
@@ -373,30 +355,9 @@ function validarDocumentoMedicionTunelab(documento) {
     throw new Error("El archivo no es una medicion Tunelab valida.");
   }
 
-  if (documento.version !== VERSION_FORMATO_MEDICION) {
+  if (!["1.0", "1.1", VERSION_FORMATO_MEDICION].includes(documento.version)) {
     throw new Error(`Version de archivo no compatible: ${documento.version || "desconocida"}.`);
   }
-}
-
-function construirTrazasDesdeMuestras(muestras) {
-  return {
-    velocidad: muestras.map((muestra) => ({
-      segundo: muestra.segundo,
-      valor: muestra.velMs,
-    })),
-    temperatura: muestras.map((muestra) => ({
-      segundo: muestra.segundo,
-      valor: muestra.tempC,
-    })),
-    potencia: muestras.map((muestra) => ({
-      segundo: muestra.segundo,
-      valor: muestra.potPct,
-    })),
-    presion: muestras.map((muestra) => ({
-      segundo: muestra.segundo,
-      valor: muestra.presionPa ?? calcularPresionPitotPa(muestra.velMs),
-    })),
-  };
 }
 
 export function crearMuestrasDesdeMedicion(medicion) {
@@ -410,7 +371,8 @@ export function crearMuestrasDesdeMedicion(medicion) {
     velMs: punto.valor,
     tempC: obtenerValorTraza(temperaturas, indice),
     potPct: obtenerValorTraza(potencias, indice),
-    presionPa: obtenerValorTraza(presiones, indice) || calcularPresionPitotPa(punto.valor),
+    presionPa: obtenerValorTraza(presiones, indice),
+    caudalM3s: obtenerValorTraza(medicion?.trazas?.caudal, indice),
   }));
 }
 
@@ -428,7 +390,8 @@ export function crearDocumentoMedicionTunelab({
     formato: FORMATO_MEDICION_TUNELAB,
     version: VERSION_FORMATO_MEDICION,
     exportadoEn: new Date().toISOString(),
-    fuenteTunel: fuenteTunel || "simulado",
+    fuenteTunel: FUENTES_TUNEL_VALIDAS.has(medicion.fuente) ? medicion.fuente
+      : FUENTES_TUNEL_VALIDAS.has(fuenteTunel) ? fuenteTunel : "desconocida",
     ensayo: {
       codigo: ensayo?.codigo || "SIN-CODIGO",
       nombre: ensayo?.nombre || "Ensayo sin nombre",
@@ -442,12 +405,17 @@ export function crearDocumentoMedicionTunelab({
       nombre: medicion.nombre || "Medicion sin nombre",
       fecha: medicion.fecha || "",
       hora: medicion.hora || "",
-      durSeg: medicion.durSeg || 0,
+      estado: medicion.estado ?? null,
+      fechaInicio: medicion.fechaInicio ?? null,
+      fechaFin: medicion.fechaFin ?? null,
+      calibracionVersion: medicion.calibracionVersion ?? null,
+      programa: medicion.programa ?? null,
+      durSeg: medicion.durSeg ?? 0,
       totalMuestras: medicion.totalMuestras || muestras.length,
-      potConsPct: medicion.potConsPct ?? estadoTunel?.potPct ?? 0,
+      potConsPct: medicion.potConsPct ?? estadoTunel?.potPct ?? null,
       objetivos: {
-        velocidadMs: medicion.objVelMs ?? estadoTunel?.objVelMs ?? 0,
-        potPct: medicion.objPotPct ?? estadoTunel?.objPotPct ?? 0,
+        velocidadMs: medicion.objVelMs ?? estadoTunel?.objVelMs ?? null,
+        potPct: medicion.objPotPct ?? estadoTunel?.objPotPct ?? null,
       },
       resumen: {
         velocidad: medicion.velocidad,
@@ -468,6 +436,20 @@ export function crearNombreArchivoMedicion(documento) {
   return `${nombreEnsayo}_${nombreMedicion}.json`;
 }
 
+function descargarBlob(blob, nombreArchivo) {
+  const url = URL.createObjectURL(blob);
+  const enlace = document.createElement("a");
+
+  enlace.href = url;
+  enlace.download = nombreArchivo;
+  document.body.appendChild(enlace);
+  enlace.click();
+  enlace.remove();
+  URL.revokeObjectURL(url);
+
+  return true;
+}
+
 export function descargarArchivoMed({ ensayo, medicion, fuenteTunel, estadoTunel }) {
   if (!ensayo || !medicion) {
     return false;
@@ -482,108 +464,7 @@ export function descargarArchivoMed({ ensayo, medicion, fuenteTunel, estadoTunel
   const blob = new Blob([JSON.stringify(documento, null, 2)], {
     type: "application/json;charset=utf-8",
   });
-  const url = URL.createObjectURL(blob);
-  const enlace = document.createElement("a");
-
-  enlace.href = url;
-  enlace.download = crearNombreArchivoMedicion(documento);
-  document.body.appendChild(enlace);
-  enlace.click();
-  enlace.remove();
-  URL.revokeObjectURL(url);
-
-  return true;
-}
-
-function crearTablaCrc32() {
-  const tabla = [];
-
-  for (let i = 0; i < 256; i += 1) {
-    let crc = i;
-
-    for (let j = 0; j < 8; j += 1) {
-      crc = crc & 1 ? 0xedb88320 ^ (crc >>> 1) : crc >>> 1;
-    }
-
-    tabla.push(crc >>> 0);
-  }
-
-  return tabla;
-}
-
-const TABLA_CRC32 = crearTablaCrc32();
-
-function calcularCrc32(bytes) {
-  let crc = 0xffffffff;
-
-  for (const byte of bytes) {
-    crc = TABLA_CRC32[(crc ^ byte) & 0xff] ^ (crc >>> 8);
-  }
-
-  return (crc ^ 0xffffffff) >>> 0;
-}
-
-function escribirTextoZip(texto) {
-  return new TextEncoder().encode(texto);
-}
-
-function escribirUint16(valor) {
-  return new Uint8Array([valor & 0xff, (valor >>> 8) & 0xff]);
-}
-
-function escribirUint32(valor) {
-  return new Uint8Array([
-    valor & 0xff,
-    (valor >>> 8) & 0xff,
-    (valor >>> 16) & 0xff,
-    (valor >>> 24) & 0xff,
-  ]);
-}
-
-function crearArchivoZip(nombre, contenido, posicion) {
-  const nombreBytes = escribirTextoZip(nombre);
-  const contenidoBytes = escribirTextoZip(contenido);
-  const crc = calcularCrc32(contenidoBytes);
-  const cabeceraLocal = new Uint8Array([
-    ...escribirUint32(0x04034b50),
-    ...escribirUint16(20),
-    ...escribirUint16(0),
-    ...escribirUint16(0),
-    ...escribirUint16(0),
-    ...escribirUint16(0),
-    ...escribirUint32(crc),
-    ...escribirUint32(contenidoBytes.length),
-    ...escribirUint32(contenidoBytes.length),
-    ...escribirUint16(nombreBytes.length),
-    ...escribirUint16(0),
-    ...nombreBytes,
-  ]);
-  const cabeceraCentral = new Uint8Array([
-    ...escribirUint32(0x02014b50),
-    ...escribirUint16(20),
-    ...escribirUint16(20),
-    ...escribirUint16(0),
-    ...escribirUint16(0),
-    ...escribirUint16(0),
-    ...escribirUint16(0),
-    ...escribirUint32(crc),
-    ...escribirUint32(contenidoBytes.length),
-    ...escribirUint32(contenidoBytes.length),
-    ...escribirUint16(nombreBytes.length),
-    ...escribirUint16(0),
-    ...escribirUint16(0),
-    ...escribirUint16(0),
-    ...escribirUint16(0),
-    ...escribirUint32(0),
-    ...escribirUint32(posicion),
-    ...nombreBytes,
-  ]);
-
-  return {
-    local: new Blob([cabeceraLocal, contenidoBytes]),
-    central: cabeceraCentral,
-    tamanoLocal: cabeceraLocal.length + contenidoBytes.length,
-  };
+  return descargarBlob(blob, crearNombreArchivoMedicion(documento));
 }
 
 export function descargarZipEnsayo({ ensayo, mediciones = [], fuenteTunel }) {
@@ -591,60 +472,26 @@ export function descargarZipEnsayo({ ensayo, mediciones = [], fuenteTunel }) {
     return false;
   }
 
-  let posicion = 0;
-  const locales = [];
-  const centrales = [];
-
-  const fichaEnsayo = crearArchivoZip(
-    "ficha_ensayo.json",
-    JSON.stringify({ ensayo, totalMediciones: mediciones.length }, null, 2),
-    posicion
-  );
-
-  locales.push(fichaEnsayo.local);
-  centrales.push(fichaEnsayo.central);
-  posicion += fichaEnsayo.tamanoLocal;
-
-  mediciones.forEach((medicion, indice) => {
+  const archivos = [
+    {
+      nombre: "ficha_ensayo.json",
+      contenido: JSON.stringify({ ensayo, totalMediciones: mediciones.length }, null, 2),
+    },
+    ...mediciones.map((medicion, indice) => {
     const documento = crearDocumentoMedicionTunelab({
       ensayo,
       medicion,
       fuenteTunel,
     });
     const nombreMedicion = crearNombreArchivoMedicion(documento).replace(/\.json$/i, "");
-    const nombreArchivo = String(indice + 1).padStart(2, "0") + "_" + nombreMedicion + ".json";
-    const archivo = crearArchivoZip(nombreArchivo, JSON.stringify(documento, null, 2), posicion);
-
-    locales.push(archivo.local);
-    centrales.push(archivo.central);
-    posicion += archivo.tamanoLocal;
-  });
-
-  const tamanoCentral = centrales.reduce((total, central) => total + central.length, 0);
-  const finCentral = new Uint8Array([
-    ...escribirUint32(0x06054b50),
-    ...escribirUint16(0),
-    ...escribirUint16(0),
-    ...escribirUint16(centrales.length),
-    ...escribirUint16(centrales.length),
-    ...escribirUint32(tamanoCentral),
-    ...escribirUint32(posicion),
-    ...escribirUint16(0),
-  ]);
-  const blob = new Blob([...locales, ...centrales, finCentral], {
-    type: "application/zip",
-  });
-  const url = URL.createObjectURL(blob);
-  const enlace = document.createElement("a");
-
-  enlace.href = url;
-  enlace.download = normalizarNombreArchivo(ensayo.nombre || ensayo.codigo || "ensayo") + ".zip";
-  document.body.appendChild(enlace);
-  enlace.click();
-  enlace.remove();
-  URL.revokeObjectURL(url);
-
-  return true;
+      return {
+        nombre: String(indice + 1).padStart(2, "0") + "_" + nombreMedicion + ".json",
+        contenido: JSON.stringify(documento, null, 2),
+      };
+    }),
+  ];
+  const blob = crearZipSinCompresion(archivos);
+  return descargarBlob(blob, normalizarNombreArchivo(ensayo.nombre || ensayo.codigo || "ensayo") + ".zip");
 }
 
 export function normalizarDocumentoMedicionTunelab(documento, nombreArchivo = "") {
@@ -659,14 +506,12 @@ export function normalizarDocumentoMedicionTunelab(documento, nombreArchivo = ""
     campo: "exportadoEn",
     maximo: LIMITES_TEXTO.exportadoEn,
   });
-  const resumenCalculado = calcularResumenDesdeMuestras({
+  const resumenCalculado = conservarResumen(documento.medicion.resumen, calcularResumenDesdeMuestras({
     muestras,
-    objVelMs: medicionBase.objVelMs,
-    objPotPct: medicionBase.objPotPct,
-  });
+  }));
   const fuenteTunel = FUENTES_TUNEL_VALIDAS.has(documento.fuenteTunel)
     ? documento.fuenteTunel
-    : "simulado";
+    : "desconocida";
 
   return {
     id: `${normalizarNombreArchivo(nombreArchivo || "archivo")}-${exportadoEn || Date.now()}`,
@@ -678,11 +523,12 @@ export function normalizarDocumentoMedicionTunelab(documento, nombreArchivo = ""
     ensayo,
     medicion: {
       ...medicionBase,
+      fuente: fuenteTunel,
       velocidad: resumenCalculado.velocidad,
       temperatura: resumenCalculado.temperatura,
       potencia: resumenCalculado.potencia,
       tecnicos: resumenCalculado.tecnicos,
-      trazas: construirTrazasDesdeMuestras(muestras),
+      trazas: crearTrazas(muestras, medicionBase.programa?.etapas),
       eventos,
       muestras,
     },
@@ -704,4 +550,11 @@ export async function leerArchivoMedicionTunelab(archivo) {
   }
 
   return normalizarDocumentoMedicionTunelab(documento, archivo.name);
+}
+
+export function comprobarCapacidadImportacion(archivos, muestrasNuevas) {
+  const total = archivos.reduce((n, archivo) => n + (archivo.medicion?.muestras?.length || 0), muestrasNuevas);
+  if (total > LIMITE_MUESTRAS_IMPORTADAS) {
+    throw new Error(`El visor admite hasta ${LIMITE_MUESTRAS_IMPORTADAS.toLocaleString("es-ES")} muestras importadas en total. Quita archivos antes de cargar más.`);
+  }
 }

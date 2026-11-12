@@ -1,0 +1,613 @@
+.reg2lista,
+.doclista,
+.docmedicioneslista {
+  overscroll-behavior: contain;
+}
+
+:is(.reg2lista,.dash2eventoslista,.doclista,.docmedicioneslista)::-webkit-scrollbar {
+  width: 8px;
+}
+
+:is(.reg2lista,.dash2eventoslista,.doclista,.docmedicioneslista)::-webkit-scrollbar-thumb {
+  background: #8297b54d;
+}
+
+.reg2listaensayos,
+.reg2listamediciones {
+  flex: auto;
+  align-content: start;
+  min-height: 0;
+}
+
+.reg2itemensayo {
+  cursor: pointer;
+}
+
+.reg2itemensayo :is(.reg2itemfecha,.reg2itemcodigo),
+.doclista .docitem span {
+  font-style: normal;
+  font-weight: 400;
+}
+
+.app-shell .page--registro2 .reg2lista,
+.app-shell .page--docente .doclista {
+  gap: 10px;
+}
+
+.app-shell .page--registro2 .reg2navegador .reg2item {
+  border-radius: var(--control-radio);
+  background: var(--claro-fondo);
+  padding: 11px 82px 11px 14px;
+}
+
+.app-shell .page--registro2 .reg2navegador .reg2item:hover {
+  background: var(--hover-recuadro-claro);
+  border-color: var(--hover-borde-recuadro-claro);
+}
+
+.app-shell .page--registro2 .reg2navegador .reg2itemseleccionado:hover {
+  background: var(--seleccion-recuadro-claro);
+  border-color: var(--seleccion-borde-recuadro-claro);
+}
+
+.app-shell .page--registro2 .reg2navegador .reg2item .reg2itemacciones {
+  background: 0 0;
+}
+
+.doclista {
+  grid-auto-rows: max-content;
+  min-height: 0;
+}
+
+.docmediciones {
+  align-content: start;
+  display: grid;
+}
+
+.docmedicioneslista {
+  max-height: clamp(260px,34vh,320px);
+}
+
+.docmedicion {
+  grid-template-columns: minmax(0,1fr) auto;
+  align-items: center;
+}
+
+.docmedicion div {
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+  display: flex;
+}
+
+@media (width<=720px) {
+  .docmedicion {
+    grid-template-columns: 1fr;
+  }
+}
+
+.dochistoriallista {
+  max-height: 260px;
+  margin-top: 0;
+}
+
+.app-shell .page--docente .dochistoriallista {
+  gap: 8px;
+}
+
+.app-shell .page--docente .doclista .docitem {
+  border-radius: var(--control-radio);
+  background: #fff;
+  padding: 11px 14px;
+}
+
+.app-shell .page--docente .doclista .docitem:hover {
+  background: var(--hover-recuadro-claro);
+  border-color: var(--hover-borde-recuadro-claro);
+}
+
+.app-shell .page--docente .doclista .docitemactivo,
+.app-shell .page--docente .doclista .docitemactivo:hover {
+  background: var(--seleccion-recuadro-claro);
+  border-color: var(--seleccion-borde-recuadro-claro);
+}
+
+.app-shell .page--docente .docmediciones {
+  gap: 10px;
+}
+
+.app-shell .page--docente .docmedicioneslista {
+  gap: 8px;
+}
+
+.app-shell .page--docente .docmedicioneslista .docmedicion {
+  border-radius: var(--control-radio);
+  background: #fff;
+  min-height: 46px;
+  padding: 9px 12px;
+}
+
+.app-shell .page--docente .docmedicioneslista .docmedicion:hover {
+  background: var(--hover-recuadro-claro);
+  border-color: var(--hover-borde-recuadro-claro);
+}
+
+.app-shell .doclista::-webkit-scrollbar-thumb,
+.app-shell .reg2lista::-webkit-scrollbar-thumb {
+  background: #aebdca;
+}
+
+.app-shell .reg2item em {
+  color: #276d3c;
+  background: #e4f2e9;
+  border-color: #8fc7a3;
+}
+
+.app-shell .reg2itemensayo,
+.app-shell .doclista .docitem {
+  gap: 7px;
+}
+
+.app-shell .reg2itemensayo .reg2itemfecha,
+.app-shell .reg2itemensayo span,
+.app-shell .doclista .docitem span {
+  color: #31506a;
+}
+
+.app-shell .reg2itemensayo strong,
+.app-shell .doclista .docitem strong {
+  color: #102033;
+  font-weight: 600;
+}
+
+.app-shell .reg2itemensayo.reg2itemseleccionado {
+  color: var(--text-main);
+}
+
+.app-shell .docitem small,
+.app-shell .docmedicion span {
+  color: #53677c;
+}
+
+.app-shell .reg2item,
+.app-shell .docmedicion {
+  background: #f8fafc;
+  border-color: #d0dbe5;
+}
+
+.app-shell .page--registro2 .reg2itemensayo,
+.app-shell .page--registro2 .reg2itemmedicion,
+.app-shell .page--docente .docitem {
+  background: var(--claro-fondo);
+  border-color: var(--claro-borde);
+}
+
+.app-shell .page--registro2 .reg2itemensayo .reg2itemacciones,
+.app-shell .page--registro2 .reg2itemmedicion .reg2itemacciones {
+  background: 0 0;
+}
+
+.lista-scroll-contenido {
+  align-content: start;
+  gap: inherit;
+  max-height: var(--lista-altura-natural);
+  grid-auto-rows: max-content;
+  display: grid;
+}
+
+.reg2lista,
+.doclista,
+.dochistoriallista,
+.docmedicioneslista {
+  scrollbar-gutter: stable;
+  align-content: start;
+  padding: 0 6px 0 0;
+  display: grid;
+  overflow-y: auto;
+}
+
+:is(.reg2lista,.doclista,.docmedicioneslista,.dochistoriallista)::-webkit-scrollbar-track {
+  background: var(--lista-scroll-pista);
+  margin-block: 0;
+}
+
+:is(.reg2item,.docitem,.docmedicion) {
+  border: 1px solid var(--tarjeta-lista-borde);
+  border-radius: var(--control-radio);
+  text-align: left;
+  align-content: start;
+  gap: 4px;
+  width: 100%;
+  min-height: auto;
+  padding: 8px 10px;
+  display: grid;
+  position: relative;
+}
+
+.reg2itemensayo,
+.reg2itemmedicion {
+  padding-right: 82px;
+}
+
+:is(.reg2item,.docitem):hover {
+  transform: none;
+}
+
+:is(.reg2itemfecha,.reg2itemcodigo,.docitem span,.docitem small,.docitem em,.docmedicion span,.reg2item span) {
+  color: var(--tarjeta-lista-secundario);
+  letter-spacing: 0;
+  text-transform: none;
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+:is(.reg2item strong,.docitem strong,.docmedicion strong) {
+  color: var(--tarjeta-lista-texto);
+  overflow-wrap: anywhere;
+  font-size: 14px;
+  line-height: 1.2;
+}
+
+.reg2itemacciones {
+  align-items: center;
+  gap: 5px;
+  display: flex;
+  position: absolute;
+  top: 8px;
+  right: 8px;
+}
+
+:is(.dash2estadoflotante span,.dash2estadoflotante small,.dash2tarjeta span,.dash2tarjeta small,.dash2alertamini,.dash2tabs button,.ens2campo span,.ens2campo input,.ens2campo textarea,.docpanelcabecera span,.docpanelcabecera>strong,.docmedicion span,.inspselectoretiqueta,.inspselectorvalor,.inspactivotexto) {
+  font-weight: 400;
+}
+
+:is(.dash2estadoflotante strong,.dash2tarjeta strong,.dash2medidor strong,.docmedicion strong,.docusotuneldatos strong) {
+  font-weight: 500;
+}
+
+:is(.dash2estadoflotante small,.dash2tarjeta small,.dash2medidor strong small,.docmedicion span,.inspactivotexto) {
+  font-size: 12px;
+}
+
+.page--docente .docmedicionescabecera {
+  padding-bottom: 0;
+}
+
+.app-shell :is(.reg2item,.reg2itemensayo,.reg2itemmedicion,.docitem,.docmedicion,.inspitem,.inspselectoritem,.inspselectorcontrol,.visorpuntoboton):hover {
+  background: var(--hover-recuadro-claro);
+  border-color: var(--hover-borde-recuadro-claro);
+  color: var(--text-main);
+}
+
+.app-shell :is(.reg2itemseleccionado,.reg2itemensayo.reg2itemseleccionado,.reg2itemmedicion.reg2itemseleccionado,.docitemactivo,.inspitemactivo,.inspselectoritemactivo,.visorpuntobotonactivo),
+.app-shell :is(.reg2itemseleccionado,.reg2itemensayo.reg2itemseleccionado,.reg2itemmedicion.reg2itemseleccionado,.docitemactivo,.inspitemactivo,.inspselectoritemactivo,.visorpuntobotonactivo):hover,
+.app-shell .page--registro2 :is(.reg2itemseleccionado,.reg2itemensayo.reg2itemseleccionado,.reg2itemmedicion.reg2itemseleccionado),
+.app-shell .page--docente .docitemactivo,
+.app-shell .page--registro2 :is(.reg2itemensayo.reg2itemseleccionado,.reg2itemmedicion.reg2itemseleccionado) .reg2itemacciones {
+  background: var(--seleccion-recuadro-claro);
+  border-color: var(--seleccion-borde-recuadro-claro);
+}
+
+.cont2programatablaenvoltura {
+  border: 1px solid var(--claro-borde);
+  border-radius: var(--tabla-radio);
+  overflow-x: auto;
+}
+
+.cont2programatabla {
+  border-collapse: collapse;
+  table-layout: fixed;
+  width: 100%;
+  min-width: 680px;
+}
+
+.cont2programatabla :is(th,td) {
+  border-bottom: 1px solid var(--claro-borde-suave);
+  text-align: left;
+  vertical-align: middle;
+  padding: 12px 16px;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.cont2programatabla thead {
+  background: var(--claro-suave);
+}
+
+.cont2programatabla thead th {
+  color: var(--text-soft);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.cont2programatabla th:first-child {
+  text-align: center;
+  width: 56px;
+}
+
+.cont2programatabla th:nth-child(2) {
+  width: 24%;
+}
+
+.cont2programatabla th:nth-child(5) {
+  text-align: center;
+  width: 152px;
+}
+
+.cont2programatabla :is(th,td):is(:nth-child(3),:nth-child(4)) {
+  text-align: center;
+}
+
+.cont2programatabla tbody td:nth-child(2) {
+  color: var(--text-soft);
+  overflow-wrap: anywhere;
+}
+
+.cont2programatabla tbody tr.cont2programaetapa--activa {
+  background: #edf5fb;
+}
+
+.cont2programatabla .cont2programaanadir {
+  padding: 0;
+  border-top: 1px solid var(--claro-borde-suave);
+  border-bottom: 0;
+}
+
+.cont2programaanadir button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 44px;
+  padding: 12px 16px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--primary);
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.cont2programaanadir button:hover:not(:disabled) {
+  background: #f3f6f9;
+}
+
+.cont2programaanadir button:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+
+.ens2tablaenvoltorio {
+  border-radius: var(--tabla-radio);
+  border: 1px solid #d5e0e9;
+  overflow-x: auto;
+}
+
+.ens2tablaensayos {
+  border-collapse: collapse;
+  table-layout: fixed;
+  width: 100%;
+  min-width: 960px;
+}
+
+.ens2tablaensayos th {
+  letter-spacing: .55px;
+  text-align: center;
+  text-transform: uppercase;
+  background: #f1f5f8;
+  border-bottom: 1px solid #d5e0e9;
+  padding: 11px 12px;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.ens2tablaensayos th:first-child {
+  width: 21%;
+}
+
+.ens2tablaensayos th:nth-child(2) {
+  width: 21%;
+}
+
+.ens2tablaensayos th:nth-child(3) {
+  width: 18%;
+}
+
+.ens2tablaensayos th:nth-child(4) {
+  width: 11%;
+}
+
+.ens2tablaensayos th:nth-child(5) {
+  width: 29%;
+}
+
+.ens2tablaensayos td {
+  background: inherit;
+  overflow-wrap: anywhere;
+  text-align: center;
+  border-bottom: 1px solid #e4ebf0;
+  padding: 6px 8px;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.ens2tablaensayos tbody tr:hover {
+  background: #f5f5f5;
+}
+
+.ens2tablaensayos tbody tr.ens2filaseleccionada {
+  background: #e9e9e9;
+}
+
+.ens2tablaensayos .ens2tablanombre {
+  font-weight: 700;
+}
+
+.ens2tablaensayos .ens2tablamediciones {
+  text-align: center;
+}
+
+.ens2tablaacciones {
+  background: 0 0;
+  grid-template-columns: repeat(2,minmax(88px,124px));
+  justify-content: center;
+  gap: 6px;
+  display: grid;
+}
+
+.docdetalletabla th,
+.docdetalletabla td {
+  vertical-align: top;
+  overflow-wrap: anywhere;
+  padding: 9px 10px;
+}
+
+.docdetalletabla th {
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.docdetalletabla td small {
+  margin-top: 3px;
+  font-size: 12px;
+  font-weight: 500;
+  display: block;
+}
+
+@media (width<=720px) {
+  .docdetalletabla,
+  .docdetalletabla tbody,
+  .docdetalletabla tr,
+  .docdetalletabla th,
+  .docdetalletabla td {
+    width: 100%;
+    display: block;
+  }
+
+  .docdetalletabla tr {
+    border-bottom: 1px solid #8496aa3d;
+  }
+
+  .docdetalletabla tr:last-child {
+    border-bottom: 0;
+  }
+
+  .docdetalletabla th {
+    padding-bottom: 2px;
+  }
+
+  .docdetalletabla td {
+    padding-top: 2px;
+  }
+}
+
+.docdetalletablas {
+  display: grid;
+}
+
+.docdetalletabla caption {
+  clip-path: inset(50%);
+  white-space: nowrap;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  position: absolute;
+  overflow: hidden;
+}
+
+.page--docente .docdetalletabla th {
+  font-size: 9.5px;
+  font-weight: 400;
+}
+
+.page--docente .docdetalletabla td {
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.35;
+}
+
+.page--docente .docdetalletabla caption {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.app-shell .page--docente :is(.docgrid,.docpanelcabecera,.doclista,.docacciones,.docdetalletablas,.docmediciones,.docmedicioneslista) {
+  background: 0 0;
+}
+
+.app-shell .page--docente .docdetalletablas {
+  gap: 12px;
+}
+
+.app-shell .page--docente .docdetalletabla {
+  border-collapse: separate;
+  border-spacing: 0;
+  border-radius: var(--tabla-radio);
+  overflow: hidden;
+}
+
+.app-shell .page--docente .docdetalletabla :is(th,td) {
+  border: 0;
+  border-bottom: 1px solid var(--claro-borde-suave);
+}
+
+.app-shell .page--docente .docdetalletabla th {
+  border-right: 1px solid var(--claro-borde-suave);
+  width: 175px;
+}
+
+.cont2programatabla tbody tr:last-child :is(th,td),
+.ens2tablaensayos tr:last-child td,
+.app-shell .page--docente .docdetalletabla tr:last-child :is(th,td) {
+  border-bottom: 0;
+}
+
+@media (width<=720px) {
+  .app-shell .page--docente .docdetalletabla th {
+    border-bottom: 0;
+    border-right: 0;
+    width: 100%;
+  }
+}
+
+.app-shell div[class^=ens2]:not(.ens2tablaacciones) {
+  background-color: var(--claro-fondo);
+  border-color: var(--claro-borde);
+}
+
+.app-shell .docdetalletabla th {
+  color: #5f7184;
+  background: #edf3f7;
+}
+
+.app-shell .docdetalletabla td {
+  background: var(--claro-fondo);
+  color: var(--text-main);
+}
+
+.app-shell .docdetalletabla td small {
+  color: #6c7f93;
+}
+
+.app-shell .docdetalletabla {
+  color: var(--text-main);
+  background: #f8fafc;
+  border-color: #d0dbe5;
+}
+
+.docdetalletabla {
+  table-layout: fixed;
+  border: 1px solid #8496aa3d;
+  width: 100%;
+}
+
+:is(.docdetalletabla th,.docdetalletabla td) {
+  text-align: left;
+}
+
+.ens2tablaensayos tbody tr {
+  background: #fff;
+}
