@@ -1,5 +1,21 @@
-import { empaquetarGLB } from '../../src/servicios/modelos3d.js';
-
+export function empaquetarGLB(json, bin) {
+  const texto = new TextEncoder().encode(JSON.stringify(json));
+  const n = Math.ceil(texto.byteLength / 4) * 4,
+    b = Math.ceil(bin.byteLength / 4) * 4;
+  const salida = new ArrayBuffer(28 + n + b),
+    view = new DataView(salida);
+  view.setUint32(0, 0x46546c67, true);
+  view.setUint32(4, 2, true);
+  view.setUint32(8, salida.byteLength, true);
+  view.setUint32(12, n, true);
+  view.setUint32(16, 0x4e4f534a, true);
+  new Uint8Array(salida, 20, n).fill(32);
+  new Uint8Array(salida, 20, texto.length).set(texto);
+  view.setUint32(20 + n, b, true);
+  view.setUint32(24 + n, 0x004e4942, true);
+  new Uint8Array(salida, 28 + n, bin.byteLength).set(bin instanceof Uint8Array ? bin : new Uint8Array(bin));
+  return salida;
+}
 // Own triangle meshes, without textures, to exercise the complete import path.
 export function glbFixture(geometry, change = () => {}) {
   geometry.computeBoundingBox();

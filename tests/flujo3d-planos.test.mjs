@@ -1,76 +1,68 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { conectarPlanos } from '../src/aerodinamica/planos.js';
-import { cortarCampo } from '../src/aerodinamica/campo.js';
+import vm from 'node:vm';
+import { Window } from 'happy-dom';
+import * as React from 'react';
+import * as jsx from 'react/jsx-runtime';
+import { transformWithOxc } from 'vite';
+import * as campo from '../src/aerodinamica/campo.js';
 import { pixelesPlano } from '../src/aerodinamica/mapas.js';
 
-class Element extends EventTarget {
-  attributes = new Map();
-  style = { setProperty() {} };
-  draws = [];
-  setAttribute(name, value) { this.attributes.set(name, value); }
-  getContext() { return {
-    putImageData: image => this.draws.push(image.data),
-    clearRect: () => { this.draws = []; },
-  }; }
+const ventana = new Window();
+for (const nombre of ['window', 'document', 'HTMLElement', 'HTMLInputElement', 'Event']) globalThis[nombre] = nombre === 'window' ? ventana : ventana[nombre];
+globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+const { createRoot } = await import('react-dom/client');
+
+function modulo(datos, contexto) {
+  return new vm.SyntheticModule(Object.keys(datos), function () {
+    for (const [nombre, valor] of Object.entries(datos)) this.setExport(nombre, valor);
+  }, { context: contexto });
 }
 
-test('cada deslizador mueve solo su corte, conserva los otros y se limpia al salir', t => {
-  const html = readFileSync(new URL('../src/aerodinamica/contenido.html', import.meta.url), 'utf8');
-  const elements = new Map([...html.matchAll(/id="([^"]+)"/g)].map(([, id]) => [id, new Element()]));
-  const root = { querySelector: selector => elements.get(selector.slice(1)) };
-  const frames = new Map();
-  let frameId = 0;
-  let views;
-  t.after(() => views?.dispose());
-  const globals = {
-    requestAnimationFrame: callback => { frames.set(++frameId, callback); return frameId; },
-    cancelAnimationFrame: id => frames.delete(id),
-    ImageData: class { constructor(data) { this.data = data; } },
+test('los tres controles React mueven cortes independientes y cancelan el dibujo al desmontarse', async () => {
+  const frames = new Map(), dibujos = new Map();
+  let contador = 0;
+  const contexto = vm.createContext({ Intl, requestAnimationFrame: fn => { frames.set(++contador, fn); return contador; }, cancelAnimationFrame: id => frames.delete(id) });
+  const ruta = new URL('../src/aerodinamica/Laboratorio.jsx', import.meta.url);
+  const { code } = await transformWithOxc(readFileSync(ruta, 'utf8') + '\nexport { Plano };', ruta.pathname, { jsx: { runtime: 'automatic' } });
+  const programa = new vm.SourceTextModule(code, { context: contexto });
+  const dependencias = {
+    react: React, 'react/jsx-runtime': jsx,
+    './campo.js': campo,
+    './mapas.js': { pintarPlano: (canvas, plano) => dibujos.set(canvas.id, pixelesPlano(plano)) },
+    './vistaObjeto.jsx': { default: () => null },
+    './flujo.js': { useFlujo: () => { throw new Error('No se utiliza en estos cortes'); } },
+    '../servicios/modelos3d.js': Object.fromEntries(['LIMITES_GLB', 'geometriaAjustada', 'maximoTamano', 'evaluarObjeto'].map(k => [k, null])),
+    './estilo.css': {},
   };
-  for (const [name, value] of Object.entries(globals)) {
-    const previous = Object.getOwnPropertyDescriptor(globalThis, name);
-    Object.defineProperty(globalThis, name, { configurable: true, writable: true, value });
-    t.after(() => { if (previous) Object.defineProperty(globalThis, name, previous); else delete globalThis[name]; });
-  }
-  const flush = () => { const callbacks = [...frames.values()]; frames.clear(); callbacks.forEach(callback => callback()); };
-  const field = { shape: [101, 71, 71], origin: [-50, -35, -35], step: 1, values: new Float32Array(101 * 71 * 71) };
-  for (let x = 0; x < 101; x++) for (let y = 0; y < 71; y++) for (let z = 0; z < 71; z++) {
-    field.values[(x * 71 + y) * 71 + z] = x / 100 + y / 1000 + z / 10000;
-  }
-  views = conectarPlanos(root);
-  views.mostrar(field);
-  const positions = { vertical: 0, horizontal: 0, transversal: 0 };
-  const move = (orientation, value) => {
-    const slider = elements.get(`posicion-${orientation}`);
-    slider.value = value;
-    slider.dispatchEvent(new Event('input'));
-  };
-  for (const [orientation, value] of [['horizontal', 9], ['vertical', -7], ['transversal', 16]]) {
-    const before = Object.fromEntries(Object.keys(positions).map(key => [key, elements.get(`mapa-${key}`).draws.length]));
-    move(orientation, value - 1);
-    move(orientation, value);
-    assert.equal(frames.size, 1, 'agrupa los eventos en un único repintado');
+  await programa.link(nombre => modulo(dependencias[nombre], contexto));
+  await programa.evaluate();
+  const Plano = programa.namespace.Plano;
+  const field = { shape: [21, 15, 15], origin: [-10, -7, -7], step: 1, values: new Float32Array(21 * 15 * 15) };
+  for (let x = 0; x < 21; x++) for (let y = 0; y < 15; y++) for (let z = 0; z < 15; z++) field.values[(x * 15 + y) * 15 + z] = x / 10 + y / 100 + z / 1000;
+  const contenedor = document.createElement('div'); document.body.append(contenedor);
+  const root = createRoot(contenedor);
+  const flush = () => { const pendientes = [...frames.values()]; frames.clear(); pendientes.forEach(fn => fn()); };
+  try {
+    await React.act(async () => root.render(React.createElement(React.Fragment, null,
+      ...Object.keys(campo.ORIENTACIONES).map(orientacion => React.createElement(Plano, { key: orientacion, campo: field, orientacion })))));
     flush();
-    positions[orientation] = value;
-    for (const [key, position] of Object.entries(positions)) {
-      const canvas = elements.get(`mapa-${key}`);
-      assert.equal(Number(elements.get(`posicion-${key}`).value), position);
-      assert.equal(canvas.draws.length, before[key] + Number(key === orientation));
-      assert.deepEqual(canvas.draws.at(-1), pixelesPlano(cortarCampo(field, key, position)));
+    const posiciones = { vertical: 0, horizontal: 0, transversal: 0 };
+    for (const [orientacion, valor] of [['horizontal', 3], ['vertical', -4], ['transversal', 8]]) {
+      const input = contenedor.querySelector(`#posicion-${orientacion}`);
+      await React.act(async () => {
+        Object.getOwnPropertyDescriptor(ventana.HTMLInputElement.prototype, 'value').set.call(input, String(valor));
+        input.dispatchEvent(new ventana.Event('input', { bubbles: true }));
+      });
+      assert.equal(frames.size, 1, 'solo se repinta el plano modificado');
+      flush(); posiciones[orientacion] = valor;
+      for (const [key, posicion] of Object.entries(posiciones)) {
+        assert.equal(Number(contenedor.querySelector(`#posicion-${key}`).value), posicion);
+        assert.deepEqual(dibujos.get(`mapa-${key}`), pixelesPlano(campo.cortarCampo(field, key, posicion)));
+      }
     }
-  }
-  move('horizontal', 10);
-  views.clear();
-  assert.equal(frames.size, 0);
-  assert.equal(elements.get('mapas-flujo').hidden, true);
-  assert.equal(elements.get('vacio').hidden, false);
-  views.mostrar(field);
-  assert.equal(elements.get('valor-horizontal').textContent, '+10 cm');
-  assert.equal(elements.get('valor-vertical').textContent, '-7 cm');
-  assert.equal(elements.get('valor-transversal').textContent, '+16 cm');
-  views.dispose();
-  move('horizontal', 11);
-  assert.equal(frames.size, 0);
+    await React.act(async () => root.unmount());
+    assert.equal(frames.size, 0);
+  } finally { contenedor.remove(); await ventana.happyDOM.close(); }
 });

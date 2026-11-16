@@ -257,96 +257,13 @@
   font-size: 14px;
 }
 
-.analisis-grafica-svg {
-  width: 100%;
-  height: auto;
-  display: block;
-  overflow: visible;
-}
-
 .analisis-grafica-lienzo {
   min-width: 0;
   position: relative;
 }
 
-.analisis-grafica-svg[tabindex] {
-  cursor: crosshair;
-}
-
-.analisis-grafica-svg:focus:not(:focus-visible) {
-  outline: none;
-}
-
-.analisis-grafica-cursor {
-  pointer-events: none;
-}
-
-.analisis-grafica-cursor line {
-  stroke: #8799aa;
-  stroke-dasharray: 3 3;
-}
-
-.analisis-grafica-cursor circle {
-  stroke: #fff;
-  stroke-width: 2;
-}
-
-.analisis-grafica-tooltip {
-  position: absolute;
-  top: 8px;
-  left: clamp(8px, var(--consulta-x), max(8px, calc(100% - 208px)));
-  width: min(200px, calc(100% - 16px));
-  padding: 8px 10px;
-  background: #fff;
-  border: 1px solid var(--analisis-borde);
-  border-radius: var(--control-radio);
-  box-shadow: 0 2px 6px #10203315;
-  pointer-events: none;
-  display: grid;
-  gap: 4px;
-  font-size: 13px;
-  overflow-wrap: anywhere;
-}
-
-.analisis-grafica-tooltip span {
-  color: var(--analisis-secundario);
-}
-
-.analisis-grafica-tooltip strong {
-  font-weight: 600;
-}
-
-.analisis-grafica-ejes {
-  stroke: #c4ced8;
-  stroke-width: 1px;
-}
-
-.analisis-grafica-marcas {
-  fill: var(--analisis-secundario);
-  font-family: inherit;
-  font-size: 14px;
-}
-
-.analisis-grafica-linea {
-  stroke-width: 2px;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  vector-effect: non-scaling-stroke;
-}
-
-.analisis-grafica-estable {
-  fill: #e4f1e8;
-}
-
-.analisis-grafica-consignas line {
-  stroke: #8799aa;
-  stroke-dasharray: 4 4;
-}
-
-.analisis-grafica-consignas text {
-  fill: #53677a;
-  font-size: 12px;
-}
+.analisis-grafica-lienzo canvas[tabindex] { cursor: crosshair; }
+.solo-lector { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
 .analisis-leyenda-flujo {
   display: flex;

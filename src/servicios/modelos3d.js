@@ -11,7 +11,7 @@ export const LIMITES_GLB = {
 
 export function optimizarGLB(buffer) {
   const resultado = prepararGLB(buffer, LIMITES_GLB.bytesEntrada);
-  return { ...resultado, bytesOriginales: buffer.byteLength, bytesPreparados: resultado.buffer.byteLength };
+  return resultado.then(preparado => ({ ...preparado, bytesOriginales: buffer.byteLength, bytesPreparados: preparado.buffer.byteLength }));
 }
 
 const entero = (v, min, max) => Number.isSafeInteger(v) && v >= min && v <= max;
@@ -20,7 +20,8 @@ const exigir = (condicion, texto) => {
 };
 
 export function comprobarGLB(buffer, limiteEntrada = LIMITES_GLB.bytesEntrada) {
-  exigir(buffer instanceof ArrayBuffer && buffer.byteLength >= 28 && buffer.byteLength <= limiteEntrada, `El GLB debe ocupar como máximo ${limiteEntrada / (1024 * 1024)} MB y contener una geometría.`);
+  exigir(buffer instanceof ArrayBuffer && buffer.byteLength >= 28, 'El archivo está vacío o incompleto: no contiene una cabecera GLB válida.');
+  exigir(buffer.byteLength <= limiteEntrada, `El GLB supera el límite de ${limiteEntrada / (1024 * 1024)} MB.`);
   const view = new DataView(buffer);
   exigir(view.getUint32(0, true) === 0x46546c67 && view.getUint32(4, true) === 2, 'Selecciona un archivo GLB versión 2. No se admiten GLTF ni archivos renombrados.');
   exigir(view.getUint32(8, true) === buffer.byteLength, 'El GLB está incompleto o tiene una longitud incorrecta.');
@@ -39,24 +40,6 @@ export class CargadorGLB extends GLTFLoader {
   }
 }
 
-export function empaquetarGLB(json, bin) {
-  const texto = new TextEncoder().encode(JSON.stringify(json));
-  const n = Math.ceil(texto.byteLength / 4) * 4,
-    b = Math.ceil(bin.byteLength / 4) * 4;
-  const salida = new ArrayBuffer(28 + n + b),
-    view = new DataView(salida);
-  view.setUint32(0, 0x46546c67, true);
-  view.setUint32(4, 2, true);
-  view.setUint32(8, salida.byteLength, true);
-  view.setUint32(12, n, true);
-  view.setUint32(16, 0x4e4f534a, true);
-  new Uint8Array(salida, 20, n).fill(32);
-  new Uint8Array(salida, 20, texto.length).set(texto);
-  view.setUint32(20 + n, b, true);
-  view.setUint32(24 + n, 0x004e4942, true);
-  new Uint8Array(salida, 28 + n, bin.byteLength).set(bin instanceof Uint8Array ? bin : new Uint8Array(bin));
-  return salida;
-}
 export function prepararGLB(buffer, limiteEntrada = LIMITES_GLB.bytes) {
   comprobarGLB(buffer, limiteEntrada);
   const view = new DataView(buffer);
@@ -228,48 +211,27 @@ export function prepararGLB(buffer, limiteEntrada = LIMITES_GLB.bytes) {
   for (const root of scene.nodes) visitar(root, 0);
   exigir(triangles > 0, 'La escena no contiene superficies trianguladas.');
 
-  // Copiar solo posiciones e índices, incluso cuando comparten buffer con otros atributos.
-  let longitud = 0;
-  const bloques = safe.accessors.map(a => {
-    const origen = safe.bufferViews[a.bufferView];
-    const bytes = { 5120: 1, 5121: 1, 5122: 2, 5123: 2, 5125: 4, 5126: 4 }[a.componentType];
-    const elemento = bytes * (a.type === 'VEC3' ? 3 : 1);
-    const paso = a.type === 'VEC3' ? Math.ceil(elemento / 4) * 4 : elemento;
-    const inicio = longitud;
-    longitud += Math.ceil(a.count * paso / 4) * 4;
-    exigir(longitud <= LIMITES_GLB.bytes, 'La geometría preparada supera 20 MB. Simplifica la malla antes de importarla.');
-    return { origen: origen.byteOffset + a.byteOffset, pasoOrigen: origen.byteStride || elemento, inicio, elemento, paso };
-  });
-  const geometria = new Uint8Array(longitud);
-  safe.bufferViews = bloques.map((bloque, i) => {
-    const a = safe.accessors[i], { origen, pasoOrigen, inicio, elemento, paso } = bloque;
-    if (pasoOrigen === elemento && paso === elemento) {
-      geometria.set(bin.subarray(origen, origen + a.count * elemento), inicio);
-    } else {
-      for (let k = 0; k < a.count; k++) {
-        const desde = origen + k * pasoOrigen;
-        geometria.set(bin.subarray(desde, desde + elemento), inicio + k * paso);
-      }
-    }
-    a.bufferView = i;
-    a.byteOffset = 0;
-    return { buffer: 0, byteOffset: inicio, byteLength: a.count * paso, ...(paso !== elemento ? { byteStride: paso } : {}) };
-  });
-  safe.buffers[0].byteLength = geometria.byteLength;
-  const resultado = empaquetarGLB(safe, geometria);
-  exigir(resultado.byteLength <= LIMITES_GLB.bytes, 'La geometría preparada supera 20 MB. Simplifica la malla antes de importarla.');
-  return {
-    buffer: resultado,
-    triangles,
-    pieces,
-    animationsIgnored: Boolean(json.animations?.length)
-  };
+  const bytesGeometria = safe.accessors.reduce((n, a) => n + a.count * (a.type === 'VEC3' ? 12 : 4), 0);
+  exigir(bytesGeometria <= LIMITES_GLB.bytes, 'La geometría preparada supera 20 MB. Simplifica la malla antes de importarla.');
+  // El documento contiene únicamente geometría validada: nunca se leen imágenes ni URLs del GLB.
+  safe.buffers[0].uri = 'geometria.bin';
+  return Promise.all([import('@gltf-transform/core'), import('@gltf-transform/extensions')])
+    .then(async ([{ WebIO }, { KHRMeshQuantization }]) => {
+      const io = new WebIO().registerExtensions([KHRMeshQuantization]);
+      const documento = await io.readJSON({ json: safe, resources: { 'geometria.bin': bin } });
+      return io.writeBinary(documento);
+    })
+    .then(datos => {
+      exigir(datos.byteLength <= LIMITES_GLB.bytes, 'La geometría preparada supera 20 MB. Simplifica la malla antes de importarla.');
+      return { buffer: datos.buffer.slice(datos.byteOffset, datos.byteOffset + datos.byteLength),
+        triangles, pieces, animationsIgnored: Boolean(json.animations?.length) };
+    });
 }
 
 export async function importarGLB(data) {
   let result;
   try {
-    const prepared = optimizarGLB(data);
+    const prepared = await optimizarGLB(data);
     const manager = new LoadingManager();
     manager.setURLModifier(() => {
       throw new Error('El modelo intenta cargar un recurso externo.');

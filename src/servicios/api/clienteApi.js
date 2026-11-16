@@ -1,3 +1,6 @@
+import { QueryClient } from '@tanstack/react-query';
+export const consultasApi = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: 0 }, mutations: { retry: false } } });
+
 export const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8010/api";
 const CLAVE_IDENTIDAD_API = "tunelab_identidad_api";
 
@@ -34,6 +37,7 @@ export function configurarIdentidadApi(usuarioActual = {}) {
     rol: usuarioActual.rol || "alumno",
   };
 
+  if (leerIdentidadApi()?.identificador !== identidad.identificador) consultasApi.clear();
   guardarIdentidadApi(identidad);
 }
 
@@ -87,6 +91,7 @@ export function leerIdentidadApi() {
 }
 
 export function borrarIdentidadApi() {
+  consultasApi.clear();
   window.localStorage.removeItem(CLAVE_IDENTIDAD_API);
   window.sessionStorage.removeItem(CLAVE_IDENTIDAD_API);
 }

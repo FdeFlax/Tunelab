@@ -11,7 +11,7 @@ from app.configuracion_tunel import TUNEL, parametros_flujo
 FLUJO = parametros_flujo(TUNEL)
 
 def identificar_modelo(parametros=FLUJO):
-    return "xlb-031-smagorinsky-v4-" + hashlib.sha256(json.dumps(parametros, sort_keys=True).encode()).hexdigest()[:16]
+    return "xlb-031-kbc-v5-" + hashlib.sha256(json.dumps(parametros, sort_keys=True).encode()).hexdigest()[:16]
 
 
 MODELO = identificar_modelo()

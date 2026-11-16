@@ -1,6 +1,8 @@
 # Revisión de licencias y gráficas de Tunelab
 
-Fecha de revisión: 3 de noviembre de 2026. Inventario actualizado el 4 de noviembre tras retirar Drei y 42 dependencias asociadas; las versiones restantes no han cambiado.
+Fecha de revisión inicial: 3 de noviembre de 2026. Inventario y refactorización actualizados el 16 de noviembre de 2026.
+
+Se han incorporado bibliotecas existentes para las etiquetas, la cámara, las gráficas, los ZIP, la escritura de GLB, las validaciones y algunas consultas. El código de aplicación disminuye, pero aumentan los paquetes de terceros instalados: son dos medidas diferentes. El inventario recoge metadatos y avisos; no acredita una auditoría completa de cada dependencia transitiva.
 
 ## Resultado
 
@@ -10,11 +12,11 @@ El uso de bibliotecas debe reconocerse en la memoria. Su licencia permite utiliz
 
 ## Alcance y evidencias
 
-Se han inventariado todas las entradas de `package-lock.json` y las distribuciones de los dos entornos Python utilizados por el proyecto, sin instalar ni actualizar dependencias:
+Se han inventariado todas las entradas de `package-lock.json` y las distribuciones de los dos entornos Python utilizados por el proyecto, después de actualizar las dependencias de esta revisión:
 
 | Conjunto | Registros | Alcance |
 | --- | ---: | --- |
-| NPM | 197 | Dependencias directas y transitivas; incluye desarrollo y binarios opcionales de otras plataformas. 166 presentes en este equipo. |
+| NPM | 257 | Dependencias directas y transitivas; incluye desarrollo y binarios opcionales de otras plataformas. 226 presentes en este equipo. |
 | API Python | 28 | Distribuciones instaladas en `backend/.venv`, incluido pip. |
 | Cálculo XLB | 47 | Distribuciones instaladas en `tmp/evaluacion-xlb/.venv`, incluido pip. |
 
@@ -35,6 +37,13 @@ La revisión combina metadatos completos con lectura de los avisos principales y
 | React / React DOM | 19.2.4 | MIT |
 | Three.js | 0.183.2 | MIT |
 | React Three Fiber | 9.5.0 | MIT; ver aviso del repositorio de esa versión |
+| Drei | 10.7.9 | MIT; aviso incluido en el paquete instalado |
+| Chart.js / chartjs-plugin-annotation | 4.6.1 / 3.1.0 | MIT |
+| fflate | 0.8.3 | MIT |
+| glTF Transform core / extensions | 4.5.1 | MIT |
+| Zod | 4.6.7 | MIT |
+| TanStack React Query | 5.107.1 | MIT |
+| Happy DOM (solo pruebas) | 21.0.4 | MIT |
 | Lucide React | 1.22.0 | ISC y aviso MIT de iconos procedentes de Feather |
 | Vite | 8.0.0 | MIT; su archivo incluye avisos adicionales |
 | Plugin React de Vite | 6.0.1 | MIT |
@@ -95,16 +104,41 @@ El inventario incluye el resto de dependencias de ambos entornos. `annotated-typ
 - No se ha encontrado una licencia general del código propio en la raíz. `private: true` en `package.json` evita publicar accidentalmente el paquete en NPM; no es una licencia. Elegir las condiciones del código propio con el tutor o la universidad antes de publicar, sin relicenciar componentes de terceros.
 - No se ha comprobado la normativa de autoría, uso de IA o depósito del TFG de la titulación. Es una revisión distinta de las licencias de software.
 
-## Cómo están hechas las gráficas y cómo reducir su código
+## Sustituciones realizadas el 16/11/2026
 
-Actualmente **no se utiliza una biblioteca de gráficas**. React renderiza SVG en `src/components/mediciones/InformeMedicion.jsx`. `src/servicios/mediciones/analisisMedicion.js` reúne las estadísticas de muestras y etapas, las escalas, las posiciones, los segmentos y la consulta del punto de la gráfica.
+| Parte | Biblioteca y responsabilidad | Código propio que se conserva |
+| --- | --- | --- |
+| Etiquetas 3D | `Html` de Drei coloca HTML en coordenadas 3D. | Texto, posiciones, selección y estilos de los puntos. |
+| Cámara | `OrbitControls` y `Bounds` de Drei gestionan interacción, encuadre y transición. | Destinos de Inspección, límites de distancia, teclado y cámara fija de Aerodinámica. |
+| Gráficas | Chart.js dibuja curvas, escalas y tooltips; annotation dibuja bandas y marcas. | Preparación de series, huecos, estadísticas, clasificación de estabilidad y accesibilidad. |
+| ZIP | `zipSync` y `strToU8` de fflate generan el archivo sin compresión. | Nombres y contenido de los informes exportados. |
+| GLB | `WebIO.readJSON` y `writeBinary` de glTF Transform leen y escriben la geometría admitida. | Límites, rechazo de recursos externos, selección de posiciones/índices y comprobaciones para XLB. |
+| Validaciones | Zod valida archivos de mediciones; Pydantic valida lecturas de aire y números de configuración. | Coherencia entre etapas, permisos, seguridad y restricciones físicas del dominio. |
+| Consultas | TanStack Query carga el detalle de mediciones, capacidades y estado de trabajos de Aerodinámica. | Contratos API, selección del usuario, cancelación e invalidación del resultado al cambiar objeto. |
+| Aerodinámica | React monta `Laboratorio.jsx`, la vista previa y los tres componentes de corte. | El dibujo de los mapas usa los datos originales de XLB; cada plano conserva su posición. |
 
-El componente se comparte entre el informe, el comparador y la vista en directo. No se debe sustituir solo una pantalla dejando tres implementaciones distintas. Las bandas verdes representan intervalos clasificados como estables; no son una predicción ni se calculan a partir del aspecto de la curva. En este cambio se retira la rejilla horizontal del dibujo compartido. Se conservan ejes, curvas, bandas estables y marcas de cambio de consigna.
+No se ha añadido un wrapper React para Chart.js ni una biblioteca nueva de formularios. Happy DOM solo sirve para comprobar componentes y consultas en las pruebas; no se distribuye en la web. Tampoco se utiliza `@gltf-transform/functions`: la escritura binaria necesaria se resuelve con core y la extensión de posiciones cuantizadas.
 
-**Recomendación: Chart.js**, si se decide migrar el renderizado. Su [licencia MIT oficial](https://github.com/chartjs/Chart.js/blob/master/LICENSE.md) permite su utilización bajo las condiciones descritas. No exige una licencia comercial por presentar un TFG. Ofrece [tooltips](https://www.chartjs.org/docs/latest/configuration/tooltip.html), escalas y adaptación al contenedor; la rejilla se controla con [grid.display](https://www.chartjs.org/docs/latest/axes/styling.html). No hace falta añadir un wrapper React para usarla, aunque existe esa posibilidad.
+Referencias de las funciones reutilizadas: [Html](https://drei.docs.pmnd.rs/misc/html), [Bounds](https://drei.docs.pmnd.rs/staging/bounds), [controles de Drei](https://drei.docs.pmnd.rs/controls/introduction), [Chart.js](https://www.chartjs.org/docs/latest/), [anotaciones](https://www.chartjs.org/chartjs-plugin-annotation/latest/guide/types/box.html), [fflate](https://github.com/101arrowz/fflate), [WebIO](https://gltf-transform.dev/modules/core/classes/WebIO), [Zod](https://zod.dev/basics), [Pydantic](https://docs.pydantic.dev/latest/concepts/models/) y [TanStack Query](https://tanstack.com/query/latest/docs/framework/react/overview).
 
-La migración reduciría la lógica propia de dibujo, pero no elimina las estadísticas, la lectura de muestras ni las reglas del túnel. Las bandas de estabilidad y marcas de consigna necesitan configuración adicional o un pequeño plugin. Deben mantenerse los huecos de datos, los ceros válidos, la consulta de muestras originales, el comportamiento de registros largos y el comparador. No se cuantifica un ahorro de líneas sin implementar y comparar ambas versiones.
+## Gráficas y consultas
 
-Chart.js dibuja en canvas: la accesibilidad no se obtiene automáticamente. Hay que conservar la tabla de muestras, el nombre accesible y un mecanismo de consulta por teclado equivalente al actual. [Documentación de accesibilidad](https://www.chartjs.org/docs/latest/general/accessibility.html).
+`GraficaMedicion`, en `src/components/mediciones/InformeMedicion.jsx`, es el componente compartido por los informes, el comparador y la vista en directo. Chart.js sustituye la construcción manual de caminos SVG, escalas y consulta del punto. `analisisMedicion.js` conserva las reglas de las mediciones y entrega series de datos a la biblioteca.
 
-**Estado:** Chart.js es una recomendación, no una dependencia instalada ni una migración realizada en esta revisión. Se han corregido la presentación solicitada y el campo de consigna sin cambiar el cálculo de las mediciones.
+Las bandas verdes representan intervalos clasificados como estables y las líneas discontinuas indican cambios de consigna; no se deducen del dibujo. No hay rejilla horizontal. Los ceros válidos se conservan, los huecos no se unen y las estadísticas utilizan las muestras originales. Se mantienen las tablas de muestras y la consulta con flechas, Inicio, Fin y Escape en las gráficas interactivas. Canvas necesita estas medidas explícitas de [accesibilidad](https://www.chartjs.org/docs/latest/general/accessibility.html).
+
+TanStack Query se aplica a consultas concretas, no al estado físico del túnel. La caché se separa por usuario y vista y se vacía al cambiar de identidad o cerrar sesión. No se reintentan automáticamente órdenes de inicio o cancelación. Los catálogos de ensayos y el control del túnel conservan sus reglas actuales; no se fuerza una migración que altere su comportamiento.
+
+## Simulador y XLB
+
+Se conserva la interpolación de la calibración, las rampas, la detección de estabilidad, las restricciones de operación y las fórmulas físicas. En el simulador se elimina una actualización redundante de lecturas; en los esquemas API se comparte la definición idéntica de crear y editar un ensayo.
+
+En el lanzador de XLB se corrigen el orden de los imports y una referencia a una constante eliminada. Se retira el parámetro de velocidad relativa obsoleto: se usa la lectura elegida en `shared/tunel.json`, como ya hacía el contrato actual del servidor. La simulación conserva D3Q27, KBC, FP32, viscosidad, malla, contornos y número de pasos. La firma de resultados se llama ahora `xlb-031-kbc-v5-<firma>` para coincidir con el método ejecutado y evitar reutilizar resultados anteriores.
+
+La ejecución real del ejemplo a 20 cm y 19,8 m/s llega al control de fallo numérico después del paso 5000 y se rechaza. Se ha comprobado el inicio, la cancelación y la comunicación del error, **no un mapa físicamente validado para esas condiciones**. Revisar malla, contornos o método numérico requiere un trabajo independiente; no se han cambiado para hacer pasar esta refactorización.
+
+## Verificación
+
+Pasan las 106 pruebas del frontend, incluidas equivalencia geométrica de GLB, cortes independientes, muestras con huecos, registros largos, ZIP UTF-8 y cancelación de trabajos antes de recibir su identificador. Pasan también las 73 pruebas del backend, que comprueban contratos, permisos, exclusión, persistencia y simulación usando una base temporal. Se comprueban además ESLint y la compilación de producción.
+
+La revisión visual en navegador incluye etiquetas y cámara de Inspección, importación y vista previa de GLB, tooltips y teclado de las gráficas, comparador con dos series y cancelación de un trabajo real de XLB. La compilación mantiene avisos de tamaño de los módulos 3D y de imports Node presentes en el paquete glTF Transform; la ruta utilizada en el worker es WebIO y se ha probado en el navegador.

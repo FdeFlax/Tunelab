@@ -4,6 +4,7 @@ import json
 import os
 from pathlib import Path
 import struct
+import subprocess
 import sys
 import tempfile
 import time
@@ -30,6 +31,13 @@ def result_fixture():
 
 
 class ContratoTests(unittest.TestCase):
+    def test_script_arranca_sin_importar_el_motor_para_mostrar_ayuda(self):
+        script = Path(__file__).resolve().parents[2] / "scripts/calcular-flujo3d.py"
+        resultado = subprocess.run([sys.executable, str(script), "--help"],
+                                   capture_output=True, text=True, timeout=15)
+        self.assertEqual(resultado.returncode, 0, resultado.stderr)
+        self.assertIn("--modelo-esperado", resultado.stdout)
+
     def test_limites_y_coordenadas(self):
         self.assertEqual(validar_geometria(cube_bytes()), [14, 14, 14])
         for data in (b"", cube_bytes()[:-1], b"0" * (MAX_BYTES + 1), struct.pack('<f', float('nan')) + cube_bytes()[4:]):

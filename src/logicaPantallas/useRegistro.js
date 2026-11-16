@@ -223,7 +223,7 @@ export default function useRegistro() {
     try {
       const mediciones = await listarMedicionesEnsayoApi(ensayo.id);
       const medicionesDetalle = await Promise.all(
-        mediciones.map(cargarMedicionApiCompleta)
+        mediciones.map(medicion => cargarMedicionApiCompleta(medicion))
       );
 
       descargarZipEnsayo({

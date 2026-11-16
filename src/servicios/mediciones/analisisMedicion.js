@@ -49,7 +49,7 @@ export function crearTrazas(muestras = [], etapas = []) {
 export function tramosEstables(muestras = []) {
   const tramos = [];
   // No colorear huecos de comunicación como si fueran lecturas estables.
-  for (const segmento of prepararSerie(muestras.map(m => ({ segundo: m.segundo, valor: m.velMs, estable: m.flujoEstable })), Infinity)) {
+  for (const segmento of prepararSerie(muestras.map(m => ({ segundo: m.segundo, valor: m.velMs, estable: m.flujoEstable })))) {
     let tramo = null;
     for (const m of segmento) {
       if (m.estable === true) {
@@ -67,8 +67,8 @@ export function cambiosConsigna(muestras = []) {
     .map(m => ({ segundo: m.segundo, texto: `${numeroInforme(m.consignaObjetivoPct, 1)} %` }));
 }
 
-// Conserva extremos por grupo al aligerar curvas largas. Nunca enlaza segmentos separados.
-export function prepararSerie(datos = [], maxPuntos = 800) {
+// Los cortes corresponden a ausencias, pausas o cambios de etapa; no se interpolan.
+export function prepararSerie(datos = []) {
   const intervalos = datos.slice(1).map((p, i) => p.segundo - datos[i].segundo)
     .filter(d => esNumero(d) && d > 0).sort((a, b) => a - b);
   const intervalo = intervalos[Math.floor((intervalos.length - 1) / 2)] ?? 1;
@@ -86,59 +86,17 @@ export function prepararSerie(datos = [], maxPuntos = 800) {
     actual.push(punto); anterior = punto;
   }
   if (actual.length) segmentos.push(actual);
-  const paso = Math.max(1, Math.ceil(datos.length / (maxPuntos / 4)));
-  return segmentos.map(segmento => {
-    if (paso === 1) return segmento;
-    const salida = [];
-    for (let i = 0; i < segmento.length; i += paso) {
-      const bloque = segmento.slice(i, i + paso);
-      let min = 0, max = 0;
-      bloque.forEach((p, j) => { if (p.valor < bloque[min].valor) min = j; if (p.valor > bloque[max].valor) max = j; });
-      for (const j of [...new Set([0, min, max, bloque.length - 1])].sort((a, b) => a - b)) salida.push(bloque[j]);
-    }
-    return salida;
-  });
+  return segmentos;
 }
 
-// Consulta la muestra original más cercana; no interpola valores entre lecturas.
-export function indiceMuestraCercana(puntos, segundo) {
-  if (!puntos.length || !esNumero(segundo)) return -1;
-  let inicio = 0, fin = puntos.length - 1;
-  while (inicio < fin) {
-    const medio = Math.floor((inicio + fin) / 2);
-    if (puntos[medio].segundo < segundo) inicio = medio + 1;
-    else fin = medio;
-  }
-  return inicio > 0 && segundo - puntos[inicio - 1].segundo <= puntos[inicio].segundo - segundo
-    ? inicio - 1 : inicio;
-}
-
-function escala(minimo, maximo, divisiones = 4) {
-  const base = Math.max(maximo - minimo, 0.1) / divisiones;
-  const unidad = 10 ** Math.floor(Math.log10(base));
-  const paso = [1, 2, 5, 10].find(v => v * unidad >= base) * unidad;
-  const min = Math.floor(minimo / paso) * paso;
-  const max = Math.ceil((maximo === minimo ? maximo + paso : maximo) / paso) * paso;
-  const ticks = [];
-  for (let v = min; v <= max + paso / 2; v += paso) ticks.push(Number(v.toFixed(6)));
-  return { min, max, ticks };
-}
-
-export function construirGrafica(series, { ancho = 640, alto = 240, desdeCero = true } = {}) {
-  const izquierda = 58, derecha = ancho - 22, arriba = 18, abajo = alto - 36;
-  const valores = resumirValores(series.flatMap(s => s.datos.map(p => p.valor)));
-  let tiempoMax = 1;
-  for (const serie of series) for (const p of serie.datos) if (esNumero(p.segundo)) tiempoMax = Math.max(tiempoMax, p.segundo);
-  const y = escala(desdeCero ? Math.min(0, valores.minima ?? 0) : valores.minima ?? 0, valores.maxima ?? 1);
-  const x = escala(0, tiempoMax, Math.max(2, Math.min(4, Math.floor((derecha - izquierda) / 90))));
-  const calcularX = t => izquierda + (t / x.max) * (derecha - izquierda);
-  const calcularY = v => abajo - ((v - y.min) / (y.max - y.min)) * (abajo - arriba);
-  return { ancho, alto, izquierda, derecha, arriba, abajo, x, y, calcularX, calcularY,
-    series: series.map(s => ({ ...s, resumen: resumirValores(s.datos.map(p => p.valor)),
-      segmentos: prepararSerie(s.datos).map(segmento => ({
-        puntos: segmento.map(p => ({ ...p, x: calcularX(p.segundo), y: calcularY(p.valor) })),
-        linea: segmento.map((p, i) => `${i ? "L" : "M"} ${calcularX(p.segundo).toFixed(2)} ${calcularY(p.valor).toFixed(2)}`).join(" "),
-      })),
-    })),
+export function prepararGrafica(series) {
+  const datasets = series.flatMap(s => prepararSerie(s.datos).map(segmento => ({
+    label: s.nombre, borderColor: s.color, pointRadius: segmento.length === 1 ? 3 : 0,
+    data: segmento.map(p => ({ x: p.segundo, y: p.valor })),
+  })));
+  return {
+    datasets,
+    resumenes: series.map(s => resumirValores(s.datos.filter(p => esNumero(p.segundo)).map(p => p.valor))),
+    consultas: datasets.flatMap((d, datasetIndex) => d.data.map((p, index) => ({ ...p, datasetIndex, index }))).sort((a, b) => a.x - b.x),
   };
 }

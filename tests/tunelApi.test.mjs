@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import vm from "node:vm";
 import test from "node:test";
+import { QueryClient } from "@tanstack/react-query";
 import { randomUUID } from "node:crypto";
 import { fileURLToPath } from "node:url";
 
@@ -69,6 +70,7 @@ async function preparar() {
     },
   });
   const modulos = new Map();
+  const query = new vm.SyntheticModule(["QueryClient"], function () { this.setExport("QueryClient", QueryClient); }, { context: contexto });
   function moduloPara(archivo) {
     if (!modulos.has(archivo)) {
       const texto = fs.readFileSync(archivo, "utf8");
@@ -81,7 +83,7 @@ async function preparar() {
   }
   async function cargar(ruta) {
     const modulo = moduloPara(path.join(root, ruta));
-    if (modulo.status === "unlinked") await modulo.link((specifier, desde) => moduloPara(
+    if (modulo.status === "unlinked") await modulo.link((specifier, desde) => specifier === "@tanstack/react-query" ? query : moduloPara(
       path.resolve(path.dirname(desde.identifier), path.extname(specifier) ? specifier : specifier + ".js")));
     if (modulo.status === "linked") await modulo.evaluate();
     return modulo.namespace;

@@ -108,7 +108,6 @@ class ControladorTunelSimulado:
             if not self._estado.encendido:
                 raise RuntimeError("El tunel debe estar encendido antes de medir")
 
-            self._actualizar_lecturas()
             self._estado.midiendo = True
             self._actualizar_lecturas()
             return asdict(self._estado)

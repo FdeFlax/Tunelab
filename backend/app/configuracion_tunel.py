@@ -2,8 +2,27 @@
 import json
 import math
 from pathlib import Path
+from functools import lru_cache
+from typing import Annotated
+from pydantic import BaseModel, Field, TypeAdapter, ValidationError
 
 RUTA_TUNEL = Path(__file__).resolve().parents[2] / "shared/tunel.json"
+
+
+class MedicionAire(BaseModel):
+    id: str = Field(min_length=1)
+    velocidadMs: float = Field(ge=0, allow_inf_nan=False)
+    velocidadMediaMs: float = Field(ge=0, allow_inf_nan=False)
+    temperaturaC: float = Field(ge=0, le=60)
+    presionAbsolutaPa: float = Field(ge=30000, le=120000)
+    humedadRelativaPct: float = Field(ge=0, le=100)
+    consignaPct: float | None = Field(default=None, ge=0, le=100)
+
+
+@lru_cache(maxsize=64)
+def esquema_numero(minimo, maximo, entero):
+    return TypeAdapter(Annotated[float, Field(strict=True, allow_inf_nan=False,
+        ge=minimo, le=maximo, multiple_of=1 if entero else None)])
 
 
 def validar_configuracion(c, incluir_aerodinamica=False):
@@ -12,8 +31,7 @@ def validar_configuracion(c, incluir_aerodinamica=False):
             n = c
             for key in ruta.split('.'):
                 n = n[int(key)] if isinstance(n, list) else n[key]
-            if type(n) not in (int, float) or not math.isfinite(n) or not minimo <= n <= maximo or (entero and int(n) != n):
-                raise ValueError()
+            esquema_numero(minimo, maximo, entero).validate_python(n)
         except (KeyError, IndexError, TypeError, ValueError):
             raise ValueError(f"shared/tunel.json: revisa {ruta}.") from None
         return n
@@ -71,20 +89,13 @@ def validar_configuracion(c, incluir_aerodinamica=False):
     lecturas = a.get('mediciones')
     if not isinstance(lecturas, list) or not lecturas:
         raise ValueError('shared/tunel.json: faltan las mediciones de la sección.')
-    ids = set()
-    for i, lectura in enumerate(lecturas):
-        ruta = f'aerodinamica.mediciones.{i}'
-        id_lectura = lectura.get('id') if isinstance(lectura, dict) else None
-        if not isinstance(id_lectura, str) or not id_lectura or id_lectura in ids:
-            raise ValueError('shared/tunel.json: cada medición debe tener un id distinto.')
-        ids.add(id_lectura)
-        numero(f'{ruta}.velocidadMs')
-        numero(f'{ruta}.velocidadMediaMs')
-        numero(f'{ruta}.temperaturaC', 0, 60)
-        numero(f'{ruta}.presionAbsolutaPa', 30000, 120000)
-        numero(f'{ruta}.humedadRelativaPct', 0, 100)
-        if lectura.get('consignaPct') is not None:
-            numero(f'{ruta}.consignaPct', 0, 100)
+    try:
+        TypeAdapter(list[MedicionAire]).validate_python(lecturas, strict=True)
+    except ValidationError as error:
+        raise ValueError(f"shared/tunel.json: mediciones inválidas: {error}") from error
+    ids = {lectura['id'] for lectura in lecturas}
+    if len(ids) != len(lecturas):
+        raise ValueError('shared/tunel.json: cada medición debe tener un id distinto.')
     if a.get('medicionActiva') not in ids:
         raise ValueError('shared/tunel.json: medicionActiva debe identificar una lectura existente.')
     numero('aerodinamica.objeto.minimoCeldas', 2, entero=True)

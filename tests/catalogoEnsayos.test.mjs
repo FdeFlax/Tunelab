@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import test from "node:test";
 import vm from "node:vm";
+import * as query from "@tanstack/react-query";
 
 const pendiente = () => {
   let resolver;
@@ -52,14 +53,19 @@ async function montar(t, opciones) {
     for (const [nombre, fn] of Object.entries(hooks)) this.setExport(nombre, fn);
   }, { context: contexto });
   const nombresServicios = ["asegurarUsuarioApi", "listarEnsayosApi", "listarMedicionesEnsayoApi",
-    "vincularEnsayoApi", "cargarMedicionApiCompleta", "crearEnsayoDesdeApi"];
+    "vincularEnsayoApi", "cargarMedicionApiCompleta", "crearEnsayoDesdeApi", "leerIdentidadApi"];
   const servicios = new vm.SyntheticModule(nombresServicios, function () {
     for (const nombre of nombresServicios) this.setExport(nombre, () => {
       throw new Error(`El catálogo debe usar las funciones recibidas: ${nombre}`);
     });
   }, { context: contexto });
   const modulo = new vm.SourceTextModule(fs.readFileSync(new URL("../src/logicaPantallas/useEnsayos.js", import.meta.url), "utf8"), { context: contexto });
+  const queryModule = new vm.SyntheticModule(Object.keys(query), function () {
+    for (const [nombre, valor] of Object.entries(query)) this.setExport(nombre, valor);
+  }, { context: contexto });
   await modulo.link(nombre => {
+    if (nombre === "@tanstack/react-query") return queryModule;
+    if (nombre === "../servicios/api/clienteApi") return servicios;
     if (nombre === "react") return react;
     if (["../servicios/api/registroApi", "../servicios/mediciones/adaptarRegistros"].includes(nombre)) return servicios;
     throw new Error(`Importación no prevista: ${nombre}`);

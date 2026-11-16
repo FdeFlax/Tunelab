@@ -7,8 +7,7 @@ import {
   resumirValores,
   cambiosConsigna,
   tramosEstables,
-  construirGrafica,
-  indiceMuestraCercana,
+  prepararGrafica,
 } from "../src/servicios/mediciones/analisisMedicion.js";
 import { crearDocumentoMedicionTunelab, normalizarDocumentoMedicionTunelab, leerArchivoMedicionTunelab, comprobarCapacidadImportacion } from "../src/servicios/archivos/medicionArchivo.js";
 import { crearMedicionDesdeApi, crearDetalleMedicionDocente } from "../src/servicios/mediciones/adaptarRegistros.js";
@@ -133,54 +132,39 @@ test("la media y la desviación ignoran ausencias pero conservan ceros reales", 
   assert.equal(resumirValores([2]).desviacion, null);
 });
 
-test("la gráfica conserva t=0, el mínimo real y los huecos en una escala común", () => {
+test("Chart.js recibe tiempos reales y segmentos separados para comparar en una escala común", () => {
   const datos = crearTrazas(captura().muestras, programa.etapas).velocidad;
-  const grafica = construirGrafica([{id: "a", datos}, {id: "b", datos: [{segundo: 0, valor: 10}, {segundo: 30, valor: 12}]}]);
-  assert.equal(grafica.series[0].segmentos.length, 2);
-  assert.equal(grafica.series[0].segmentos[0].puntos[0].valor, 2.561);
-  assert.equal(grafica.series[0].segmentos[0].puntos[0].segundo, 0);
-  assert.equal(grafica.series[0].resumen.minima, 2.561);
-  assert.ok(grafica.x.max >= 30);
-  assert.ok(grafica.y.max >= 12);
-  assert.equal(grafica.series[0].segmentos[0].puntos[0].x, grafica.series[1].segmentos[0].puntos[0].x);
+  const grafica = prepararGrafica([{nombre: 'a', datos}, {nombre: 'b', datos: [{segundo: 0, valor: 10}, {segundo: 30, valor: 12}]}]);
+  assert.equal(grafica.datasets.length, 3);
+  assert.deepEqual(grafica.datasets[0].data[0], {x: 0, y: 2.561});
+  assert.deepEqual(grafica.datasets[1].data[0], {x: 10, y: 8.18});
+  assert.deepEqual(grafica.datasets[2].data.at(-1), {x: 30, y: 12});
+  assert.equal(grafica.resumenes[0].minima, 2.561);
   assert.equal(prepararSerie([{segundo: 0, valor: 1}, {segundo: 1, valor: null}, {segundo: 2, valor: 3}]).length, 2);
   assert.equal(prepararSerie([{segundo: 0, valor: 1}, {segundo: 1, valor: 2}, {segundo: 15, valor: 3}]).length, 2);
 });
 
-test("la consulta de la gráfica elige una muestra real, también en huecos y extremos", () => {
+test("la consulta por teclado apunta a las mismas muestras originales enviadas a Chart.js", () => {
   const puntos = [{segundo:0,valor:0}, {segundo:1,valor:3.42}, {segundo:8,valor:6.31}];
-  assert.equal(indiceMuestraCercana(puntos, -1), 0);
-  assert.equal(indiceMuestraCercana(puntos, 0), 0);
-  assert.equal(indiceMuestraCercana(puntos, 0.8), 1);
-  assert.equal(indiceMuestraCercana(puntos, 4), 1);
-  assert.equal(indiceMuestraCercana(puntos, 7), 2);
-  assert.equal(indiceMuestraCercana(puntos, 20), 2);
-  assert.equal(indiceMuestraCercana([], 1), -1);
-  assert.equal(indiceMuestraCercana(puntos, NaN), -1);
+  const grafica = prepararGrafica([{nombre: 'a', datos: puntos}]);
+  assert.equal(grafica.consultas.length, 3);
+  for (const [i, p] of grafica.consultas.entries()) {
+    assert.deepEqual(grafica.datasets[p.datasetIndex].data[p.index], {x: puntos[i].segundo, y: puntos[i].valor});
+  }
 });
 
-test("la consulta conserva lecturas que no aparecen en la curva reducida", () => {
-  const puntos = Array.from({length:10000}, (_, segundo) => ({segundo,valor:segundo / 3}));
-  const visibles = new Set(prepararSerie(puntos).flat().map(p => p.segundo));
-  const oculta = puntos.find(p => !visibles.has(p.segundo));
-  assert.ok(oculta);
-  assert.equal(puntos[indiceMuestraCercana(puntos, oculta.segundo + 0.1)], oculta);
-});
-
-test("registros de 15 horas se importan y las curvas se reducen conservando extremos", async () => {
+test("registros de 15 horas llegan completos a Chart.js, sin perder extremos ni muestras consultables", async () => {
   const documento = crearDocumentoMedicionTunelab({ensayo, medicion: captura()});
   documento.medicion.programa = null;
   documento.medicion.durSeg = 54000;
   documento.muestras = Array.from({length: 54001}, (_, i) => ({segundo:i,velMs:i === 31000 ? 59 : i === 7000 ? 0 : 5,tempC:null,potPct:50}));
   const texto = JSON.stringify(documento);
   const importada = await leerArchivoMedicionTunelab({name:"larga.json",size:Buffer.byteLength(texto),text:async()=>texto});
-  const original = importada.medicion.trazas.velocidad;
-  const reducida = prepararSerie(original).flat();
-  assert.equal(original.length, 54001);
-  assert.ok(reducida.length <= 810);
-  assert.equal(Math.min(...reducida.map(p => p.valor)), 0);
-  assert.equal(Math.max(...reducida.map(p => p.valor)), 59);
-  assert.equal(reducida.at(-1).segundo, 54000);
+  const grafica = prepararGrafica([{nombre: 'larga', datos: importada.medicion.trazas.velocidad}]);
+  assert.equal(grafica.datasets[0].data.length, 54001);
+  assert.equal(grafica.resumenes[0].minima, 0);
+  assert.equal(grafica.resumenes[0].maxima, 59);
+  assert.equal(grafica.consultas.at(-1).x, 54000);
 });
 
 test("valida intervalos malformados y tamaño del archivo", async () => {
@@ -194,6 +178,15 @@ test("valida intervalos malformados y tamaño del archivo", async () => {
 test("las fechas sin zona del servidor se interpretan como UTC", () => {
   assert.equal(fechaApi("2026-09-30T08:00:00").toISOString(), "2026-09-30T08:00:00.000Z");
   assert.equal(fechaApi("2026-09-30T10:00:00+02:00").toISOString(), "2026-09-30T08:00:00.000Z");
+});
+
+test("los errores de fecha y estabilidad importadas explican el campo en español", () => {
+  const documento = crearDocumentoMedicionTunelab({ ensayo, medicion: captura() });
+  documento.medicion.fechaInicio = 'ayer';
+  assert.throws(() => normalizarDocumentoMedicionTunelab(documento), /fechaInicio.*no es una fecha ISO válida/);
+  documento.medicion.fechaInicio = null;
+  documento.muestras[0].flujoEstable = 'sí';
+  assert.throws(() => normalizarDocumentoMedicionTunelab(documento), /flujoEstable.*verdadero o falso/);
 });
 
 test("el límite acumulado impide saturar el visor con varios archivos grandes", () => {

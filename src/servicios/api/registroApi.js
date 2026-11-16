@@ -100,12 +100,12 @@ export async function listarEnsayosDocenteApi() {
 export async function listarMedicionesDocenteApi(ensayoId) {
   return pedirApi(`/docente/ensayos/${ensayoId}/mediciones`);
 }
-export async function listarMuestrasMedicionDocenteApi(medicionId) {
-  return pedirApi(`/docente/mediciones/${medicionId}/muestras`);
+export async function listarMuestrasMedicionDocenteApi(medicionId, signal) {
+  return pedirApi(`/docente/mediciones/${medicionId}/muestras`, { signal });
 }
 
-export async function listarEventosMedicionDocenteApi(medicionId) {
-  return pedirApi(`/docente/mediciones/${medicionId}/eventos`);
+export async function listarEventosMedicionDocenteApi(medicionId, signal) {
+  return pedirApi(`/docente/mediciones/${medicionId}/eventos`, { signal });
 }
 
 export async function listarEventosDocenteApi() {
@@ -127,12 +127,12 @@ export async function obtenerUltimaMedicionUsuarioApi() {
   return pedirApi("/mediciones/ultima");
 }
 
-export async function listarMuestrasMedicionApi(medicionId) {
-  return pedirApi(`/mediciones/${medicionId}/muestras`);
+export async function listarMuestrasMedicionApi(medicionId, signal) {
+  return pedirApi(`/mediciones/${medicionId}/muestras`, { signal });
 }
 
-export async function listarEventosMedicionApi(medicionId) {
-  return pedirApi(`/mediciones/${medicionId}/eventos`);
+export async function listarEventosMedicionApi(medicionId, signal) {
+  return pedirApi(`/mediciones/${medicionId}/eventos`, { signal });
 }
 
 export async function borrarMedicionApi(medicionId) {
@@ -141,18 +141,18 @@ export async function borrarMedicionApi(medicionId) {
   });
 }
 
-export async function cargarMedicionDocenteCompleta(medicion) {
+export async function cargarMedicionDocenteCompleta(medicion, signal) {
   const [muestras, eventos] = await Promise.all([
-    listarMuestrasMedicionDocenteApi(medicion.id),
-    listarEventosMedicionDocenteApi(medicion.id),
+    listarMuestrasMedicionDocenteApi(medicion.id, signal),
+    listarEventosMedicionDocenteApi(medicion.id, signal),
   ]);
   return crearDetalleMedicionDocente(medicion, muestras, eventos);
 }
 
-export async function cargarMedicionApiCompleta(medicion) {
+export async function cargarMedicionApiCompleta(medicion, signal) {
   const [muestras, eventos] = await Promise.all([
-    listarMuestrasMedicionApi(medicion.id),
-    listarEventosMedicionApi(medicion.id),
+    listarMuestrasMedicionApi(medicion.id, signal),
+    listarEventosMedicionApi(medicion.id, signal),
   ]);
   return crearMedicionDesdeApi(medicion, muestras, eventos);
 }

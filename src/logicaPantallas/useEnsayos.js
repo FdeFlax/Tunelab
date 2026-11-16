@@ -1,3 +1,5 @@
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { leerIdentidadApi } from '../servicios/api/clienteApi';
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   asegurarUsuarioApi,
@@ -88,44 +90,20 @@ export function useCatalogoEnsayos({ listarEnsayos, listarMediciones, precargar 
 }
 
 export function useDetalleMedicion(medicionApiSeleccionada, usaApi = true, cargar = cargarMedicionApiCompleta) {
-  const [medicionApiDetalle, setMedicionApiDetalle] = useState(null);
-  const [errorDetalle, setErrorDetalle] = useState('');
-  const [cargandoDetalle, setCargandoDetalle] = useState(false);
-
-  useEffect(() => {
-    if (!usaApi || !medicionApiSeleccionada?.id) {
-      setMedicionApiDetalle(null);
-      setCargandoDetalle(false);
-      setErrorDetalle("");
-      return;
-    }
-
-    let cancelado = false;
-
-    async function cargarDetalleMedicion() {
-      setCargandoDetalle(true);
-      setErrorDetalle("");
-      setMedicionApiDetalle(null);
-      try {
-        const detalle = await cargar(medicionApiSeleccionada);
-        if (!cancelado) setMedicionApiDetalle(detalle);
-      } catch {
-        if (!cancelado) {
-          setErrorDetalle("No se han podido cargar las muestras de esta medición.");
-        }
-      } finally {
-        if (!cancelado) setCargandoDetalle(false);
-      }
-    }
-
-    void cargarDetalleMedicion();
-
-    return () => {
-      cancelado = true;
-    };
-  }, [medicionApiSeleccionada, usaApi, cargar]);
-
-  return { medicionApiDetalle, setMedicionApiDetalle, errorDetalle, cargandoDetalle };
+  const cliente = useQueryClient();
+  const clave = ['detalle-medicion', leerIdentidadApi()?.identificador,
+    cargar === cargarMedicionApiCompleta ? 'registro' : 'docente', medicionApiSeleccionada?.id];
+  const consulta = useQuery({
+    queryKey: clave,
+    queryFn: ({ signal }) => cargar(medicionApiSeleccionada, signal),
+    enabled: Boolean(usaApi && medicionApiSeleccionada?.id),
+  });
+  return {
+    medicionApiDetalle: usaApi && medicionApiSeleccionada ? consulta.data ?? null : null,
+    setMedicionApiDetalle: cambio => cliente.setQueryData(clave, cambio),
+    errorDetalle: usaApi && medicionApiSeleccionada && consulta.isError ? 'No se han podido cargar las muestras de esta medición.' : '',
+    cargandoDetalle: consulta.isLoading,
+  };
 }
 
 export function useEnsayosPersistidos(usuario, accionesTunel) {

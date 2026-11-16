@@ -1,6 +1,6 @@
-import { memo, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
-import { createRoot } from 'react-dom/client';
-import { useFrame, useLoader, useThree } from '@react-three/fiber';
+import { memo, useEffect, useMemo } from 'react';
+import { Html } from '@react-three/drei';
+import { useLoader, useThree } from '@react-three/fiber';
 import { CargadorGLB } from '../../servicios/modelos3d.js';
 import { Vector3 } from 'three';
 import CONFIGURACION_TUNEL from '../../../shared/tunel.json';
@@ -9,50 +9,6 @@ import { VISTAS_TUNEL } from './ajustesTunel.js';
 const MODELO_GLB = CONFIGURACION_TUNEL.modeloGlb;
 const VISTA = VISTAS_TUNEL.visor;
 useLoader.preload(CargadorGLB, MODELO_GLB);
-
-function Etiqueta3D({ posicion, children }) {
-  const grupo = useRef(null);
-  const raiz = useRef(null);
-  const etiqueta = useRef(null);
-  const { gl } = useThree();
-  const [mundo, pantalla, camara] = useMemo(() => [new Vector3(), new Vector3(), new Vector3()], []);
-
-  useLayoutEffect(() => {
-    const elemento = document.createElement('div');
-    const contenido = createRoot(elemento);
-    etiqueta.current = elemento;
-    raiz.current = contenido;
-    elemento.style.cssText = 'position:absolute;top:0;left:0;transform-origin:0 0;display:none;';
-    gl.domElement.parentElement.appendChild(elemento);
-    return () => {
-      elemento.remove();
-      etiqueta.current = null;
-      raiz.current = null;
-      // La raíz HTML se desmonta después de terminar el renderizador 3D.
-      queueMicrotask(() => contenido.unmount());
-    };
-  }, [gl]);
-  useLayoutEffect(() => { raiz.current.render(children); }, [children]);
-
-  useFrame(({ camera, size }) => {
-    const elemento = etiqueta.current;
-    if (!grupo.current || !elemento) return;
-    camera.updateMatrixWorld();
-    grupo.current.getWorldPosition(mundo);
-    camera.getWorldPosition(camara);
-    pantalla.copy(mundo).applyMatrix4(camera.matrixWorldInverse);
-    const delante = pantalla.z < 0;
-    pantalla.copy(mundo).project(camera);
-    elemento.style.display = delante && Math.abs(pantalla.z) <= 1 ? 'block' : 'none';
-    const distancia = mundo.distanceTo(camara);
-    const escala = 5 / (2 * Math.tan(camera.fov * Math.PI / 360) * distancia);
-    const x = (pantalla.x + 1) * size.width / 2;
-    const y = (1 - pantalla.y) * size.height / 2;
-    elemento.style.transform = `translate3d(${x}px,${y}px,0) scale(${escala})`;
-    elemento.style.zIndex = String(Math.round(1000 * (camera.far - distancia) / (camera.far - camera.near)));
-  });
-  return <group ref={grupo} position={posicion} />;
-}
 
 const PuntosInteres = memo(function PuntosInteres({ puntos, puntoActivoId, onSeleccionarPunto }) {
   function detenerEventoEtiqueta(evento) {
@@ -67,7 +23,7 @@ const PuntosInteres = memo(function PuntosInteres({ puntos, puntoActivoId, onSel
   }
 
   return puntos.map((punto) => (
-    <Etiqueta3D key={punto.id} posicion={punto.posicion}>
+    <Html key={punto.id} position={punto.posicion} distanceFactor={5} zIndexRange={[1000, 0]}>
       <div className="visorpuntowrapper">
         <button
           type="button"
@@ -84,7 +40,7 @@ const PuntosInteres = memo(function PuntosInteres({ puntos, puntoActivoId, onSel
           <span>{punto.etiqueta}</span>
         </button>
       </div>
-    </Etiqueta3D>
+    </Html>
   ));
 });
 

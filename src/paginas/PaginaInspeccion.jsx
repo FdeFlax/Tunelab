@@ -1,4 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Vector3 } from 'three';
 import CONFIGURACION_TUNEL from "../../shared/tunel.json";
 import { VISUAL, VISTAS_TUNEL } from "../components/visor/ajustesTunel.js";
 import { obtenerVelocidadMaximaCalibrada, calcularRelacionContraccion } from "../servicios/tunel/fichaTunel.js";
@@ -11,30 +12,13 @@ const numero = valor => valor.toLocaleString('es-ES', { maximumFractionDigits: 3
 const seccion = ({ anchoM, altoM }) => `${numero(anchoM)} × ${numero(altoM)} m`;
 const VELOCIDAD_MAXIMA = numero(obtenerVelocidadMaximaCalibrada());
 
-function rotarCoordenadaY([x, y, z], angulo) {
-  const coseno = Math.cos(angulo);
-  const seno = Math.sin(angulo);
-
-  return [
-    Number((x * coseno + z * seno).toFixed(2)),
-    y,
-    Number((-x * seno + z * coseno).toFixed(2)),
-  ];
-}
+const EJE_Y = new Vector3(0, 1, 0);
+const redondearPosicion = vector => vector.toArray().map((v, i) => i === 1 ? v : Number(v.toFixed(2)));
+const rotarCoordenadaY = (posicion, angulo) => redondearPosicion(new Vector3(...posicion).applyAxisAngle(EJE_Y, angulo));
 
 function rotarCamaraAlrededorDeObjetivo(camara, objetivo, angulo) {
-  const [camaraX, camaraY, camaraZ] = camara;
-  const [objetivoX, , objetivoZ] = objetivo;
-  const coseno = Math.cos(angulo);
-  const seno = Math.sin(angulo);
-  const deltaX = camaraX - objetivoX;
-  const deltaZ = camaraZ - objetivoZ;
-
-  return [
-    Number((objetivoX + deltaX * coseno + deltaZ * seno).toFixed(2)),
-    camaraY,
-    Number((objetivoZ - deltaX * seno + deltaZ * coseno).toFixed(2)),
-  ];
+  const centro = new Vector3(...objetivo);
+  return redondearPosicion(new Vector3(...camara).sub(centro).applyAxisAngle(EJE_Y, angulo).add(centro));
 }
 
 const PUNTOS_TUNEL = [

@@ -1,5 +1,5 @@
 {
-  "fecha": "2026-11-04",
+  "fecha": "2026-11-16",
   "npm": [
     {
       "nombre": "@babel/code-frame",
@@ -223,6 +223,19 @@
       ]
     },
     {
+      "nombre": "@dimforge/rapier3d-compat",
+      "version": "0.12.0",
+      "licencia": "Apache-2.0",
+      "directa": false,
+      "desarrollo": false,
+      "opcional": false,
+      "instalado": true,
+      "ruta": "node_modules/@dimforge/rapier3d-compat",
+      "avisos": [
+        "node_modules/@dimforge/rapier3d-compat/LICENSE"
+      ]
+    },
+    {
       "nombre": "@emnapi/core",
       "version": "1.9.0",
       "licencia": "MIT",
@@ -235,7 +248,7 @@
     },
     {
       "nombre": "@emnapi/runtime",
-      "version": "1.9.0",
+      "version": "1.11.3",
       "licencia": "MIT",
       "directa": false,
       "desarrollo": true,
@@ -399,6 +412,32 @@
       ]
     },
     {
+      "nombre": "@gltf-transform/core",
+      "version": "4.5.1",
+      "licencia": "MIT",
+      "directa": true,
+      "desarrollo": false,
+      "opcional": false,
+      "instalado": true,
+      "ruta": "node_modules/@gltf-transform/core",
+      "avisos": [
+        "node_modules/@gltf-transform/core/LICENSE.md"
+      ]
+    },
+    {
+      "nombre": "@gltf-transform/extensions",
+      "version": "4.5.1",
+      "licencia": "MIT",
+      "directa": true,
+      "desarrollo": false,
+      "opcional": false,
+      "instalado": true,
+      "ruta": "node_modules/@gltf-transform/extensions",
+      "avisos": [
+        "node_modules/@gltf-transform/extensions/LICENSE.md"
+      ]
+    },
+    {
       "nombre": "@humanfs/core",
       "version": "0.19.1",
       "licencia": "Apache-2.0",
@@ -516,6 +555,43 @@
       ]
     },
     {
+      "nombre": "@kurkle/color",
+      "version": "0.3.4",
+      "licencia": "MIT",
+      "directa": false,
+      "desarrollo": false,
+      "opcional": false,
+      "instalado": true,
+      "ruta": "node_modules/@kurkle/color",
+      "avisos": [
+        "node_modules/@kurkle/color/LICENSE.md"
+      ]
+    },
+    {
+      "nombre": "@mediapipe/tasks-vision",
+      "version": "0.10.17",
+      "licencia": "Apache-2.0",
+      "directa": false,
+      "desarrollo": false,
+      "opcional": false,
+      "instalado": true,
+      "ruta": "node_modules/@mediapipe/tasks-vision",
+      "avisos": []
+    },
+    {
+      "nombre": "@monogrid/gainmap-js",
+      "version": "3.7.3",
+      "licencia": "MIT",
+      "directa": false,
+      "desarrollo": false,
+      "opcional": false,
+      "instalado": true,
+      "ruta": "node_modules/@monogrid/gainmap-js",
+      "avisos": [
+        "node_modules/@monogrid/gainmap-js/LICENSE"
+      ]
+    },
+    {
       "nombre": "@napi-rs/wasm-runtime",
       "version": "1.1.1",
       "licencia": "MIT",
@@ -550,6 +626,19 @@
       "ruta": "node_modules/@oxc-project/types",
       "avisos": [
         "node_modules/@oxc-project/types/LICENSE"
+      ]
+    },
+    {
+      "nombre": "@react-three/drei",
+      "version": "10.7.9",
+      "licencia": "MIT",
+      "directa": true,
+      "desarrollo": false,
+      "opcional": false,
+      "instalado": true,
+      "ruta": "node_modules/@react-three/drei",
+      "avisos": [
+        "node_modules/@react-three/drei/LICENSE"
       ]
     },
     {
@@ -742,6 +831,45 @@
       ]
     },
     {
+      "nombre": "@tanstack/query-core",
+      "version": "5.107.1",
+      "licencia": "MIT",
+      "directa": false,
+      "desarrollo": false,
+      "opcional": false,
+      "instalado": true,
+      "ruta": "node_modules/@tanstack/query-core",
+      "avisos": [
+        "node_modules/@tanstack/query-core/LICENSE"
+      ]
+    },
+    {
+      "nombre": "@tanstack/react-query",
+      "version": "5.107.1",
+      "licencia": "MIT",
+      "directa": true,
+      "desarrollo": false,
+      "opcional": false,
+      "instalado": true,
+      "ruta": "node_modules/@tanstack/react-query",
+      "avisos": [
+        "node_modules/@tanstack/react-query/LICENSE"
+      ]
+    },
+    {
+      "nombre": "@tweenjs/tween.js",
+      "version": "23.1.3",
+      "licencia": "MIT",
+      "directa": false,
+      "desarrollo": false,
+      "opcional": false,
+      "instalado": true,
+      "ruta": "node_modules/@tweenjs/tween.js",
+      "avisos": [
+        "node_modules/@tweenjs/tween.js/LICENSE"
+      ]
+    },
+    {
       "nombre": "@tybys/wasm-util",
       "version": "0.10.1",
       "licencia": "MIT",
@@ -751,6 +879,19 @@
       "instalado": false,
       "ruta": "node_modules/@tybys/wasm-util",
       "avisos": []
+    },
+    {
+      "nombre": "@types/draco3d",
+      "version": "1.4.10",
+      "licencia": "MIT",
+      "directa": false,
+      "desarrollo": false,
+      "opcional": false,
+      "instalado": true,
+      "ruta": "node_modules/@types/draco3d",
+      "avisos": [
+        "node_modules/@types/draco3d/LICENSE"
+      ]
     },
     {
       "nombre": "@types/estree",
@@ -776,6 +917,32 @@
       "ruta": "node_modules/@types/json-schema",
       "avisos": [
         "node_modules/@types/json-schema/LICENSE"
+      ]
+    },
+    {
+      "nombre": "@types/node",
+      "version": "26.6.6",
+      "licencia": "MIT",
+      "directa": false,
+      "desarrollo": true,
+      "opcional": false,
+      "instalado": true,
+      "ruta": "node_modules/@types/node",
+      "avisos": [
+        "node_modules/@types/node/LICENSE"
+      ]
+    },
+    {
+      "nombre": "@types/offscreencanvas",
+      "version": "2019.7.3",
+      "licencia": "MIT",
+      "directa": false,
+      "desarrollo": false,
+      "opcional": false,
+      "instalado": true,
+      "ruta": "node_modules/@types/offscreencanvas",
+      "avisos": [
+        "node_modules/@types/offscreencanvas/LICENSE"
       ]
     },
     {
@@ -818,6 +985,32 @@
       ]
     },
     {
+      "nombre": "@types/stats.js",
+      "version": "0.17.4",
+      "licencia": "MIT",
+      "directa": false,
+      "desarrollo": false,
+      "opcional": false,
+      "instalado": true,
+      "ruta": "node_modules/@types/stats.js",
+      "avisos": [
+        "node_modules/@types/stats.js/LICENSE"
+      ]
+    },
+    {
+      "nombre": "@types/three",
+      "version": "0.187.0",
+      "licencia": "MIT",
+      "directa": false,
+      "desarrollo": false,
+      "opcional": false,
+      "instalado": true,
+      "ruta": "node_modules/@types/three",
+      "avisos": [
+        "node_modules/@types/three/LICENSE"
+      ]
+    },
+    {
       "nombre": "@types/webxr",
       "version": "0.5.24",
       "licencia": "MIT",
@@ -828,6 +1021,58 @@
       "ruta": "node_modules/@types/webxr",
       "avisos": [
         "node_modules/@types/webxr/LICENSE"
+      ]
+    },
+    {
+      "nombre": "@types/whatwg-mimetype",
+      "version": "3.0.2",
+      "licencia": "MIT",
+      "directa": false,
+      "desarrollo": true,
+      "opcional": false,
+      "instalado": true,
+      "ruta": "node_modules/@types/whatwg-mimetype",
+      "avisos": [
+        "node_modules/@types/whatwg-mimetype/LICENSE"
+      ]
+    },
+    {
+      "nombre": "@types/ws",
+      "version": "8.18.2",
+      "licencia": "MIT",
+      "directa": false,
+      "desarrollo": true,
+      "opcional": false,
+      "instalado": true,
+      "ruta": "node_modules/@types/ws",
+      "avisos": [
+        "node_modules/@types/ws/LICENSE"
+      ]
+    },
+    {
+      "nombre": "@use-gesture/core",
+      "version": "10.3.1",
+      "licencia": "MIT",
+      "directa": false,
+      "desarrollo": false,
+      "opcional": false,
+      "instalado": true,
+      "ruta": "node_modules/@use-gesture/core",
+      "avisos": [
+        "node_modules/@use-gesture/core/LICENSE"
+      ]
+    },
+    {
+      "nombre": "@use-gesture/react",
+      "version": "10.3.1",
+      "licencia": "MIT",
+      "directa": false,
+      "desarrollo": false,
+      "opcional": false,
+      "instalado": true,
+      "ruta": "node_modules/@use-gesture/react",
+      "avisos": [
+        "node_modules/@use-gesture/react/LICENSE"
       ]
     },
     {
@@ -948,6 +1193,19 @@
       ]
     },
     {
+      "nombre": "bidi-js",
+      "version": "1.1.0",
+      "licencia": "MIT",
+      "directa": false,
+      "desarrollo": false,
+      "opcional": false,
+      "instalado": true,
+      "ruta": "node_modules/bidi-js",
+      "avisos": [
+        "node_modules/bidi-js/LICENSE.txt"
+      ]
+    },
+    {
       "nombre": "brace-expansion",
       "version": "1.1.12",
       "licencia": "MIT",
@@ -988,6 +1246,19 @@
       ]
     },
     {
+      "nombre": "buffer-image-size",
+      "version": "0.6.4",
+      "licencia": "MIT",
+      "directa": false,
+      "desarrollo": true,
+      "opcional": false,
+      "instalado": true,
+      "ruta": "node_modules/buffer-image-size",
+      "avisos": [
+        "node_modules/buffer-image-size/LICENSE"
+      ]
+    },
+    {
       "nombre": "callsites",
       "version": "3.1.0",
       "licencia": "MIT",
@@ -998,6 +1269,19 @@
       "ruta": "node_modules/callsites",
       "avisos": [
         "node_modules/callsites/license"
+      ]
+    },
+    {
+      "nombre": "camera-controls",
+      "version": "3.1.2",
+      "licencia": "MIT",
+      "directa": false,
+      "desarrollo": false,
+      "opcional": false,
+      "instalado": true,
+      "ruta": "node_modules/camera-controls",
+      "avisos": [
+        "node_modules/camera-controls/LICENSE"
       ]
     },
     {
@@ -1024,6 +1308,32 @@
       "ruta": "node_modules/chalk",
       "avisos": [
         "node_modules/chalk/license"
+      ]
+    },
+    {
+      "nombre": "chart.js",
+      "version": "4.6.1",
+      "licencia": "MIT",
+      "directa": true,
+      "desarrollo": false,
+      "opcional": false,
+      "instalado": true,
+      "ruta": "node_modules/chart.js",
+      "avisos": [
+        "node_modules/chart.js/LICENSE.md"
+      ]
+    },
+    {
+      "nombre": "chartjs-plugin-annotation",
+      "version": "3.1.0",
+      "licencia": "MIT",
+      "directa": true,
+      "desarrollo": false,
+      "opcional": false,
+      "instalado": true,
+      "ruta": "node_modules/chartjs-plugin-annotation",
+      "avisos": [
+        "node_modules/chartjs-plugin-annotation/LICENSE.md"
       ]
     },
     {
@@ -1079,11 +1389,24 @@
       ]
     },
     {
+      "nombre": "cross-env",
+      "version": "7.0.3",
+      "licencia": "MIT",
+      "directa": false,
+      "desarrollo": false,
+      "opcional": false,
+      "instalado": true,
+      "ruta": "node_modules/cross-env",
+      "avisos": [
+        "node_modules/cross-env/LICENSE"
+      ]
+    },
+    {
       "nombre": "cross-spawn",
       "version": "7.0.6",
       "licencia": "MIT",
       "directa": false,
-      "desarrollo": true,
+      "desarrollo": false,
       "opcional": false,
       "instalado": true,
       "ruta": "node_modules/cross-spawn",
@@ -1131,6 +1454,19 @@
       ]
     },
     {
+      "nombre": "detect-gpu",
+      "version": "5.0.70",
+      "licencia": "MIT",
+      "directa": false,
+      "desarrollo": false,
+      "opcional": false,
+      "instalado": true,
+      "ruta": "node_modules/detect-gpu",
+      "avisos": [
+        "node_modules/detect-gpu/LICENSE"
+      ]
+    },
+    {
       "nombre": "detect-libc",
       "version": "2.1.2",
       "licencia": "Apache-2.0",
@@ -1144,6 +1480,17 @@
       ]
     },
     {
+      "nombre": "draco3d",
+      "version": "1.5.9",
+      "licencia": "Apache-2.0",
+      "directa": false,
+      "desarrollo": false,
+      "opcional": false,
+      "instalado": true,
+      "ruta": "node_modules/draco3d",
+      "avisos": []
+    },
+    {
       "nombre": "electron-to-chromium",
       "version": "1.5.313",
       "licencia": "ISC",
@@ -1154,6 +1501,19 @@
       "ruta": "node_modules/electron-to-chromium",
       "avisos": [
         "node_modules/electron-to-chromium/LICENSE"
+      ]
+    },
+    {
+      "nombre": "entities",
+      "version": "7.0.1",
+      "licencia": "BSD-2-Clause",
+      "directa": false,
+      "desarrollo": true,
+      "opcional": false,
+      "instalado": true,
+      "ruta": "node_modules/entities",
+      "avisos": [
+        "node_modules/entities/LICENSE"
       ]
     },
     {
@@ -1363,6 +1723,19 @@
       ]
     },
     {
+      "nombre": "fflate",
+      "version": "0.8.3",
+      "licencia": "MIT",
+      "directa": true,
+      "desarrollo": false,
+      "opcional": false,
+      "instalado": true,
+      "ruta": "node_modules/fflate",
+      "avisos": [
+        "node_modules/fflate/LICENSE"
+      ]
+    },
+    {
       "nombre": "file-entry-cache",
       "version": "8.0.0",
       "licencia": "MIT",
@@ -1465,6 +1838,32 @@
       ]
     },
     {
+      "nombre": "glsl-noise",
+      "version": "0.0.0",
+      "licencia": "MIT",
+      "directa": false,
+      "desarrollo": false,
+      "opcional": false,
+      "instalado": true,
+      "ruta": "node_modules/glsl-noise",
+      "avisos": [
+        "node_modules/glsl-noise/LICENSE"
+      ]
+    },
+    {
+      "nombre": "happy-dom",
+      "version": "21.0.4",
+      "licencia": "MIT",
+      "directa": true,
+      "desarrollo": true,
+      "opcional": false,
+      "instalado": true,
+      "ruta": "node_modules/happy-dom",
+      "avisos": [
+        "node_modules/happy-dom/LICENSE"
+      ]
+    },
+    {
       "nombre": "has-flag",
       "version": "4.0.0",
       "licencia": "MIT",
@@ -1504,6 +1903,19 @@
       ]
     },
     {
+      "nombre": "hls.js",
+      "version": "1.7.4",
+      "licencia": "Apache-2.0",
+      "directa": false,
+      "desarrollo": false,
+      "opcional": false,
+      "instalado": true,
+      "ruta": "node_modules/hls.js",
+      "avisos": [
+        "node_modules/hls.js/LICENSE"
+      ]
+    },
+    {
       "nombre": "ieee754",
       "version": "1.2.1",
       "licencia": "BSD-3-Clause",
@@ -1527,6 +1939,19 @@
       "ruta": "node_modules/ignore",
       "avisos": [
         "node_modules/ignore/LICENSE-MIT"
+      ]
+    },
+    {
+      "nombre": "immediate",
+      "version": "3.0.6",
+      "licencia": "MIT",
+      "directa": false,
+      "desarrollo": false,
+      "opcional": false,
+      "instalado": true,
+      "ruta": "node_modules/immediate",
+      "avisos": [
+        "node_modules/immediate/LICENSE.txt"
       ]
     },
     {
@@ -1580,11 +2005,24 @@
       ]
     },
     {
+      "nombre": "is-promise",
+      "version": "2.2.2",
+      "licencia": "MIT",
+      "directa": false,
+      "desarrollo": false,
+      "opcional": false,
+      "instalado": true,
+      "ruta": "node_modules/is-promise",
+      "avisos": [
+        "node_modules/is-promise/LICENSE"
+      ]
+    },
+    {
       "nombre": "isexe",
       "version": "2.0.0",
       "licencia": "ISC",
       "directa": false,
-      "desarrollo": true,
+      "desarrollo": false,
       "opcional": false,
       "instalado": true,
       "ruta": "node_modules/isexe",
@@ -1708,6 +2146,19 @@
       "avisos": []
     },
     {
+      "nombre": "ktx-parse",
+      "version": "1.1.0",
+      "licencia": "MIT",
+      "directa": false,
+      "desarrollo": false,
+      "opcional": false,
+      "instalado": true,
+      "ruta": "node_modules/ktx-parse",
+      "avisos": [
+        "node_modules/ktx-parse/LICENSE"
+      ]
+    },
+    {
       "nombre": "levn",
       "version": "0.4.1",
       "licencia": "MIT",
@@ -1718,6 +2169,19 @@
       "ruta": "node_modules/levn",
       "avisos": [
         "node_modules/levn/LICENSE"
+      ]
+    },
+    {
+      "nombre": "lie",
+      "version": "3.3.0",
+      "licencia": "MIT",
+      "directa": false,
+      "desarrollo": false,
+      "opcional": false,
+      "instalado": true,
+      "ruta": "node_modules/lie",
+      "avisos": [
+        "node_modules/lie/license.md"
       ]
     },
     {
@@ -1909,6 +2373,43 @@
       ]
     },
     {
+      "nombre": "maath",
+      "version": "0.10.8",
+      "licencia": "MIT",
+      "directa": false,
+      "desarrollo": false,
+      "opcional": false,
+      "instalado": true,
+      "ruta": "node_modules/maath",
+      "avisos": []
+    },
+    {
+      "nombre": "meshline",
+      "version": "3.3.1",
+      "licencia": "MIT",
+      "directa": false,
+      "desarrollo": false,
+      "opcional": false,
+      "instalado": true,
+      "ruta": "node_modules/meshline",
+      "avisos": [
+        "node_modules/meshline/LICENSE"
+      ]
+    },
+    {
+      "nombre": "meshoptimizer",
+      "version": "1.1.1",
+      "licencia": "MIT",
+      "directa": false,
+      "desarrollo": false,
+      "opcional": false,
+      "instalado": true,
+      "ruta": "node_modules/meshoptimizer",
+      "avisos": [
+        "node_modules/meshoptimizer/LICENSE.md"
+      ]
+    },
+    {
       "nombre": "minimatch",
       "version": "3.1.5",
       "licencia": "ISC",
@@ -2041,7 +2542,7 @@
       "version": "3.1.1",
       "licencia": "MIT",
       "directa": false,
-      "desarrollo": true,
+      "desarrollo": false,
       "opcional": false,
       "instalado": true,
       "ruta": "node_modules/path-key",
@@ -2089,6 +2590,19 @@
       ]
     },
     {
+      "nombre": "potpack",
+      "version": "1.0.2",
+      "licencia": "ISC",
+      "directa": false,
+      "desarrollo": false,
+      "opcional": false,
+      "instalado": true,
+      "ruta": "node_modules/potpack",
+      "avisos": [
+        "node_modules/potpack/LICENSE"
+      ]
+    },
+    {
       "nombre": "prelude-ls",
       "version": "1.2.1",
       "licencia": "MIT",
@@ -2099,6 +2613,32 @@
       "ruta": "node_modules/prelude-ls",
       "avisos": [
         "node_modules/prelude-ls/LICENSE"
+      ]
+    },
+    {
+      "nombre": "promise-worker-transferable",
+      "version": "1.0.4",
+      "licencia": "Apache-2.0",
+      "directa": false,
+      "desarrollo": false,
+      "opcional": false,
+      "instalado": true,
+      "ruta": "node_modules/promise-worker-transferable",
+      "avisos": [
+        "node_modules/promise-worker-transferable/LICENSE"
+      ]
+    },
+    {
+      "nombre": "property-graph",
+      "version": "4.1.0",
+      "licencia": "MIT",
+      "directa": false,
+      "desarrollo": false,
+      "opcional": false,
+      "instalado": true,
+      "ruta": "node_modules/property-graph",
+      "avisos": [
+        "node_modules/property-graph/LICENSE"
       ]
     },
     {
@@ -2151,6 +2691,19 @@
       "ruta": "node_modules/react-use-measure",
       "avisos": [
         "node_modules/react-use-measure/LICENSE"
+      ]
+    },
+    {
+      "nombre": "require-from-string",
+      "version": "2.0.2",
+      "licencia": "MIT",
+      "directa": false,
+      "desarrollo": false,
+      "opcional": false,
+      "instalado": true,
+      "ruta": "node_modules/require-from-string",
+      "avisos": [
+        "node_modules/require-from-string/license"
       ]
     },
     {
@@ -2223,7 +2776,7 @@
       "version": "2.0.0",
       "licencia": "MIT",
       "directa": false,
-      "desarrollo": true,
+      "desarrollo": false,
       "opcional": false,
       "instalado": true,
       "ruta": "node_modules/shebang-command",
@@ -2236,7 +2789,7 @@
       "version": "3.0.0",
       "licencia": "MIT",
       "directa": false,
-      "desarrollo": true,
+      "desarrollo": false,
       "opcional": false,
       "instalado": true,
       "ruta": "node_modules/shebang-regex",
@@ -2255,6 +2808,43 @@
       "ruta": "node_modules/source-map-js",
       "avisos": [
         "node_modules/source-map-js/LICENSE"
+      ]
+    },
+    {
+      "nombre": "stats-gl",
+      "version": "2.4.2",
+      "licencia": "MIT",
+      "directa": false,
+      "desarrollo": false,
+      "opcional": false,
+      "instalado": true,
+      "ruta": "node_modules/stats-gl",
+      "avisos": []
+    },
+    {
+      "nombre": "three",
+      "version": "0.170.0",
+      "licencia": "MIT",
+      "directa": false,
+      "desarrollo": false,
+      "opcional": false,
+      "instalado": true,
+      "ruta": "node_modules/stats-gl/node_modules/three",
+      "avisos": [
+        "node_modules/stats-gl/node_modules/three/LICENSE"
+      ]
+    },
+    {
+      "nombre": "stats.js",
+      "version": "0.17.0",
+      "licencia": "MIT",
+      "directa": false,
+      "desarrollo": false,
+      "opcional": false,
+      "instalado": true,
+      "ruta": "node_modules/stats.js",
+      "avisos": [
+        "node_modules/stats.js/LICENSE"
       ]
     },
     {
@@ -2310,6 +2900,45 @@
       ]
     },
     {
+      "nombre": "three-mesh-bvh",
+      "version": "0.8.3",
+      "licencia": "MIT",
+      "directa": false,
+      "desarrollo": false,
+      "opcional": false,
+      "instalado": true,
+      "ruta": "node_modules/three-mesh-bvh",
+      "avisos": [
+        "node_modules/three-mesh-bvh/LICENSE"
+      ]
+    },
+    {
+      "nombre": "three-stdlib",
+      "version": "2.36.1",
+      "licencia": "MIT",
+      "directa": false,
+      "desarrollo": false,
+      "opcional": false,
+      "instalado": true,
+      "ruta": "node_modules/three-stdlib",
+      "avisos": [
+        "node_modules/three-stdlib/LICENSE"
+      ]
+    },
+    {
+      "nombre": "fflate",
+      "version": "0.6.11",
+      "licencia": "MIT",
+      "directa": false,
+      "desarrollo": false,
+      "opcional": false,
+      "instalado": true,
+      "ruta": "node_modules/three-stdlib/node_modules/fflate",
+      "avisos": [
+        "node_modules/three-stdlib/node_modules/fflate/LICENSE"
+      ]
+    },
+    {
       "nombre": "tinyglobby",
       "version": "0.2.15",
       "licencia": "MIT",
@@ -2320,6 +2949,45 @@
       "ruta": "node_modules/tinyglobby",
       "avisos": [
         "node_modules/tinyglobby/LICENSE"
+      ]
+    },
+    {
+      "nombre": "troika-three-text",
+      "version": "0.52.5",
+      "licencia": "MIT",
+      "directa": false,
+      "desarrollo": false,
+      "opcional": false,
+      "instalado": true,
+      "ruta": "node_modules/troika-three-text",
+      "avisos": [
+        "node_modules/troika-three-text/LICENSE"
+      ]
+    },
+    {
+      "nombre": "troika-three-utils",
+      "version": "0.52.5",
+      "licencia": "MIT",
+      "directa": false,
+      "desarrollo": false,
+      "opcional": false,
+      "instalado": true,
+      "ruta": "node_modules/troika-three-utils",
+      "avisos": [
+        "node_modules/troika-three-utils/LICENSE"
+      ]
+    },
+    {
+      "nombre": "troika-worker-utils",
+      "version": "0.52.0",
+      "licencia": "MIT",
+      "directa": false,
+      "desarrollo": false,
+      "opcional": false,
+      "instalado": true,
+      "ruta": "node_modules/troika-worker-utils",
+      "avisos": [
+        "node_modules/troika-worker-utils/LICENSE"
       ]
     },
     {
@@ -2334,6 +3002,32 @@
       "avisos": []
     },
     {
+      "nombre": "tunnel-rat",
+      "version": "0.1.2",
+      "licencia": "MIT",
+      "directa": false,
+      "desarrollo": false,
+      "opcional": false,
+      "instalado": true,
+      "ruta": "node_modules/tunnel-rat",
+      "avisos": [
+        "node_modules/tunnel-rat/LICENSE"
+      ]
+    },
+    {
+      "nombre": "zustand",
+      "version": "4.5.7",
+      "licencia": "MIT",
+      "directa": false,
+      "desarrollo": false,
+      "opcional": false,
+      "instalado": true,
+      "ruta": "node_modules/tunnel-rat/node_modules/zustand",
+      "avisos": [
+        "node_modules/tunnel-rat/node_modules/zustand/LICENSE"
+      ]
+    },
+    {
       "nombre": "type-check",
       "version": "0.4.0",
       "licencia": "MIT",
@@ -2344,6 +3038,19 @@
       "ruta": "node_modules/type-check",
       "avisos": [
         "node_modules/type-check/LICENSE"
+      ]
+    },
+    {
+      "nombre": "undici-types",
+      "version": "8.9.0",
+      "licencia": "MIT",
+      "directa": false,
+      "desarrollo": true,
+      "opcional": false,
+      "instalado": true,
+      "ruta": "node_modules/undici-types",
+      "avisos": [
+        "node_modules/undici-types/LICENSE"
       ]
     },
     {
@@ -2386,6 +3093,19 @@
       ]
     },
     {
+      "nombre": "utility-types",
+      "version": "3.11.0",
+      "licencia": "MIT",
+      "directa": false,
+      "desarrollo": false,
+      "opcional": false,
+      "instalado": true,
+      "ruta": "node_modules/utility-types",
+      "avisos": [
+        "node_modules/utility-types/LICENSE"
+      ]
+    },
+    {
       "nombre": "vite",
       "version": "8.0.0",
       "licencia": "MIT",
@@ -2399,11 +3119,50 @@
       ]
     },
     {
+      "nombre": "webgl-constants",
+      "version": "1.1.1",
+      "licencia": null,
+      "directa": false,
+      "desarrollo": false,
+      "opcional": false,
+      "instalado": true,
+      "ruta": "node_modules/webgl-constants",
+      "avisos": [
+        "node_modules/webgl-constants/LICENSE"
+      ]
+    },
+    {
+      "nombre": "webgl-sdf-generator",
+      "version": "1.1.1",
+      "licencia": "MIT",
+      "directa": false,
+      "desarrollo": false,
+      "opcional": false,
+      "instalado": true,
+      "ruta": "node_modules/webgl-sdf-generator",
+      "avisos": [
+        "node_modules/webgl-sdf-generator/LICENSE.txt"
+      ]
+    },
+    {
+      "nombre": "whatwg-mimetype",
+      "version": "3.0.0",
+      "licencia": "MIT",
+      "directa": false,
+      "desarrollo": true,
+      "opcional": false,
+      "instalado": true,
+      "ruta": "node_modules/whatwg-mimetype",
+      "avisos": [
+        "node_modules/whatwg-mimetype/LICENSE.txt"
+      ]
+    },
+    {
       "nombre": "which",
       "version": "2.0.2",
       "licencia": "ISC",
       "directa": false,
-      "desarrollo": true,
+      "desarrollo": false,
       "opcional": false,
       "instalado": true,
       "ruta": "node_modules/which",
@@ -2422,6 +3181,19 @@
       "ruta": "node_modules/word-wrap",
       "avisos": [
         "node_modules/word-wrap/LICENSE"
+      ]
+    },
+    {
+      "nombre": "ws",
+      "version": "8.23.0",
+      "licencia": "MIT",
+      "directa": false,
+      "desarrollo": true,
+      "opcional": false,
+      "instalado": true,
+      "ruta": "node_modules/ws",
+      "avisos": [
+        "node_modules/ws/LICENSE"
       ]
     },
     {
@@ -2452,10 +3224,10 @@
     },
     {
       "nombre": "zod",
-      "version": "4.3.6",
+      "version": "4.6.7",
       "licencia": "MIT",
-      "directa": false,
-      "desarrollo": true,
+      "directa": true,
+      "desarrollo": false,
       "opcional": false,
       "instalado": true,
       "ruta": "node_modules/zod",

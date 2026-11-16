@@ -1,6 +1,6 @@
-import { Component, useEffect, useMemo, useRef } from 'react';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { Component, useEffect, useRef } from 'react';
+import { Canvas, useThree } from '@react-three/fiber';
+import { Bounds, OrbitControls } from '@react-three/drei';
 import { ACESFilmicToneMapping, SRGBColorSpace } from 'three';
 
 class LimiteVisor extends Component {
@@ -9,24 +9,6 @@ class LimiteVisor extends Component {
   render() {
     return this.state.error ? <p role="status">Vista 3D no disponible en este navegador.</p> : this.props.children;
   }
-}
-
-function ControlesCamara({ referencia, opciones }) {
-  const { camera, gl, invalidate } = useThree();
-  const controles = useMemo(() => new OrbitControls(camera), [camera]);
-  useEffect(() => {
-    const actualizar = () => invalidate();
-    controles.connect(gl.domElement);
-    controles.addEventListener('change', actualizar);
-    return () => {
-      controles.removeEventListener('change', actualizar);
-      controles.dispose();
-    };
-  }, [controles, gl, invalidate]);
-  useFrame(() => {
-    if (controles.enabled) controles.update();
-  }, -1);
-  return <primitive object={controles} ref={referencia} enablePan={false} enableDamping {...opciones} />;
 }
 
 function AccesoCamara({ controlesRef, descripcion, permitirGiro }) {
@@ -48,8 +30,8 @@ function AccesoCamara({ controlesRef, descripcion, permitirGiro }) {
       if (!paso) return;
       evento.preventDefault();
       controles.dispatchEvent({ type: 'start' });
-      if (paso[0]) controles.rotateLeft(-paso[0]);
-      if (paso[1]) controles.rotateUp(-paso[1]);
+      if (paso[0]) controles.setAzimuthalAngle(controles.getAzimuthalAngle() + paso[0]);
+      if (paso[1]) controles.setPolarAngle(controles.getPolarAngle() + paso[1]);
       controles.dispatchEvent({ type: 'end' });
     }
     canvas.addEventListener('keydown', girar);
@@ -71,8 +53,8 @@ export default function Visor3D({ camera, controlesRef, controles = {}, ligero =
         gl={{ outputColorSpace: SRGBColorSpace, toneMapping: ACESFilmicToneMapping, toneMappingExposure: 1.2,
           antialias: true, alpha: true, powerPreference: 'high-performance', preserveDrawingBuffer: false, stencil: false, ...gl }}
       >
-        {children}
-        <ControlesCamara referencia={referencia} opciones={controles} />
+        <OrbitControls ref={referencia} makeDefault enablePan={false} enableDamping {...controles} />
+        <Bounds maxDuration={0.8}>{children}</Bounds>
         <AccesoCamara controlesRef={referencia} descripcion={descripcion} permitirGiro={controles.enableRotate !== false} />
       </Canvas>
     </LimiteVisor>

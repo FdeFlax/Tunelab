@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import { redondear } from "../formato.js";
 import { crearTrazas, resumirValores } from "../mediciones/analisisMedicion.js";
 import { crearZipSinCompresion } from "./zipSinCompresion.js";
@@ -60,44 +61,30 @@ function limitarTexto(texto, maximo) {
   return String(texto || "").trim().slice(0, maximo);
 }
 
+const numeroEnRango = ({ min, max }) => z.number({ error: 'debe ser un número válido' })
+  .min(min, 'está fuera de rango').max(max, 'está fuera de rango');
+const textoLimitado = (maximo, requerido = false) => z.preprocess(v => v == null ? '' : v,
+  z.string({ error: 'debe ser texto' }).max(maximo, `supera ${maximo} caracteres`).trim().min(requerido ? 1 : 0, 'es obligatorio'));
+const instanteISO = z.preprocess(v => v === '' || v == null ? null : v,
+  z.string({ error: 'debe ser una fecha en texto' }).max(40, 'supera 40 caracteres')
+    .regex(/^\d{4}-\d{2}-\d{2}T/, 'no es una fecha ISO válida')
+    .refine(v => Number.isFinite(Date.parse(v)), 'no es una fecha ISO válida').nullable());
+
+function validar(esquema, valor, campo) {
+  const resultado = esquema.safeParse(valor);
+  if (resultado.success) return resultado.data;
+  const error = resultado.error.issues[0];
+  throw new Error(`El campo ${[campo, ...error.path].join('.')} ${error.message}.`);
+}
+
 function validarTexto({ valor, campo, maximo, requerido = false }) {
-  if (valor == null || valor === "") {
-    if (requerido) {
-      throw new Error(`El campo ${campo} es obligatorio.`);
-    }
-
-    return "";
-  }
-
-  if (typeof valor !== "string") {
-    throw new Error(`El campo ${campo} debe ser texto.`);
-  }
-
-  if (valor.length > maximo) {
-    throw new Error(`El campo ${campo} supera ${maximo} caracteres.`);
-  }
-
-  return valor.trim();
+  return validar(textoLimitado(maximo, requerido), valor, campo);
 }
-
 function validarNumero({ valor, campo, rango }) {
-  if (typeof valor !== "number" || !Number.isFinite(valor)) {
-    throw new Error(`El campo ${campo} debe ser un numero valido.`);
-  }
-
-  if (valor < rango.min || valor > rango.max) {
-    throw new Error(`El campo ${campo} esta fuera de rango.`);
-  }
-
-  return valor;
+  return validar(numeroEnRango(rango), valor, campo);
 }
-
 function validarNumeroOpcional({ valor, campo, rango }) {
-  if (valor == null) {
-    return null;
-  }
-
-  return validarNumero({ valor, campo, rango });
+  return valor == null ? null : validarNumero({ valor, campo, rango });
 }
 
 function obtenerValorTraza(traza, indice) {
@@ -121,11 +108,7 @@ function calcularResumenDesdeMuestras({ muestras }) {
 }
 
 function validarInstante(valor, campo) {
-  if (valor == null || valor === "") return null;
-  if (typeof valor !== "string" || valor.length > 40 || !/^\d{4}-\d{2}-\d{2}T/.test(valor) || !Number.isFinite(Date.parse(valor))) {
-    throw new Error(`El campo ${campo} no es una fecha ISO válida.`);
-  }
-  return valor;
+  return validar(instanteISO, valor, campo);
 }
 
 function validarPrograma(programa) {
@@ -181,65 +164,28 @@ function conservarResumen(original, calculado) {
   ]));
 }
 
-function validarEnsayo(ensayo) {
-  if (!esObjeto(ensayo)) {
-    throw new Error("El archivo no incluye un ensayo valido.");
-  }
-  const texto = (campo, maximo, requerido = false) => validarTexto({
-    valor: ensayo[campo], campo: `ensayo.${campo}`, maximo, requerido,
-  });
-  return {
-    codigo: texto("codigo", LIMITES_TEXTO.codigo, true),
-    nombre: texto("nombre", LIMITES_TEXTO.nombreEnsayo, true),
-    objetivo: texto("objetivo", LIMITES_TEXTO.objetivo),
-    descripcion: texto("descripcion", LIMITES_TEXTO.descripcion),
-    fecha: texto("fecha", LIMITES_TEXTO.fecha),
-    hora: texto("hora", LIMITES_TEXTO.hora),
-  };
-}
+const esquemaEnsayo = z.object({
+  codigo: textoLimitado(LIMITES_TEXTO.codigo, true),
+  nombre: textoLimitado(LIMITES_TEXTO.nombreEnsayo, true),
+  objetivo: textoLimitado(LIMITES_TEXTO.objetivo),
+  descripcion: textoLimitado(LIMITES_TEXTO.descripcion),
+  fecha: textoLimitado(LIMITES_TEXTO.fecha),
+  hora: textoLimitado(LIMITES_TEXTO.hora),
+});
+const esquemaMuestra = z.object({
+  segundo: numeroEnRango(RANGOS_NUMERICOS.segundo),
+  ...Object.fromEntries(['velMs', 'tempC', 'potPct', 'frecHz', 'corrA', 'rpm', 'presionPa', 'caudalM3s']
+    .map(campo => [campo, numeroEnRango(RANGOS_NUMERICOS[campo]).nullish().transform(v => v ?? null)])),
+  flujoEstable: z.boolean({ error: 'debe ser verdadero o falso' }).nullish().transform(v => v ?? null),
+  consignaObjetivoPct: numeroEnRango(RANGOS_NUMERICOS.potPct).nullish().transform(v => v ?? null),
+  instante: instanteISO,
+  fuente: z.preprocess(v => typeof v === 'string' ? limitarTexto(v, 30) : '', z.string()),
+});
+const esquemaMuestras = z.array(esquemaMuestra).min(1, 'no contiene muestras de medición')
+  .max(LIMITE_MUESTRAS_MEDICION, `supera el límite de ${LIMITE_MUESTRAS_MEDICION} muestras`);
 
-function validarMuestra(muestra, indice) {
-  if (!esObjeto(muestra)) {
-    throw new Error(`La muestra ${indice + 1} no es valida.`);
-  }
-  if (muestra.flujoEstable != null && typeof muestra.flujoEstable !== "boolean") {
-    throw new Error("La estabilidad de la muestra debe ser un booleano.");
-  }
-  const numero = campo => validarNumeroOpcional({
-    valor: muestra[campo], campo: `muestras[${indice}].${campo}`, rango: RANGOS_NUMERICOS[campo],
-  });
-  return {
-    flujoEstable: muestra.flujoEstable ?? null,
-    consignaObjetivoPct: validarNumeroOpcional({valor:muestra.consignaObjetivoPct,campo:"consigna objetivo",rango:RANGOS_NUMERICOS.potPct}),
-    segundo: validarNumero({
-      valor: muestra.segundo,
-      campo: `muestras[${indice}].segundo`,
-      rango: RANGOS_NUMERICOS.segundo,
-    }),
-    velMs: numero("velMs"),
-    tempC: numero("tempC"),
-    potPct: numero("potPct"),
-    frecHz: numero("frecHz"),
-    corrA: numero("corrA"),
-    rpm: numero("rpm"),
-    presionPa: numero("presionPa"),
-    instante: validarInstante(muestra.instante, `muestras[${indice}].instante`),
-    caudalM3s: numero("caudalM3s"),
-    fuente: typeof muestra.fuente === "string" ? limitarTexto(muestra.fuente, 30) : "",
-  };
-}
-
-function validarMuestras(muestras) {
-  if (!Array.isArray(muestras) || muestras.length === 0) {
-    throw new Error("El archivo no contiene muestras de medicion.");
-  }
-
-  if (muestras.length > LIMITE_MUESTRAS_MEDICION) {
-    throw new Error(`El archivo supera el limite de ${LIMITE_MUESTRAS_MEDICION} muestras.`);
-  }
-
-  return muestras.map(validarMuestra);
-}
+function validarEnsayo(ensayo) { return validar(esquemaEnsayo, ensayo, 'ensayo'); }
+function validarMuestras(muestras) { return validar(esquemaMuestras, muestras, 'muestras'); }
 
 function validarEventos(eventos) {
   if (eventos == null) {

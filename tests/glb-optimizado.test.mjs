@@ -2,8 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { BoxGeometry, SphereGeometry } from 'three';
-import { empaquetarGLB, LIMITES_GLB, optimizarGLB, importarGLB } from '../src/servicios/modelos3d.js';
-import { glbFixture } from './helpers/glbFixture.mjs';
+import { LIMITES_GLB, optimizarGLB, importarGLB } from '../src/servicios/modelos3d.js';
+import { empaquetarGLB, glbFixture } from './helpers/glbFixture.mjs';
 
 function abrir(buffer) {
   const n = new DataView(buffer).getUint32(12, true);
@@ -32,7 +32,7 @@ test('un GLB de más de 20 MB conserva exactamente las piezas y triángulos sin 
   cube.dispose();
   const grande = conTextura(base, 24 * 1024 * 1024);
   const firma = () => createHash('sha256').update(new Uint8Array(grande)).digest('hex');
-  const antes = firma(), limpio = optimizarGLB(grande);
+  const antes = firma(), limpio = await optimizarGLB(grande);
   assert.ok(grande.byteLength > LIMITES_GLB.bytes);
   assert.ok(limpio.buffer.byteLength < 4096);
   assert.equal(limpio.bytesOriginales, grande.byteLength);
@@ -67,7 +67,7 @@ test('extrae posiciones intercaladas sin copiar normales ni cambiar sus valores'
   json.bufferViews[1].byteOffset = posiciones.count * 24;
   json.accessors.push({ bufferView: 0, byteOffset: 12, componentType: 5126, count: posiciones.count, type: 'VEC3' });
   json.meshes[0].primitives[0].attributes.NORMAL = 2;
-  const entrelazado = empaquetarGLB(json, datos), limpio = optimizarGLB(entrelazado);
+  const entrelazado = empaquetarGLB(json, datos), limpio = await optimizarGLB(entrelazado);
   assert.ok(limpio.buffer.byteLength < entrelazado.byteLength);
   assert.deepEqual((await importarGLB(limpio.buffer)).positions, (await importarGLB(base)).positions);
 });
@@ -85,7 +85,7 @@ test('conserva la alineación y los valores de posiciones cuantizadas de tres by
     ],
     meshes: [{ primitives: [{ attributes: { POSITION: 0 }, indices: 1 }] }]
   };
-  const limpio = optimizarGLB(empaquetarGLB(json, bin));
+  const limpio = await optimizarGLB(empaquetarGLB(json, bin));
   assert.equal(abrir(limpio.buffer).json.bufferViews[0].byteStride, 4);
   const resultado = await importarGLB(limpio.buffer);
   assert.deepEqual(resultado.dimensions, [1, 1, 0]);
@@ -104,5 +104,5 @@ test('optimizar no evita los límites de entrada, triángulos ni las validacione
   const cube = new BoxGeometry(4, 2, 1);
   const datos = glbFixture(cube, (json, _, bin) => { new Uint32Array(bin, json.bufferViews[1].byteOffset)[0] = 999999; });
   cube.dispose();
-  await assert.rejects(importarGLB(optimizarGLB(datos).buffer), /índice de vértice/);
+  await assert.rejects(importarGLB((await optimizarGLB(datos)).buffer), /índice de vértice/);
 });

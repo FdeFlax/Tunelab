@@ -13,11 +13,8 @@ class EnsayoCrear(BaseModel):
     descripcion: str | None = Field(default=None, max_length=200)
 
 
-class EnsayoActualizar(BaseModel):
-    nombre: str = Field(min_length=1, max_length=30)
-    objetivo: str | None = Field(default=None, max_length=40)
-    descripcion: str | None = Field(default=None, max_length=200)
-
+class EnsayoActualizar(EnsayoCrear):
+    pass
 
 class EnsayoRespuesta(BaseModel):
     id: int

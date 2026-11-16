@@ -1,204 +1,103 @@
-import { pedirApi } from '../servicios/api/clienteApi.js';
+import { useEffect, useRef, useState } from 'react';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { leerIdentidadApi, pedirApi } from '../servicios/api/clienteApi.js';
 import { leerCampo } from './campo.js';
-import { conectarPlanos } from './planos.js';
-import { evaluarObjeto } from '../servicios/modelos3d.js';
-export function conectarFlujo(contenedor, alRecibirConfiguracion) {
-  const $ = id => contenedor.querySelector(`#${id}`);
-  const numero = n => new Intl.NumberFormat('es-ES', { maximumFractionDigits: 1 }).format(n);
-  $('condiciones-aire').title = 'Referencia GUST medida en la sección. Simulación transitoria con entrada uniforme, pendiente de validación.';
-  const cicloVida = new AbortController();
-  const solicitar = (ruta, opciones = {}) => pedirApi(ruta, {
-    ...opciones,
-    signal: AbortSignal.any([cicloVida.signal, AbortSignal.timeout(opciones.method === 'POST' ? 25000 : 10000)])
+
+const finalizado = estado => ['completado', 'error', 'cancelado'].includes(estado);
+const errorDefinitivo = error => [401, 404].includes(error?.respuesta?.status);
+
+export function useFlujo(objeto) {
+  const usuario = leerIdentidadApi()?.identificador;
+  const montado = useRef(false);
+  const ocupado = useRef(false);
+  const cancelando = useRef(false);
+  const cancelacionAutomatica = useRef(null);
+  const [trabajo, setTrabajo] = useState(null);
+  const [campo, setCampo] = useState(null);
+  const [aviso, setAviso] = useState('');
+  const [cancelacionPedida, setCancelacionPedida] = useState(false);
+  const capacidad = useQuery({
+    queryKey: ['capacidad-flujo', usuario],
+    queryFn: ({ signal }) => pedirApi('/flujo3d/capacidad', { signal }),
+    staleTime: Infinity, gcTime: 0, refetchOnWindowFocus: false,
   });
-  let objeto,
-    revision = 0,
-    activo = false,
-    id,
-    temporizador,
-    configurado = false,
-    modelo, parametros,
-    desmontado = false;
-  let cancelacionEnviada = false;
-  const planos = conectarPlanos(contenedor);
-  function mostrarEstado(text, kind = '') {
-    if (desmontado) return;
-    $('estado-flujo').textContent = text;
-    $('estado-flujo').className = `ayuda ${kind}`;
-  }
-
-  function motivoBloqueo() {
-    const revisionObjeto = evaluarObjeto(objeto, parametros);
-    return revisionObjeto.titulo ? `${revisionObjeto.titulo}. Revisa el aviso junto al botón.` : revisionObjeto.motivo;
-  }
-
-  function actualizarControles() {
-    if (desmontado) return;
-    const revisionObjeto = evaluarObjeto(objeto, parametros);
-    $('calcular-flujo').disabled = !configurado || activo || Boolean(revisionObjeto.motivo);
-    $('calcular-flujo').setAttribute('aria-busy', String(activo));
-    $('indicador-calculo').hidden = !activo;
-    $('texto-calcular').textContent = activo ? 'Calculando…' : 'Calcular flujo';
-    $('vacio').querySelector('p').textContent = activo ? 'El mapa aparecerá aquí al terminar.' : 'Carga un objeto y calcula para ver el flujo.';
-    $('bloqueo-flujo').hidden = !revisionObjeto.titulo;
-    $('titulo-bloqueo-flujo').textContent = revisionObjeto.titulo || '';
-    $('detalle-bloqueo-flujo').textContent = revisionObjeto.titulo ? revisionObjeto.motivo : '';
-    $('detalle-limites-flujo').hidden = !revisionObjeto.detalles;
-    $('detalle-limites-flujo').textContent = revisionObjeto.detalles || '';
-    $('cancelar-flujo').hidden = !activo;
-    $('cancelar-flujo').disabled = cancelacionEnviada;
-  }
-
-  function limpiarMapas() {
-    planos.clear();
-  }
-
-  async function cancelar() {
-    if (!id || cancelacionEnviada) return;
-    cancelacionEnviada = true;
-    actualizarControles();
-    mostrarEstado('Deteniendo el cálculo anterior…');
-    try {
-      await solicitar(`/flujo3d/calculos/${id}`, {
-        method: 'DELETE'
-      });
-    } catch {
-      cancelacionEnviada = false;
-      actualizarControles();
-      mostrarEstado('No se ha podido confirmar la cancelación. El servidor tiene un límite de tiempo; puedes volver a intentarlo.', 'aviso');
-    }
-  }
-
-  function invalidarResultado() {
-    revision++;
-    limpiarMapas();
-    if (activo) {
-      cancelar();
-      mostrarEstado('Han cambiado las condiciones. El cálculo anterior ya no se mostrará.');
-    } else if (configurado) mostrarEstado('');
-    actualizarControles();
-  }
-
-  function terminar() {
-    activo = false;
-    id = null;
-    clearTimeout(temporizador);
-    cancelacionEnviada = false;
-    actualizarControles();
-  }
-
-  function mostrarTrabajo(trabajo, revisionSolicitada) {
-    if (desmontado) return;
-    const mismaRevision = revisionSolicitada === revision;
-    if (trabajo.estado === 'completado') {
-      if (mismaRevision) {
-        const data = trabajo.resultado;
-        if (data.modelo !== modelo) throw new Error('El mapa corresponde a otra configuración.');
-        planos.mostrar(leerCampo(data.volumen, parametros));
-        mostrarEstado('');
-      } else mostrarEstado('Las condiciones han cambiado. Puedes calcular el nuevo caso.');
-      terminar();
-      return;
-    }
-    if (['error', 'cancelado'].includes(trabajo.estado)) {
-      terminar();
-      mostrarEstado(mismaRevision ? trabajo.mensaje : motivoBloqueo() || 'Puedes calcular el objeto con los nuevos ajustes.', trabajo.estado === 'error' && mismaRevision ? 'error' : '');
-      return;
-    }
-    if (!mismaRevision) cancelar();else if (!cancelacionEnviada) mostrarEstado('');
-    temporizador = setTimeout(() => consultarTrabajo(revisionSolicitada), 800);
-  }
-
-  async function consultarTrabajo(revisionSolicitada) {
-    if (desmontado || !id) return;
-    let trabajo;
-    try {
-      trabajo = await solicitar(`/flujo3d/calculos/${id}`);
-    } catch (error) {
-      if (desmontado) return;
-      if (error.respuesta?.status === 404 || error.respuesta?.status === 401) {
-        terminar();
-        mostrarEstado(error.detalle || 'El cálculo ya no está disponible.', 'error');
-      } else {
-        mostrarEstado('Se ha perdido la conexión. Intentando recuperar el estado del cálculo…', 'aviso');
-        temporizador = setTimeout(() => consultarTrabajo(revisionSolicitada), 2500);
-      }
-      return;
-    }
-    try {
-      mostrarTrabajo(trabajo, revisionSolicitada);
-    } catch {
-      terminar();
-      limpiarMapas();
-      mostrarEstado('No se ha podido representar el resultado recibido. Vuelve a calcular para recuperarlo.', 'error');
-    }
-  }
-  $('calcular-flujo').addEventListener('click', async () => {
-    if (activo || motivoBloqueo() || !configurado) return;
-    const revisionSolicitada = revision;
-    activo = true;
-    id = null;
-    cancelacionEnviada = false;
-    limpiarMapas();
-    actualizarControles();
-    mostrarEstado('');
-    try {
-      const trabajo = await solicitar(`/flujo3d/calculos?modelo=${encodeURIComponent(modelo)}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/octet-stream'
-        },
-        body: objeto.posiciones
-      });
-      if (desmontado) return;
-      id = trabajo.id;
-      mostrarTrabajo(trabajo, revisionSolicitada);
-    } catch (error) {
-      terminar();
-      mostrarEstado(error.detalle || 'No se pudo confirmar el inicio. Comprueba el servidor antes de volver a intentarlo.', 'error');
-    }
-  });
-  $('cancelar-flujo').addEventListener('click', () => {
-    if (id) cancelar();else {
-      revision++;
-      mostrarEstado('Se cancelará en cuanto el servidor confirme la recepción.');
-    }
-  });
-  async function consultarCapacidad() {
-    try {
-      const info = await solicitar('/flujo3d/capacidad');
-      if (desmontado) return;
-      modelo = info.modelo;
-      parametros = info.parametros;
-      configurado = info.configurado;
-      const aire = parametros.aire;
-      $('condiciones-aire').textContent = `Entrada: ${numero(aire.velocidadMs)} m/s · ${numero(aire.temperaturaC)} °C · ${numero(aire.presionAbsolutaPa / 100)} hPa · ${numero(aire.humedadRelativaPct)} % HR`;
-      alRecibirConfiguracion(parametros);
-      mostrarEstado(!configurado ? 'El motor de cálculo no está configurado.' : info.ocupado ? 'El servidor está calculando otro caso.' : '');
-      $('acceso-flujo').hidden = true;
-    } catch (error) {
-      if (desmontado) return;
-      configurado = false;
-      const login = error.respuesta?.status === 401;
-      $('acceso-flujo').hidden = !login;
-      mostrarEstado(login ? 'Inicia sesión para calcular.' : 'No se puede conectar con el servidor.', 'aviso');
-    }
-    $('reintentar-flujo').hidden = configurado;
-    actualizarControles();
-  }
-  $('reintentar-flujo').addEventListener('click', consultarCapacidad);
-  consultarCapacidad();
-  return {
-    cambiar(data) {
-      objeto = data;
-      invalidarResultado();
+  const inicio = useMutation({
+    mutationFn: datos => pedirApi(`/flujo3d/calculos?modelo=${encodeURIComponent(datos.modelo)}`, {
+      method: 'POST', headers: { 'Content-Type': 'application/octet-stream' },
+      body: datos.objeto.posiciones, signal: AbortSignal.timeout(25000),
+    }),
+    onSuccess: (respuesta, datos) => { if (montado.current) setTrabajo({ ...datos, id: respuesta.id }); },
+    onError: error => {
+      ocupado.current = false;
+      if (montado.current) setAviso(error.detalle || 'No se pudo confirmar el inicio. Comprueba el servidor antes de volver a intentarlo.');
     },
-    dispose() {
-      desmontado = true;
-      cicloVida.abort();
-      clearTimeout(temporizador);
-      objeto = null;
-      planos.dispose();
+  });
+  const cancelacion = useMutation({
+    mutationFn: id => pedirApi(`/flujo3d/calculos/${id}`, { method: 'DELETE' }),
+    onError: () => {
+      if (!montado.current) return;
+      cancelando.current = false;
+      setCancelacionPedida(false);
+      setAviso('No se ha podido confirmar la cancelación. Puedes volver a intentarlo.');
+    },
+  });
+  const consulta = useQuery({
+    queryKey: ['calculo-flujo', usuario, trabajo?.id],
+    queryFn: ({ signal }) => pedirApi(`/flujo3d/calculos/${trabajo.id}`, { signal }),
+    enabled: Boolean(trabajo), gcTime: 0,
+    refetchInterval: q => errorDefinitivo(q.state.error) || finalizado(q.state.data?.estado) ? false : q.state.error ? 2500 : 800,
+    refetchIntervalInBackground: true, refetchOnWindowFocus: false,
+  });
+
+  useEffect(() => { montado.current = true; return () => { montado.current = false; }; }, []);
+  useEffect(() => { setCampo(null); setAviso(''); }, [objeto]);
+  const cancelarTrabajo = cancelacion.mutate;
+  useEffect(() => {
+    if (!trabajo || !(cancelacionPedida || trabajo.objeto !== objeto) || cancelacionAutomatica.current === trabajo.id) return;
+    cancelacionAutomatica.current = trabajo.id;
+    cancelando.current = true;
+    setCancelacionPedida(true);
+    cancelarTrabajo(trabajo.id);
+  }, [trabajo, objeto, cancelacionPedida, cancelarTrabajo]);
+
+  useEffect(() => {
+    if (!trabajo) return;
+    if (errorDefinitivo(consulta.error)) {
+      setAviso(consulta.error.detalle || 'El cálculo ya no está disponible.');
+      ocupado.current = false;
+      setTrabajo(null);
+      return;
     }
-  };
+    const resultado = consulta.data;
+    if (!resultado || !finalizado(resultado.estado)) return;
+    if (resultado.estado === 'completado' && trabajo.objeto === objeto && !cancelacionPedida) {
+      try {
+        if (resultado.resultado.modelo !== trabajo.modelo) throw new Error('Configuración diferente.');
+        setCampo(leerCampo(resultado.resultado.volumen, trabajo.parametros));
+        setAviso('');
+      } catch { setAviso('No se ha podido representar el resultado recibido. Vuelve a calcular para recuperarlo.'); }
+    } else setAviso(trabajo.objeto !== objeto ? 'Puedes calcular el nuevo objeto.' : resultado.mensaje || 'Cálculo cancelado.');
+    ocupado.current = false;
+    setTrabajo(null);
+  }, [consulta.data, consulta.error, trabajo, objeto, cancelacionPedida]);
+
+  function calcular() {
+    if (!objeto || ocupado.current || inicio.isPending || trabajo || !capacidad.data?.configurado) return;
+    ocupado.current = true; cancelando.current = false;
+    setCampo(null); setAviso(''); setCancelacionPedida(false);
+    cancelacionAutomatica.current = null;
+    inicio.mutate({ objeto, modelo: capacidad.data.modelo, parametros: capacidad.data.parametros });
+  }
+  function cancelar() {
+    if (cancelando.current) return;
+    cancelando.current = true;
+    setCancelacionPedida(true);
+    setAviso('Deteniendo el cálculo…');
+    if (trabajo) {
+      cancelacionAutomatica.current = trabajo.id;
+      cancelarTrabajo(trabajo.id);
+    }
+  }
+  return { capacidad, campo, calcular, cancelar, activo: inicio.isPending || Boolean(trabajo), cancelacionPedida,
+    aviso: consulta.isError && !errorDefinitivo(consulta.error) ? 'Se ha perdido la conexión. Intentando recuperar el cálculo…' : aviso };
 }
