@@ -1,3 +1,5 @@
+/* Estructura y navegación lateral */
+
 .app-shell {
   min-height: 100vh;
   transition: grid-template-columns .28s cubic-bezier(.2,.8,.2,1);
@@ -159,9 +161,6 @@
 
 .sidebar--open .sidelink {
   border-radius: var(--control-radio);
-  text-align: left;
-  flex-direction: row;
-  justify-content: flex-start;
   gap: 12px;
   min-height: 42px;
   padding: 8px 12px;
@@ -218,7 +217,6 @@
 .sidebar--open .sideactionbtn {
   border-radius: var(--control-radio);
   text-align: left;
-  justify-content: flex-start;
   gap: 12px;
   min-height: 42px;
   padding: 8px 12px;
@@ -246,7 +244,6 @@
 }
 
 .sidebar--open .sideuser {
-  justify-content: flex-start;
   gap: 8px;
   min-height: 48px;
   padding: 6px;
@@ -393,7 +390,6 @@
   }
 
   .sidebar--open {
-    width: 230px;
     max-width: calc(100vw - 48px);
     box-shadow: 10px 0 24px #3a4c601f;
   }
@@ -424,6 +420,8 @@
     transition: none;
   }
 }
+
+/* Acceso con perfiles locales */
 
 .loginlocal {
   display: grid;
@@ -470,12 +468,6 @@
   border-color: var(--hover-borde-recuadro-claro);
 }
 
-.loginlocalboton:focus-visible,
-.loginlocalestado button:focus-visible {
-  outline: 2px solid var(--primary);
-  outline-offset: 3px;
-}
-
 .loginlocalboton:disabled,
 .loginlocalestado button:disabled {
   opacity: .55;
@@ -501,6 +493,8 @@
   font-size: 14px;
 }
 
+/* Título de la página */
+
 .app-page-title {
   min-height: auto;
   margin: 0 0 var(--seccion-gap);
@@ -521,10 +515,6 @@
   .app-page-title {
     min-height: 30px;
     margin-bottom: 14px;
-  }
-
-  .app-page-title h1 {
-    font-size: var(--titulo-pagina);
   }
 }
 
@@ -706,12 +696,12 @@
   border-color: #0000;
 }
 
-.app-shell .sidebar--collapsed :is(.sidelink,.sideactionbtn,.sideuser,.sidebar-logo) {
+.app-shell .sidebar--collapsed :is(.sidelink, .sideactionbtn, .sideuser, .sidebar-logo) {
   border-radius: var(--control-radio);
   transition: background-color .16s,color .16s;
 }
 
-.app-shell .sidebar--collapsed :is(.sidelink,.sideactionbtn,.sideuser,.sidebar-logo):hover {
+.app-shell .sidebar--collapsed :is(.sidelink, .sideactionbtn, .sideuser, .sidebar-logo):hover {
   background: #f0f5fb;
 }
 

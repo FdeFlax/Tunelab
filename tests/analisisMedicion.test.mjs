@@ -10,7 +10,7 @@ import {
   prepararGrafica,
 } from "../src/servicios/mediciones/analisisMedicion.js";
 import { crearDocumentoMedicionTunelab, normalizarDocumentoMedicionTunelab, leerArchivoMedicionTunelab, comprobarCapacidadImportacion } from "../src/servicios/archivos/medicionArchivo.js";
-import { crearMedicionDesdeApi, crearDetalleMedicionDocente } from "../src/servicios/mediciones/adaptarRegistros.js";
+import { crearMedicionDesdeApi, crearDetalleMedicionDocente, crearEnsayoDesdeApi } from "../src/servicios/mediciones/adaptarRegistros.js";
 import { fechaApi } from "../src/servicios/formato.js";
 
 const programa = { nombre: "Barrido", version: 1, etapas: [
@@ -26,7 +26,54 @@ function captura(convertir = crearMedicionDesdeApi) {
       frecuencia_hz: 12.345, corriente_a: 1.789, rpm: 752.333, presion_pa: 3.90567,
     })), [{id: 2, creado_en: "2026-09-30T08:00:10", tipo: "info", mensaje: "Etapa 2/2 iniciada"}]);
 }
-const ensayo = {codigo: "A-1", nombre: "Prueba"};
+const ensayo = {id: "api-ensayo-1", apiId: 1, nombre: "Prueba"};
+
+test("la descarga desde Registro conserva la fecha del ensayo de MySQL al volver a importar", () => {
+  const ensayoApi = { id: 63, nombre: "Prueba 1", objetivo: "Objetivo 1", descripcion: "Descripción 1",
+    creado_en: "2026-11-23T19:00:29" };
+  const ensayoVista = crearEnsayoDesdeApi(ensayoApi);
+  for (const origen of [ensayoApi, ensayoVista]) {
+    const documento = crearDocumentoMedicionTunelab({ ensayo: origen, medicion: captura() });
+    const recuperado = normalizarDocumentoMedicionTunelab(JSON.parse(JSON.stringify(documento))).ensayo;
+    assert.deepEqual(recuperado, { id: 63, nombre: ensayoApi.nombre, objetivo: ensayoApi.objetivo,
+      descripcion: ensayoApi.descripcion, fecha: ensayoVista.fecha, hora: ensayoVista.hora });
+    assert.ok(recuperado.fecha && recuperado.hora);
+  }
+});
+
+test("la exportación respeta fechas de archivos importados y no inventa las que faltan", () => {
+  for (const fechas of [{ fecha: "12/05/2025", hora: "09:35" }, { fecha: "", hora: "" }]) {
+    const documento = crearDocumentoMedicionTunelab({ ensayo: { ...ensayo, ...fechas }, medicion: captura() });
+    const recuperado = normalizarDocumentoMedicionTunelab(JSON.parse(JSON.stringify(documento))).ensayo;
+    assert.equal(recuperado.fecha, fechas.fecha);
+    assert.equal(recuperado.hora, fechas.hora);
+  }
+});
+
+test("una medición simple conserva consigna, duración prevista y muestras al exportar", () => {
+  const medicion = { ...captura(), programa: null, duracionPrevistaSeg: 20, objPotPct: 25 };
+  const doc = crearDocumentoMedicionTunelab({ ensayo, medicion });
+  const recuperada = normalizarDocumentoMedicionTunelab(JSON.parse(JSON.stringify(doc))).medicion;
+  assert.equal(recuperada.duracionPrevistaSeg, 20);
+  assert.equal(recuperada.objPotPct, 25);
+  assert.equal(recuperada.programa, null);
+  assert.deepEqual(analizarEtapas(recuperada), []);
+  assert.deepEqual(recuperada.muestras, medicion.muestras);
+});
+
+test("exporta el ID del ensayo sin código y permite importar los archivos anteriores", () => {
+  const documento = crearDocumentoMedicionTunelab({ ensayo, medicion: captura() });
+  assert.equal(documento.ensayo.id, 1);
+  assert.equal("codigo" in documento.ensayo, false);
+  assert.equal(normalizarDocumentoMedicionTunelab(documento).ensayo.id, 1);
+  for (const version of ["1.0", "1.1", "1.2"]) {
+    const antiguo = { ...documento, version, ensayo: { ...documento.ensayo, codigo: "A-001" } };
+    delete antiguo.ensayo.id;
+    const recuperado = normalizarDocumentoMedicionTunelab(antiguo);
+    assert.equal(recuperado.ensayo.codigo, "A-001");
+    assert.equal(recuperado.medicion.totalMuestras, documento.muestras.length);
+  }
+});
 
 function capturaContinua() {
   const original = captura();
@@ -40,10 +87,47 @@ function capturaContinua() {
     }))};
 }
 
+function capturaTemporizada() {
+  const m = capturaContinua();
+  return { ...m, programa: { nombre: "Barrido", version: 3, etapas: [
+    { consigna: 25, duracion_segundos: 5, cambio_segundo: 0, inicio_segundo: 0, fin_segundo: 5, estado: "completada" },
+    { consigna: 75, duracion_segundos: 5, cambio_segundo: 5, inicio_segundo: 5, fin_segundo: 10, estado: "completada" },
+  ] } };
+}
+
+test("las etapas temporizadas incluyen las transiciones y no duplican la muestra del cambio", () => {
+  const m = capturaTemporizada();
+  const etapas = analizarEtapas(m);
+  assert.deepEqual(etapas.map(e => e.registroSeg), [5, 5]);
+  assert.deepEqual(etapas.map(e => e.muestrasResumen.length), [6, 5]);
+  assert.equal(etapas[0].velocidad.media, 1.5);
+  assert.equal(etapas[1].velocidad.media, 7.4);
+  assert.equal(etapas[0].velocidad.minima, 0);
+  assert.deepEqual(etapas.flatMap(e => e.muestras), m.muestras);
+  assert.equal(prepararSerie(crearTrazas(m.muestras, m.programa.etapas).velocidad).length, 1);
+});
+
+test("el archivo conserva etapas temporizadas y resultados parciales sin exigir estabilidad", () => {
+  const m = capturaTemporizada();
+  m.programa.etapas[0].estado = "parcial";
+  m.programa.etapas[0].fin_segundo = 1;
+  m.programa.etapas[1] = { ...m.programa.etapas[1], estado: "pendiente", cambio_segundo: null, inicio_segundo: null, fin_segundo: null };
+  m.muestras = m.muestras.slice(0, 2);
+  const doc = crearDocumentoMedicionTunelab({ ensayo, medicion: m });
+  const recuperada = normalizarDocumentoMedicionTunelab(JSON.parse(JSON.stringify(doc))).medicion;
+  assert.deepEqual(recuperada.programa, m.programa);
+  assert.deepEqual(recuperada.muestras, m.muestras);
+  const etapas = analizarEtapas(recuperada);
+  assert.equal(etapas[0].registroSeg, 1);
+  assert.equal(etapas[0].velocidad.media, 0.5);
+  assert.equal(etapas[1].muestras.length, 0);
+  assert.equal(etapas[1].velocidad.media, null);
+});
+
 test("la captura continua dibuja transiciones y calcula medias solo con muestras estables", () => {
   const m = capturaContinua(), etapas = analizarEtapas(m);
   assert.deepEqual(etapas.map(e => e.muestras.length), [6, 5]);
-  assert.deepEqual(etapas.map(e => e.muestrasEstables.length), [3, 3]);
+  assert.deepEqual(etapas.map(e => e.muestrasResumen.length), [3, 3]);
   assert.deepEqual(etapas.map(e => e.velocidad.media), [2, 8]);
   assert.deepEqual(etapas.map(e => e.registroSeg), [2, 2]);
   assert.equal(prepararSerie(crearTrazas(m.muestras, m.programa.etapas).velocidad).length, 1);
@@ -55,7 +139,7 @@ test("la primera muestra estable cuenta aunque el programador marque el tramo un
   const m = capturaContinua();
   m.programa.etapas[0].tramos_estables[0].inicio = 3.005;
   m.programa.etapas[0].inicio_segundo = 3.005;
-  assert.equal(analizarEtapas(m)[0].muestrasEstables.length, 3);
+  assert.equal(analizarEtapas(m)[0].muestrasResumen.length, 3);
 });
 
 test("la exportación conserva transiciones, criterio y tramos sin alterar los archivos antiguos", () => {
@@ -86,7 +170,7 @@ test("exportar e importar conserva muestras, origen, fechas, calibración y etap
     const original = captura(convertir);
     const documento = crearDocumentoMedicionTunelab({ensayo, medicion: original, fuenteTunel: "mysql"});
     const recuperada = normalizarDocumentoMedicionTunelab(JSON.parse(JSON.stringify(documento))).medicion;
-    assert.equal(documento.version, "1.2");
+    assert.equal(documento.version, "1.3");
     for (const campo of ["fuente", "estado", "fechaInicio", "fechaFin", "calibracionVersion", "programa", "durSeg", "trazas", "muestras", "tecnicos"]) {
       assert.deepEqual(recuperada[campo], original[campo], campo);
     }
@@ -132,21 +216,21 @@ test("la media y la desviación ignoran ausencias pero conservan ceros reales", 
   assert.equal(resumirValores([2]).desviacion, null);
 });
 
-test("Chart.js recibe tiempos reales y segmentos separados para comparar en una escala común", () => {
+test("Chart.js conserva los tiempos y separa los huecos de una medición", () => {
   const datos = crearTrazas(captura().muestras, programa.etapas).velocidad;
-  const grafica = prepararGrafica([{nombre: 'a', datos}, {nombre: 'b', datos: [{segundo: 0, valor: 10}, {segundo: 30, valor: 12}]}]);
-  assert.equal(grafica.datasets.length, 3);
+  const grafica = prepararGrafica({nombre: 'a', datos});
+  assert.equal(grafica.datasets.length, 2);
   assert.deepEqual(grafica.datasets[0].data[0], {x: 0, y: 2.561});
   assert.deepEqual(grafica.datasets[1].data[0], {x: 10, y: 8.18});
-  assert.deepEqual(grafica.datasets[2].data.at(-1), {x: 30, y: 12});
-  assert.equal(grafica.resumenes[0].minima, 2.561);
+  assert.deepEqual(grafica.datasets[1].data.at(-1), {x: 13, y: 8.18});
+  assert.equal(grafica.resumen.minima, 2.561);
   assert.equal(prepararSerie([{segundo: 0, valor: 1}, {segundo: 1, valor: null}, {segundo: 2, valor: 3}]).length, 2);
   assert.equal(prepararSerie([{segundo: 0, valor: 1}, {segundo: 1, valor: 2}, {segundo: 15, valor: 3}]).length, 2);
 });
 
 test("la consulta por teclado apunta a las mismas muestras originales enviadas a Chart.js", () => {
   const puntos = [{segundo:0,valor:0}, {segundo:1,valor:3.42}, {segundo:8,valor:6.31}];
-  const grafica = prepararGrafica([{nombre: 'a', datos: puntos}]);
+  const grafica = prepararGrafica({nombre: 'a', datos: puntos});
   assert.equal(grafica.consultas.length, 3);
   for (const [i, p] of grafica.consultas.entries()) {
     assert.deepEqual(grafica.datasets[p.datasetIndex].data[p.index], {x: puntos[i].segundo, y: puntos[i].valor});
@@ -160,10 +244,10 @@ test("registros de 15 horas llegan completos a Chart.js, sin perder extremos ni 
   documento.muestras = Array.from({length: 54001}, (_, i) => ({segundo:i,velMs:i === 31000 ? 59 : i === 7000 ? 0 : 5,tempC:null,potPct:50}));
   const texto = JSON.stringify(documento);
   const importada = await leerArchivoMedicionTunelab({name:"larga.json",size:Buffer.byteLength(texto),text:async()=>texto});
-  const grafica = prepararGrafica([{nombre: 'larga', datos: importada.medicion.trazas.velocidad}]);
+  const grafica = prepararGrafica({nombre: 'larga', datos: importada.medicion.trazas.velocidad});
   assert.equal(grafica.datasets[0].data.length, 54001);
-  assert.equal(grafica.resumenes[0].minima, 0);
-  assert.equal(grafica.resumenes[0].maxima, 59);
+  assert.equal(grafica.resumen.minima, 0);
+  assert.equal(grafica.resumen.maxima, 59);
   assert.equal(grafica.consultas.at(-1).x, 54000);
 });
 

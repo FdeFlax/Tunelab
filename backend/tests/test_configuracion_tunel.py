@@ -81,7 +81,8 @@ class ConfiguracionTunelTests(unittest.TestCase):
             lambda c: c['simulador'].update(consignaInicialPct=101),
             lambda c: c['simulador'].update(consignasRapidasPct=[25, 25]),
             lambda c: c['simulador'].update(consignasRapidasPct=[True]),
-            lambda c: c['aerodinamica'].update(medicionActiva='foto-5'),
+            lambda c: c['aerodinamica']['mediciones'][0].update(consignaPct=None),
+            lambda c: c['aerodinamica']['mediciones'][0].update(consignaPct=75),
             lambda c: c['aerodinamica'].update(medicionActiva='inexistente'),
             lambda c: c['aerodinamica']['mediciones'][0].update(presionAbsolutaPa=1007.6),
             lambda c: c['aerodinamica']['mediciones'][0].update(humedadRelativaPct=101),
@@ -119,6 +120,24 @@ class ConfiguracionTunelTests(unittest.TestCase):
         self.assertAlmostEqual(FLUJO['aire']['densidadKgM3'], 1.18178753594, places=10)
         self.assertAlmostEqual(FLUJO['aire']['viscosidadCinematicaM2s'], 1.54335222725e-5, places=14)
         self.assertEqual(len(TUNEL['aerodinamica']['mediciones']), 5)
+
+    def test_curva_medida_interpolacion_y_ambiente_independiente(self):
+        for consigna, velocidad in [(0, 0), (25, 4), (50, 9.2), (60, 11.32), (75, 14.5), (100, 19.8)]:
+            f = parametros_flujo(TUNEL, consigna)
+            self.assertAlmostEqual(f['aire']['velocidadMs'], velocidad)
+            for key in ('temperaturaC', 'presionAbsolutaPa', 'humedadRelativaPct', 'viscosidadCinematicaM2s'):
+                self.assertEqual(f['aire'][key], FLUJO['aire'][key])
+            if velocidad:
+                dt, dx = f['aire']['segundosPorPaso'], f['pasoCm'] / 100
+                self.assertAlmostEqual(f['velocidadRedBase'] * dx / dt, velocidad)
+                self.assertAlmostEqual(f['viscosidadRed'] * dx ** 2 / dt, FLUJO['aire']['viscosidadCinematicaM2s'])
+            else:
+                self.assertIsNone(f['viscosidadRed'])
+                self.assertIsNone(f['aire']['segundosPorPaso'])
+        self.assertEqual(identificar_modelo(parametros_flujo(TUNEL, 100.0)), MODELO)
+        for consigna in (-1, 101, math.nan, math.inf, True, '50'):
+            with self.assertRaises(ValueError):
+                parametros_flujo(TUNEL, consigna)
 
     def test_propiedades_del_aire_seco_humedo_y_caliente(self):
         lectura = dict(temperaturaC=0, presionAbsolutaPa=101325, humedadRelativaPct=0)

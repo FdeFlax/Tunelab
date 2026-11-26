@@ -7,7 +7,7 @@ import * as React from 'react';
 import * as jsx from 'react/jsx-runtime';
 import { transformWithOxc } from 'vite';
 import * as campo from '../src/aerodinamica/campo.js';
-import { pixelesPlano } from '../src/aerodinamica/mapas.js';
+import { pixelesPlano, gradienteRapidez } from '../src/aerodinamica/mapas.js';
 
 const ventana = new Window();
 for (const nombre of ['window', 'document', 'HTMLElement', 'HTMLInputElement', 'Event']) globalThis[nombre] = nombre === 'window' ? ventana : ventana[nombre];
@@ -30,7 +30,7 @@ test('los tres controles React mueven cortes independientes y cancelan el dibujo
   const dependencias = {
     react: React, 'react/jsx-runtime': jsx,
     './campo.js': campo,
-    './mapas.js': { pintarPlano: (canvas, plano) => dibujos.set(canvas.id, pixelesPlano(plano)) },
+    './mapas.js': { gradienteRapidez, pintarPlano: (canvas, plano) => dibujos.set(canvas.id, pixelesPlano(plano)) },
     './vistaObjeto.jsx': { default: () => null },
     './flujo.js': { useFlujo: () => { throw new Error('No se utiliza en estos cortes'); } },
     '../servicios/modelos3d.js': Object.fromEntries(['LIMITES_GLB', 'geometriaAjustada', 'maximoTamano', 'evaluarObjeto'].map(k => [k, null])),
@@ -39,7 +39,7 @@ test('los tres controles React mueven cortes independientes y cancelan el dibujo
   await programa.link(nombre => modulo(dependencias[nombre], contexto));
   await programa.evaluate();
   const Plano = programa.namespace.Plano;
-  const field = { shape: [21, 15, 15], origin: [-10, -7, -7], step: 1, values: new Float32Array(21 * 15 * 15) };
+  const field = { shape: [21, 15, 15], origin: [-10, -7, -7], step: 1, escalaMaxMs: 3.2, values: new Float32Array(21 * 15 * 15) };
   for (let x = 0; x < 21; x++) for (let y = 0; y < 15; y++) for (let z = 0; z < 15; z++) field.values[(x * 15 + y) * 15 + z] = x / 10 + y / 100 + z / 1000;
   const contenedor = document.createElement('div'); document.body.append(contenedor);
   const root = createRoot(contenedor);

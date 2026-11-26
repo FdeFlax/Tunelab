@@ -11,7 +11,7 @@ from app.configuracion_tunel import TUNEL, parametros_flujo
 FLUJO = parametros_flujo(TUNEL)
 
 def identificar_modelo(parametros=FLUJO):
-    return "xlb-031-kbc-v5-" + hashlib.sha256(json.dumps(parametros, sort_keys=True).encode()).hexdigest()[:16]
+    return "xlb-031-smagorinsky-v6-" + hashlib.sha256(json.dumps(parametros, sort_keys=True).encode()).hexdigest()[:16]
 
 
 MODELO = identificar_modelo()
@@ -50,9 +50,9 @@ def validar_geometria(datos):
     return medidas
 
 
-def validar_resultado(datos):
+def validar_resultado(datos, parametros=FLUJO):
     """No publicar campos parciales, no finitos o de un contrato diferente."""
-    if datos.get("modelo") != MODELO or datos.get("pasos") != PASOS:
+    if datos.get("modelo") != identificar_modelo(parametros) or datos.get("pasos") != parametros['pasos']:
         raise ValueError("El motor no ha devuelto un resultado completo.")
     campo = datos.get("volumen", {})
     if (campo.get("formato") != FORMATO_CAMPO or campo.get("malla") != list(MALLA)

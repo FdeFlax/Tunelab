@@ -33,10 +33,10 @@ function AnalisisEtapas({
       <h4>{medicion.programa?.version === 2 ? "Tramos estables por etapa" : "Resultados por etapa"}</h4>
     </div>
     <div className="analisis-tabla" tabIndex={0} role="region" aria-label="Estadísticas por etapa"><table>
-      <thead><tr><th>Etapa</th><th>Consigna</th><th>Estado</th><th>{medicion.programa?.version === 2 ? "Tiempo estable / previsto" : "Registro / previsto"}</th><th>Muestras</th><th>Media (m/s)</th><th>Mín. (m/s)</th><th>Máx. (m/s)</th><th title="Desviación muestral; requiere al menos dos valores válidos">Desv. (m/s)</th></tr></thead>
+      <thead><tr><th>Etapa</th><th>Consigna</th><th>Estado</th><th>{medicion.programa?.version === 2 ? "Tiempo estable / previsto" : "Duración / prevista"}</th><th>Muestras</th><th>Media (m/s)</th><th>Mín. (m/s)</th><th>Máx. (m/s)</th><th title="Desviación muestral; requiere al menos dos valores válidos">Desv. (m/s)</th></tr></thead>
       <tbody>{etapas.map(e => <tr key={e.indice}>
         <th scope="row">{e.indice + 1}</th><td>{e.consigna}%</td><td>{estados[e.estado] || "Sin documentar"}</td>
-        <td>{numeroInforme(e.registroSeg, 1)} / {e.duracion_segundos} s</td><td>{e.muestrasEstables.length}</td>
+        <td>{numeroInforme(e.registroSeg, 1)} / {e.duracion_segundos} s</td><td>{e.muestrasResumen.length}</td>
         <td>{numeroInforme(e.velocidad.media)}</td><td>{numeroInforme(e.velocidad.minima)}</td>
         <td>{numeroInforme(e.velocidad.maxima)}</td><td>{numeroInforme(e.velocidad.desviacion)}</td>
       </tr>)}</tbody>
@@ -52,15 +52,15 @@ const magnitudes = {
   temperatura: { titulo: "Temperatura", unidad: "°C" },
 };
 
-export function GraficaMedicion({ titulo, color, unidad = "", datos = VACIO, series,
-  descripcionAria = "durante la medición", yDesdeCero = false, tramos = VACIO, marcas = VACIO, mostrarResumen = true, estado, alto = 220, interactiva = false }) {
+export function GraficaMedicion({ titulo, color, unidad = "", datos = VACIO,
+  yDesdeCero = false, tramos = VACIO, marcas = VACIO, mostrarResumen = true, alto = 220, interactiva = false }) {
   const lienzo = useRef(null);
   const instancia = useRef(null);
   const consulta = useRef(-1);
   const [lectura, setLectura] = useState(null);
-  const grafica = useMemo(() => prepararGrafica(series || [{ nombre: titulo, color, datos }]), [series, titulo, color, datos]);
-  const resumen = grafica.resumenes[0];
-  const total = grafica.resumenes.reduce((n, r) => n + r.n, 0);
+  const grafica = useMemo(() => prepararGrafica({ nombre: titulo, color, datos }), [titulo, color, datos]);
+  const resumen = grafica.resumen;
+  const total = resumen.n;
 
   useEffect(() => {
     const estilos = getComputedStyle(lienzo.current);
@@ -86,9 +86,7 @@ export function GraficaMedicion({ titulo, color, unidad = "", datos = VACIO, ser
           } },
           annotation: { annotations: [
             ...tramos.map(t => ({ type: 'box', xMin: t.inicio, xMax: t.fin, backgroundColor: '#e4f1e8', borderWidth: 0, drawTime: 'beforeDatasetsDraw', adjustScaleRange: false })),
-            ...marcas.map((m, i) => ({ type: 'line', xMin: m.segundo, xMax: m.segundo, borderColor: '#8799aa', borderWidth: 1, borderDash: [4, 4], adjustScaleRange: false,
-              label: { content: m.texto, position: 'end', color: '#53677a', backgroundColor: 'transparent', font: { size: 12 },
-                display: ({ chart }) => i === 0 || chart.scales.x.getPixelForValue(m.segundo) - chart.scales.x.getPixelForValue(marcas[i - 1].segundo) >= 65 } })),
+            ...marcas.map(m => ({ type: 'line', xMin: m.segundo, xMax: m.segundo, borderColor: '#8799aa', borderWidth: 1, borderDash: [4, 4], adjustScaleRange: false })),
           ] },
         },
       },
@@ -118,19 +116,17 @@ export function GraficaMedicion({ titulo, color, unidad = "", datos = VACIO, ser
   return <article className="analisis-grafica">
     <header className="analisis-grafica-cabecera">
       <h4>{titulo}</h4>
-      <span className="analisis-grafica-unidad">{estado && `${estado} · `}{unidad.trim()}{series && ' · tiempo desde el inicio (s)'}</span>
     </header>
-    {(tramos.length > 0 || marcas.length > 0) && <div className="analisis-leyenda-flujo">
-      {tramos.length > 0 && <span className="analisis-leyenda-estable">Flujo estable</span>}
-      {marcas.length > 0 && <span className="analisis-leyenda-consigna">Consigna</span>}
+    {tramos.length > 0 && <div className="analisis-leyenda-flujo">
+      <span className="analisis-leyenda-estable">Flujo estable</span>
     </div>}
-    <div className="analisis-grafica-lienzo" style={{ height: series ? 260 : alto }}>
+    <div className="analisis-grafica-lienzo" style={{ height: alto }}>
       <canvas ref={lienzo} role="img" tabIndex={interactiva ? 0 : undefined}
-        aria-label={`${titulo} ${descripcionAria}. ${total} valores válidos. Los huecos no se interpolan. ${interactiva ? "Flechas, Inicio y Fin para consultar muestras." : ""}`}
+        aria-label={`${titulo} durante la medición. ${total} valores válidos. Los huecos no se interpolan. ${interactiva ? "Flechas, Inicio y Fin para consultar muestras." : ""}`}
         onKeyDown={interactiva ? consultarConTeclado : undefined} />
     </div>
     <span className="solo-lector" aria-live="polite">{lectura?.grafica === grafica ? lectura.texto : ""}</span>
-    {!series && mostrarResumen && <footer className="analisis-grafica-pie">
+    {mostrarResumen && <footer className="analisis-grafica-pie">
       <table aria-label={`Estadísticas de ${titulo.toLowerCase()}`}>
         <thead><tr><th scope="col">Media</th><th scope="col">Mínimo</th><th scope="col">Máximo</th></tr></thead>
         <tbody><tr><td>{numeroInforme(resumen?.media)}{unidad}</td><td>{numeroInforme(resumen?.minima)}{unidad}</td><td>{numeroInforme(resumen?.maxima)}{unidad}</td></tr></tbody>
@@ -192,9 +188,6 @@ function ContenidoInforme({
   medicion,
   titulo = "Informe de medición",
   onDescargar,
-  onComparar,
-  puedeComparar = true,
-  textoComparar = "Añadir al comparador",
   onBorrar,
   onCerrar,
   nombreEnsayo = "",
@@ -217,7 +210,6 @@ function ContenidoInforme({
           <h3>{titulo}</h3>
         </div>
         <div className="analisis-acciones">
-          {onComparar && <button type="button" className="reg2boton reg2botonsecundario" onClick={onComparar} disabled={!puedeComparar}>{textoComparar}</button>}
           {onDescargar ? (
             <button type="button" className="reg2boton reg2botonsecundario" onClick={onDescargar}>Descargar medición</button>
           ) : null}
@@ -234,11 +226,11 @@ function ContenidoInforme({
 
       <div className="analisis-resumen" tabIndex={0} role="region" aria-label="Resumen de la medición">
         <table>
-          <thead><tr><th scope="col">Ensayo asociado</th><th scope="col">Nombre de la medición</th><th scope="col">Número de etapas</th><th scope="col">Duración</th><th scope="col">Muestras</th></tr></thead>
+          <thead><tr><th scope="col">Ensayo asociado</th><th scope="col">Nombre de la medición</th><th scope="col">{etapas.length ? "Número de etapas" : "Consigna"}</th><th scope="col">Duración</th><th scope="col">Muestras</th></tr></thead>
           <tbody><tr>
             <td>{nombreEnsayo || "—"}</td>
             <td>{medicion.nombre || "—"}</td>
-            <td>{etapas.length}</td>
+            <td>{etapas.length || (medicion.objPotPct != null ? `${numeroInforme(medicion.objPotPct, 1)} %` : "—")}</td>
             <td>{medicion.duracion || medicion.duracionTexto || (medicion.durSeg !== undefined ? numeroInforme(medicion.durSeg, 1) + " s" : "—")}</td>
             <td>{medicion.muestras?.length || 0}</td>
           </tr></tbody>

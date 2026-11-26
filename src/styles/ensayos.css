@@ -63,15 +63,6 @@
   align-items: stretch;
 }
 
-.ens2resumenficha>div {
-  gap: 8px;
-  padding: 16px;
-}
-
-.ens2resumenficha>div+div {
-  border-left: 1px solid #8297b52e;
-}
-
 .ens2resumenficha strong {
   overflow-wrap: anywhere;
 }
@@ -79,13 +70,6 @@
 .ens2contadorlista {
   text-transform: none;
   letter-spacing: 0;
-}
-
-@media (width<=820px) {
-  .ens2resumenficha>div+div {
-    border-top: 1px solid #8297b52e;
-    border-left: 0;
-  }
 }
 
 .page--ensayo2 .ens2resumenficha {
@@ -173,18 +157,11 @@
   display: grid;
 }
 
-.app-shell .page--ensayo2 :is(.ens2formulariocabecera,.ens2historialtitulo) h3 {
+.app-shell .page--ensayo2 :is(.ens2formulariocabecera, .ens2historialcabecera) h3 {
   margin: 0;
 }
 
-.app-shell .page--ensayo2 :is(.ens2formulariocabecera,.ens2historialtitulo) p {
-  color: #62758a;
-  margin: 0;
-  font-size: 13px;
-  line-height: 1.5;
-}
-
-.app-shell .page--ensayo2 :is(.ens2fichaunica,.ens2editarform) {
+.app-shell .page--ensayo2 :is(.ens2fichaunica, .ens2editarform) {
   flex-direction: column;
   flex: 1;
   gap: 20px;
@@ -197,7 +174,7 @@
   gap: 20px 16px;
 }
 
-.app-shell .page--ensayo2 :is(.ens2accionescrear,.ens2accionesficha) {
+.app-shell .page--ensayo2 :is(.ens2accionescrear, .ens2accionesficha) {
   grid-template-columns: minmax(0,1fr);
   gap: 12px;
   margin-top: auto;
@@ -215,23 +192,17 @@
 }
 
 @media (width<=520px) {
-
   .app-shell .page--ensayo2 .ens2accionesficha {
     grid-template-columns: minmax(0,1fr);
   }
 }
 
 .app-shell .page--ensayo2 .ens2historialcabecera {
-  grid-template-columns: minmax(240px,1fr) minmax(190px,280px) auto;
+  grid-template-columns: minmax(0,1fr) auto;
   align-items: center;
   gap: 14px;
   margin: 0;
   padding: 0;
-  display: grid;
-}
-
-.ens2historialtitulo {
-  gap: 8px;
   display: grid;
 }
 
@@ -245,16 +216,6 @@
   display: flex;
 }
 
-@media (width<=820px) {
-  .app-shell .page--ensayo2 .ens2historialcabecera {
-    grid-template-columns: minmax(0,1fr) auto;
-  }
-
-  .ens2historialtitulo {
-    grid-column: 1/-1;
-  }
-}
-
 .app-shell .ens2vacio {
   border-color: var(--claro-borde-suave);
   background: #f8fafc;
@@ -262,10 +223,4 @@
 
 .app-shell .ens2panel * {
   border-color: var(--claro-borde);
-}
-
-.ens2panelcabecera h3 {
-  font-size: var(--titulo-panel);
-  letter-spacing: -.02em;
-  line-height: 1.3;
 }

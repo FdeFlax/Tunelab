@@ -14,10 +14,11 @@ from time import perf_counter
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "backend"))
 from app.flujo3d_datos import (
-    MODELO, MALLA, PASOS, VISCOSIDAD, FORMATO_CAMPO,
+    FLUJO, MALLA, PASOS, FORMATO_CAMPO,
     VELOCIDAD_RED_BASE, PASO_CM, SECCION_CM, ORIGEN_CM,
-    validar_geometria,
+    validar_geometria, identificar_modelo,
 )
+from app.configuracion_tunel import TUNEL, parametros_flujo
 
 
 def evento(**datos):
@@ -25,7 +26,9 @@ def evento(**datos):
     print("TUNELAB_FLOW " + mensaje, flush=True)
 
 
-def calcular(ruta_entrada, ruta_salida):
+def calcular(ruta_entrada, ruta_salida, parametros=FLUJO):
+    if parametros['aire']['velocidadMs'] <= 0:
+        raise ValueError('El túnel está en reposo. Selecciona una consigna mayor que cero para calcular.')
     from flujo3d_geometria import preparar_solido
 
     inicio = perf_counter()
@@ -39,8 +42,8 @@ def calcular(ruta_entrada, ruta_salida):
     velocidad_entrada = VELOCIDAD_RED_BASE
 
     motor, id_objeto = preparar_simulacion(cache, puntos, velocidad_entrada)
-    resultado = ejecutar_simulacion(motor, id_objeto, puntos, velocidad_entrada, inicio)
-    guardar_resultado(ruta_salida, medidas, geometria, resultado, inicio)
+    resultado = ejecutar_simulacion(motor, id_objeto, puntos, velocidad_entrada, inicio, parametros['viscosidadRed'])
+    guardar_resultado(ruta_salida, medidas, geometria, resultado, inicio, parametros)
     evento(fase="completado", paso=PASOS, mensaje="Mapas calculados.")
 
 
@@ -108,12 +111,12 @@ def preparar_simulacion(cache, puntos_solidos, velocidad_entrada):
     malla = grid_factory(MALLA, compute_backend=backend)
     condiciones, id_objeto = crear_contorno(malla, puntos_solidos, velocidad_entrada)
     motor = IncompressibleNavierStokesStepper(
-        grid=malla, boundary_conditions=condiciones, collision_type="KBC",
+        grid=malla, boundary_conditions=condiciones, collision_type="SmagorinskyLESBGK",
     )
     return motor, id_objeto
 
 
-def ejecutar_simulacion(motor, id_objeto, puntos_solidos, velocidad_entrada, inicio):
+def ejecutar_simulacion(motor, id_objeto, puntos_solidos, velocidad_entrada, inicio, viscosidad):
     import numpy as np
     import warp as wp
 
@@ -130,7 +133,7 @@ def ejecutar_simulacion(motor, id_objeto, puntos_solidos, velocidad_entrada, ini
     solidos[:, :, [0, -1]] = True
     fluido = ~solidos
     # Relajación LBM: tau = 0.5 + 3ν y omega = 1/tau. Véase docs/FLUJO_3D.md.
-    omega = 1.0 / (0.5 + 3.0 * VISCOSIDAD)
+    omega = 1.0 / (0.5 + 3.0 * viscosidad)
     comprobaciones = []
     segundos_preparacion = perf_counter() - inicio
     inicio_calculo = perf_counter()
@@ -180,6 +183,8 @@ def ejecutar_simulacion(motor, id_objeto, puntos_solidos, velocidad_entrada, ini
     segundos_calculo = perf_counter() - inicio_calculo
     return {
         "volumen": crear_volumen(rapidez, solidos, velocidad_entrada),
+        "modelo_colision": type(motor.collision).__name__,
+        "coeficiente_smagorinsky": motor.collision.smagorinsky_coef,
         "comprobaciones": comprobaciones,
         "velocidad_red": velocidad_entrada,
         "preparacion_s": round(segundos_preparacion, 2),
@@ -200,17 +205,19 @@ def crear_volumen(rapidez, solidos, velocidad_entrada):
     }
 
 
-def guardar_resultado(ruta, medidas, geometria, resultado, inicio):
+def guardar_resultado(ruta, medidas, geometria, resultado, inicio, parametros):
     resultado.update({
-        "modelo": MODELO,
+        "modelo": identificar_modelo(parametros),
+        "consigna_pct": parametros['consignaPct'],
+        "aire": parametros['aire'],
         "pasos": PASOS,
         "malla": MALLA,
         "seccion_cm": SECCION_CM,
         "medidas_objeto_cm": medidas,
         "velocidad_relativa": 1.0,
-        "viscosidad_red": VISCOSIDAD,
+        "viscosidad_red": parametros['viscosidadRed'],
         "reynolds_lado_mayor": round(
-            resultado["velocidad_red"] * (max(medidas) / PASO_CM) / VISCOSIDAD, 1
+            resultado["velocidad_red"] * (max(medidas) / PASO_CM) / parametros['viscosidadRed'], 1
         ),
         "total_s": round(perf_counter() - inicio, 2),
         "geometria": geometria,
@@ -228,15 +235,17 @@ if __name__ == "__main__":
     parser.add_argument("--input", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--modelo-esperado")
+    parser.add_argument("--consigna", type=float, help="Consigna del variador dentro del intervalo medido (%%).")
     args = parser.parse_args()
     os.environ.setdefault("OMP_NUM_THREADS", "2")
 
     try:
-        if args.modelo_esperado and args.modelo_esperado != MODELO:
+        parametros = parametros_flujo(TUNEL, args.consigna)
+        if args.modelo_esperado and args.modelo_esperado != identificar_modelo(parametros):
             raise ValueError(
                 "La configuración del túnel ha cambiado. Reinicia el servidor antes de calcular."
             )
-        calcular(args.input, args.output)
+        calcular(args.input, args.output, parametros)
     except ValueError as error:
         evento(fase="error", mensaje=str(error))
         raise SystemExit(2)

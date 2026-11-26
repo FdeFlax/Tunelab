@@ -33,15 +33,9 @@ export default function ComprobacionPrevia({ potencia = 0, medicion = false, onC
 
   return <div className="cont2popupfondo" role="presentation">
     <section className="cont2modal cont2modalcomprobaciones" role="dialog" aria-modal="true"
-      aria-labelledby="comprobacion-titulo" aria-describedby="comprobacion-descripcion">
-      <div>
-        <h3 id="comprobacion-titulo">Comprobación previa</h3>
-        <p id="comprobacion-descripcion" className="cont2modalintroduccion">
-          Confirma presencialmente cada punto de seguridad. Ninguna comprobación sustituye a los dispositivos físicos de protección.
-        </p>
-      </div>
-      <fieldset className="cont2checklist" disabled={ocupado}>
-        <legend>Lista de comprobación</legend>
+      aria-labelledby="comprobacion-titulo">
+      <h3 id="comprobacion-titulo">Comprobación previa</h3>
+      <fieldset className="cont2checklist" aria-labelledby="comprobacion-titulo" disabled={ocupado}>
         {COMPROBACIONES.map((texto, i) => <label className="cont2checkitem" key={texto}>
           <input type="checkbox" checked={comprobaciones[i]}
             onChange={() => setComprobaciones(actual => actual.map((valor, j) => j === i ? !valor : valor))} />
@@ -49,7 +43,7 @@ export default function ComprobacionPrevia({ potencia = 0, medicion = false, onC
         </label>)}
       </fieldset>
       <div className="cont2potenciaconfirmacion">
-        <span>{medicion ? "Consigna de la primera etapa" : "Consigna al encender"}</span>
+        <span>{medicion ? "Consigna de la medición" : "Consigna al encender"}</span>
         <strong>{potencia}%</strong>
       </div>
       {error && <p className="cont2modalerror" role="alert">{error}</p>}

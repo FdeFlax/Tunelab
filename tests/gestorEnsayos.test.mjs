@@ -54,14 +54,13 @@ function crearGestor() {
     ensayos: [
       {
         id: "ensayo-1",
-        codigo: "A-001",
+        apiId: 1,
         nombre: "Base",
         objetivo: "Objetivo",
         mediciones: [crearMedicion("medicion-1", "Medicion inicial")],
       },
     ],
     ensayoActivoId: "ensayo-1",
-    etiquetaEnsayo: "A-001",
     resumenUltMed: { durSeg: 10 },
   };
   const operaciones = [];
@@ -83,22 +82,35 @@ test("el gestor conserva el ensayo activo y actualiza su resumen al borrar la me
   assert.equal(obtenerEstado().ensayos[0].mediciones.length, 0);
   assert.equal(obtenerEstado().resumenUltMed, null);
 
-  const nuevo = gestor.crearNuevoEnsayo({ codigo: "A-002" });
-  assert.equal(nuevo.codigo, "A-002");
+  const nuevo = gestor.crearNuevoEnsayo({ id: 2, nombre: "Nuevo", creado_en: "2026-11-23T09:00:00" });
+  assert.equal(nuevo.id, "api-ensayo-2");
+  assert.equal(nuevo.apiId, 2);
   assert.equal(obtenerEstado().ensayoActivoId, nuevo.id);
-  assert.equal(obtenerEstado().etiquetaEnsayo, "A-002");
+  assert.equal("codigo" in nuevo, false);
 });
 
 test("la recuperación no selecciona otro ensayo cuando desaparece el activo", () => {
   const { gestor, establecerEstado, obtenerEstado } = crearGestor();
   establecerEstado({ ensayoActivoId: "eliminado" });
-  gestor.cargarEnsayosPersistidos([{ id: "guardado", codigo: "A-010", mediciones: [] }]);
+  gestor.cargarEnsayosPersistidos([{ id: "guardado", apiId: 10, nombre: "Guardado", mediciones: [] }]);
   assert.equal(obtenerEstado().ensayoActivoId, null);
 });
 
 test("sin selección previa se carga el primer ensayo guardado", () => {
   const { gestor, establecerEstado, obtenerEstado } = crearGestor();
   establecerEstado({ ensayoActivoId: null });
-  gestor.cargarEnsayosPersistidos([{ id: "guardado", codigo: "A-010", mediciones: [] }]);
+  gestor.cargarEnsayosPersistidos([{ id: "guardado", apiId: 10, nombre: "Guardado", mediciones: [] }]);
   assert.equal(obtenerEstado().ensayoActivoId, "guardado");
+});
+
+test("dos ensayos con el mismo nombre conservan su selección al recargar y editar", () => {
+  const { gestor, obtenerEstado } = crearGestor();
+  const uno = gestor.crearNuevoEnsayo({ id: 2, nombre: "Prueba" });
+  const dos = gestor.crearNuevoEnsayo({ id: 3, nombre: "Prueba" });
+  gestor.activarEnsayo(uno.id);
+  gestor.cargarEnsayosPersistidos([dos, uno]);
+  assert.equal(obtenerEstado().ensayoActivoId, uno.id);
+  gestor.actualizarEnsayo(uno.id, { nombre: "Renombrado" });
+  assert.equal(obtenerEstado().ensayos.find(e => e.apiId === 2).nombre, "Renombrado");
+  assert.equal(obtenerEstado().ensayos.find(e => e.apiId === 3).nombre, "Prueba");
 });

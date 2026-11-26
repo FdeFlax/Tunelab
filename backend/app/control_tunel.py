@@ -1,4 +1,4 @@
-from app.configuracion_tunel import TUNEL
+from app.configuracion_tunel import TUNEL, interpolar_velocidad
 
 from dataclasses import asdict, dataclass
 from datetime import datetime
@@ -15,14 +15,7 @@ DENSIDAD_AIRE = (AMBIENTE["densidadReferenciaKgM3"] if AMBIENTE["usarDensidadCon
 
 def calcular_velocidad_por_potencia(potencia: float) -> float:
     consigna = max(0.0, min(100.0, float(potencia or 0)))
-    puntos = CALIBRACION["velocidad"]["puntos"]
-    if consigna <= puntos[0]["consignaPct"]:
-        return puntos[0]["velocidadMs"]
-    for izquierda, derecha in zip(puntos, puntos[1:]):
-        if consigna <= derecha["consignaPct"]:
-            factor = (consigna - izquierda["consignaPct"]) / (derecha["consignaPct"] - izquierda["consignaPct"])
-            return izquierda["velocidadMs"] + factor * (derecha["velocidadMs"] - izquierda["velocidadMs"])
-    return puntos[-1]["velocidadMs"]
+    return interpolar_velocidad(consigna, CALIBRACION["velocidad"]["puntos"])
 
 
 @dataclass

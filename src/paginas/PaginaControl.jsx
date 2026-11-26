@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Plug, Power } from "lucide-react";
 import RegistroMedicion from "../components/control/RegistroMedicion";
 import {
@@ -14,8 +13,8 @@ import {
   resumirAlarmas as resumenAlarmas,
 } from "../servicios/tunel/estadoTunel";
 import { descargarArchivoMed } from "../servicios/archivos/medicionArchivo";
+import { formatearNumero } from "../servicios/formato";
 import { useTunel, useConexionTunel } from "../logicaPantallas/useTunel";
-import { finalizarCaptura } from "../servicios/tunel/finalizarCaptura";
 import ComprobacionPrevia from "../components/control/ComprobacionPrevia";
 import useBorradorSincronizado from "../logicaPantallas/useBorradorSincronizado";
 
@@ -38,7 +37,6 @@ function datosSistema(tunel, fuente) {
 function PaginaControl() {
   const { estadoTunel: tunel, accionesTunel: acciones } = useTunel();
   const { conexion, avisoConexion, setAvisoConexion, conectar, desconectar } = useConexionTunel();
-  const [avisoGuardado, setAvisoGuardado] = useState(null);
 
   const ensayo = getEnsayoActivo(tunel);
   const resumen = tunel.resumenUltMed;
@@ -76,40 +74,10 @@ function PaginaControl() {
     await desconectar();
   }
 
-  async function apagarTunelYDesconectar() {
-    try {
-      const fin = await finalizarCaptura(acciones, { apagar: true });
-      mostrarResultadoGuardado(fin);
-      if (fin.resultado === false || fin.resultado === null) {
-        setAvisoConexion("No se ha podido confirmar el apagado del túnel");
-        return;
-      }
-    } catch {
-      setAvisoConexion("No se ha podido apagar el túnel");
-      return;
-    }
+  function solicitarInicioMedicion(datos) {
+    if (!puedeOperar) return;
 
-    await desconectar({
-      mensaje: "Túnel apagado y desconectado",
-      error: "Túnel apagado, pero no se ha podido liberar la conexión",
-    });
-  }
-
-  function solicitarInicioMedicion({ ensayoId, potencia }) {
-    if (!puedeOperar || tunel.estadoTunel === "RUNNING") return;
-
-    setConfirmacionEncendido({ ensayoId, potencia });
-  }
-
-  function mostrarResultadoGuardado(fin) {
-    if (fin.errorGuardado) {
-      setAvisoGuardado({
-        error: true,
-        texto: "Captura interrumpida. Consulta las muestras confirmadas en Registro.",
-      });
-    } else if (fin.guardada) {
-      setAvisoGuardado({ error: false, texto: "Medición guardada en Registro." });
-    }
+    setConfirmacionEncendido(datos);
   }
 
   function descargarUlt() {
@@ -171,9 +139,20 @@ function PaginaControl() {
         </div>
       </section>
 
+      <table className="cont2datos" aria-label="Datos actuales del túnel">
+        <thead>
+          <tr><th scope="col">Consigna aplicada</th><th scope="col">Velocidad del aire</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>{formatearNumero(tunel.permiteCtrl ? tunel.consignaVariadorPct : null, 2)} %</td>
+            <td>{formatearNumero(tunel.permiteCtrl ? tunel.velMs : null, 2)} m/s</td>
+          </tr>
+        </tbody>
+      </table>
+
       <div className="cont2grid">
         <RegistroMedicion {...{ ensayo, tunel, acciones, puedeOperar, comprobacionPendiente }}
-          onApagarTunel={apagarTunelYDesconectar}
           onSolicitarInicio={solicitarInicioMedicion} />
         <PanelSeguridadControl
           estadoTunel={tunel}
@@ -185,11 +164,6 @@ function PaginaControl() {
         <PanelEstadoSistemaControl datosSistema={datosSistema(tunel, fuente)} />
       </div>
 
-      {avisoGuardado ? (
-        <p role={avisoGuardado.error ? "alert" : "status"}>
-          {avisoGuardado.texto}
-        </p>
-      ) : null}
       <RecapMedicionControl
         resumenUlt={hayInformeMedicion ? resumen : null}
         onDescargarMed={descargarUlt}
@@ -197,9 +171,9 @@ function PaginaControl() {
       />
 
       {confirmacionEncendido && puedeOperar && <ComprobacionPrevia
-        potencia={confirmacionEncendido.potencia} medicion
+        potencia={confirmacionEncendido.consigna} medicion
         onCancelar={() => setConfirmacionEncendido(null)}
-        onConfirmar={() => acciones.iniciarPrograma(confirmacionEncendido.ensayoId, { encender: true })} />}
+        onConfirmar={() => acciones.iniciarMedicion(confirmacionEncendido)} />}
 
     </div>
   );

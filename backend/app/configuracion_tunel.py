@@ -16,7 +16,7 @@ class MedicionAire(BaseModel):
     temperaturaC: float = Field(ge=0, le=60)
     presionAbsolutaPa: float = Field(ge=30000, le=120000)
     humedadRelativaPct: float = Field(ge=0, le=100)
-    consignaPct: float | None = Field(default=None, ge=0, le=100)
+    consignaPct: float = Field(ge=0, le=100, allow_inf_nan=False)
 
 
 @lru_cache(maxsize=64)
@@ -98,6 +98,10 @@ def validar_configuracion(c, incluir_aerodinamica=False):
         raise ValueError('shared/tunel.json: cada medición debe tener un id distinto.')
     if a.get('medicionActiva') not in ids:
         raise ValueError('shared/tunel.json: medicionActiva debe identificar una lectura existente.')
+    curva = sorted(lecturas, key=lambda m: m['consignaPct'])
+    if len(curva) < 2 or any(d['consignaPct'] <= i['consignaPct'] or d['velocidadMs'] < i['velocidadMs']
+                             for i, d in zip(curva, curva[1:])):
+        raise ValueError('shared/tunel.json: revisa la curva de velocidad de Aerodinámica; las consignas deben ser únicas y la velocidad no decreciente.')
     numero('aerodinamica.objeto.minimoCeldas', 2, entero=True)
     numero('aerodinamica.objeto.separacionParedCeldas', 2, entero=True)
     positivo('aerodinamica.objeto.maximoCm')
@@ -118,7 +122,18 @@ def propiedades_aire(lectura):
                 viscosidadCinematicaM2s=viscosidad / densidad)
 
 
-def parametros_flujo(c):
+def interpolar_velocidad(consigna, puntos):
+    """Interpolación por tramos; fuera de la curva se conserva el extremo más cercano."""
+    if consigna <= puntos[0]['consignaPct']:
+        return puntos[0]['velocidadMs']
+    for izquierda, derecha in zip(puntos, puntos[1:]):
+        if consigna <= derecha['consignaPct']:
+            factor = (consigna - izquierda['consignaPct']) / (derecha['consignaPct'] - izquierda['consignaPct'])
+            return izquierda['velocidadMs'] + factor * (derecha['velocidadMs'] - izquierda['velocidadMs'])
+    return puntos[-1]['velocidadMs']
+
+
+def parametros_flujo(c, consigna=None):
     validar_configuracion(c, incluir_aerodinamica=True)
     a, s = c['aerodinamica'], c['geometria']['seccionEnsayo']
     seccion = [round(s[key] * 100, 8) for key in ('longitudM', 'altoM', 'anchoM')]
@@ -133,18 +148,28 @@ def parametros_flujo(c):
     if min(maximos) <= minimo:
         raise ValueError('shared/tunel.json: no queda espacio para el objeto con estos límites.')
     lectura = next(m for m in a['mediciones'] if m['id'] == a['medicionActiva'])
-    if lectura['velocidadMs'] <= 0:
-        raise ValueError('shared/tunel.json: el mapa relativo necesita una medición con velocidad mayor que cero; la lectura de reposo se conserva como referencia.')
-    aire = dict(lectura, **propiedades_aire(lectura))
+    curva = sorted([dict(consignaPct=m['consignaPct'], velocidadMs=m['velocidadMs'])
+                    for m in a['mediciones']], key=lambda m: m['consignaPct'])
+    if consigna is None:
+        consigna = lectura['consignaPct']
+    if (isinstance(consigna, bool) or not isinstance(consigna, (int, float)) or not math.isfinite(consigna)
+            or not curva[0]['consignaPct'] <= consigna <= curva[-1]['consignaPct']):
+        raise ValueError('Selecciona una consigna dentro del intervalo medido de Aerodinámica.')
+    consigna = float(consigna)
+    velocidad = interpolar_velocidad(consigna, curva)
+    # La curva modifica la velocidad; T, p y HR siguen siendo las de la referencia ambiental.
+    aire = {key: lectura[key] for key in ('temperaturaC', 'presionAbsolutaPa', 'humedadRelativaPct')}
+    aire.update(propiedades_aire(lectura), referenciaAmbiental=lectura['id'], velocidadMs=velocidad)
     # Ured = Ufisica·dt/dx; νred = νfisica·dt/dx².
     paso_m = a['pasoCm'] / 100
-    segundos_por_paso = a['velocidadRedBase'] * paso_m / lectura['velocidadMs']
-    viscosidad = aire['viscosidadCinematicaM2s'] * segundos_por_paso / paso_m ** 2
+    segundos_por_paso = a['velocidadRedBase'] * paso_m / velocidad if velocidad > 0 else None
+    viscosidad = aire['viscosidadCinematicaM2s'] * segundos_por_paso / paso_m ** 2 if velocidad > 0 else None
     aire['segundosPorPaso'] = segundos_por_paso
-    if not math.isfinite(viscosidad) or viscosidad <= 0:
+    if viscosidad is not None and (not math.isfinite(viscosidad) or viscosidad <= 0):
         raise ValueError('shared/tunel.json: la viscosidad de red calculada no es válida.')
     return dict(seccionCm=seccion, malla=malla, origenCm=[-n / 2 for n in seccion], pasoCm=a['pasoCm'], pasos=a['pasos'],
                 velocidadRedBase=a['velocidadRedBase'], viscosidadRed=viscosidad, aire=aire,
+                consignaPct=consigna, curvaVelocidad=curva,
                 minimoObjetoCm=minimo, maximosObjetoCm=maximos,
                 separacionParedCeldas=a['objeto']['separacionParedCeldas'], bloqueoMaximo=a['bloqueoMaximo'])
 

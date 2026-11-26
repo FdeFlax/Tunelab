@@ -1,8 +1,10 @@
+/* Campos y búsquedas */
+
 .ens2campo {
   display: grid;
 }
 
-.app-shell .page :is(.ens2campo input,.ens2campo textarea,.ens2busqueda,.reg2buscar,.docbuscarcentral input,.cont2campo input,.cont2programatabla input) {
+.app-shell .page :is(.ens2campo input, .ens2campo textarea, .reg2buscar, .docbuscarcentral input, .cont2campo input, .cont2campo select) {
   min-height: var(--control-alto);
   border: 1px solid var(--control-borde);
   border-radius: var(--control-radio);
@@ -14,81 +16,63 @@
   line-height: 1.4;
 }
 
-.app-shell .page :is(.ens2campo input,.ens2campo textarea,.ens2busqueda,.reg2buscar,.docbuscarcentral input,.cont2campo input,.cont2programatabla input):focus-visible {
+.app-shell .page :is(.ens2campo input, .ens2campo textarea, .reg2buscar, .docbuscarcentral input, .cont2campo input, .cont2campo select):focus-visible {
   border-color: var(--primary);
   outline-offset: 2px;
   outline: 2px solid #d7e2eb;
 }
 
 .cont2campo {
+  min-width: 0;
   gap: 8px;
   display: grid;
 }
 
-:is(.ens2campo input,.ens2campo textarea),
-.cont2campo input {
+:is(.ens2campo input, .ens2campo textarea),
+.cont2campo :is(input, select) {
   outline: none;
   width: 100%;
 }
 
-:is(.ens2campo input,.ens2campo textarea):focus,
-.cont2campo input:focus {
+:is(.ens2campo input, .ens2campo textarea):focus,
+.cont2campo :is(input, select):focus {
   border-color: color-mix(in srgb, var(--primary) 62%, transparent);
 }
 
-.cont2campo input:disabled {
+.cont2campo :is(input, select):disabled {
   cursor: not-allowed;
   opacity: .58;
 }
 
-.app-shell :is(.page--control2,.page--dashboard2) .cont2checkitem:has(input:checked) {
+.app-shell .page--control2 .cont2checkitem:has(input:checked) {
   color: #27573a;
   background: #edf7ef;
   border-color: #a9cdb2;
 }
 
-.app-shell :is(.page--control2,.page--dashboard2) .cont2checkitem:has(input:focus-visible) {
+.app-shell .page--control2 .cont2checkitem:has(input:focus-visible) {
   outline-offset: 2px;
   outline: 2px solid #80aa90;
 }
 
-.app-shell :is(.page--control2,.page--dashboard2) .cont2checkitem input {
+.app-shell .page--control2 .cont2checkitem input {
   accent-color: #398356;
   width: 19px;
   height: 19px;
   margin: 0;
 }
 
-.app-shell .page--control2 .cont2programaresumen .cont2campo input {
+.app-shell .page--control2 .cont2registrocampos .cont2campo :is(input, select) {
   height: var(--control-alto);
-  min-height: var(--control-alto);
   padding: 9px 12px;
 }
 
-.page--control2 .cont2programaresumen .cont2campo span {
+.page--control2 .cont2registrocampos .cont2campo span {
   color: var(--text-main);
   letter-spacing: 0;
   text-transform: none;
   font-size: 16px;
   font-weight: 700;
-}
-
-.app-shell .page--control2 .cont2programatabla input {
-  border: 1px solid var(--claro-borde);
-  border-radius: var(--control-radio);
-  width: 100%;
-  max-width: 160px;
-  min-height: var(--control-alto);
-  color: var(--text-main);
-  font: inherit;
-  font-variant-numeric: tabular-nums;
-  text-align: center;
-  background: #fff;
-  padding: 8px 12px;
-}
-
-.cont2programatabla input:disabled {
-  opacity: .72;
 }
 
 .ens2campoarea {
@@ -145,7 +129,7 @@
   font-weight: 400;
 }
 
-.app-shell .page--ensayo2 .ens2campo :is(input,textarea) {
+.app-shell .page--ensayo2 .ens2campo :is(input, textarea) {
   min-width: 0;
   min-height: var(--control-alto);
   border: 1px solid var(--control-borde);
@@ -163,24 +147,22 @@
   min-height: 128px;
 }
 
-.app-shell .page--ensayo2 .ens2campo :is(input,textarea)::placeholder,
-.app-shell .page--ensayo2 .ens2busqueda::placeholder {
+.app-shell .page--ensayo2 .ens2campo :is(input, textarea)::placeholder {
   color: #7b8a9a;
   opacity: 1;
 }
 
-.app-shell .page--ensayo2 .ens2campo :is(input,textarea):hover:not(:disabled),
-.app-shell .page--ensayo2 .ens2busqueda:hover {
+.app-shell .page--ensayo2 .ens2campo :is(input, textarea):hover:not(:disabled) {
   border-color: #94aabe;
 }
 
-.app-shell .page--ensayo2 .ens2campo :is(input,textarea):focus-visible {
+.app-shell .page--ensayo2 .ens2campo :is(input, textarea):focus-visible {
   outline-offset: 2px;
   border-color: #497495;
   outline: 2px solid #c8dce9;
 }
 
-.app-shell .page--ensayo2 :is(.ens2busqueda,.ens2contadorlista) {
+.app-shell .page--ensayo2 .ens2contadorlista {
   box-sizing: border-box;
   height: var(--control-alto);
   border: 1px solid var(--control-borde);
@@ -188,16 +170,6 @@
   background: #fff;
   align-self: center;
   padding: 10px 12px;
-}
-
-.app-shell .page--ensayo2 .ens2busqueda {
-  width: 100%;
-  min-width: 0;
-  transition: border-color .15s;
-}
-
-.ens2busquedavacia {
-  margin-top: 8px;
 }
 
 .reg2importador input[type=file] {
@@ -214,20 +186,11 @@
 
 .page--docente>.docbuscadorarriba .docbuscarcentral input {
   width: 100%;
-  min-height: var(--control-alto);
-  border-radius: var(--control-radio);
   font: inherit;
-  padding: 9px 12px;
 }
 
 .page--docente>.docbuscadorarriba .docbuscarcentral input:focus {
   outline: 1px solid #3fb4e8b3;
-}
-
-.ens2campo input:focus,
-.ens2campo textarea:focus,
-.cont2campo input:focus {
-  box-shadow: none;
 }
 
 .app-shell .page--docente>.docbuscadorarriba .docbuscarcentral input {
@@ -251,7 +214,9 @@
   text-transform: none;
 }
 
-.app-shell .page :is(.dash2boton,.ens2boton,.reg2boton,.cont2boton,.docbtn,.docdesconectar) {
+/* Botones compartidos y estados */
+
+.app-shell .page :is(.dash2boton, .ens2boton, .reg2boton, .cont2boton, .docbtn, .docdesconectar) {
   min-height: var(--control-alto);
   border: 1px solid var(--control-borde);
   border-radius: var(--control-radio);
@@ -273,31 +238,31 @@
   display: inline-flex;
 }
 
-.app-shell .page :is(.dash2boton,.ens2boton,.reg2boton,.cont2boton,.docbtn):hover:not(:disabled) {
+.app-shell .page :is(.dash2boton, .ens2boton, .reg2boton, .cont2boton, .docbtn):hover:not(:disabled) {
   background: var(--hover-recuadro-claro);
   border-color: var(--hover-borde-recuadro-claro);
   transform: none;
 }
 
-.app-shell .page :is(.dash2botonprimario,.ens2botonprimario,.reg2botonprimario,.cont2botonprimario) {
+.app-shell .page :is(.dash2botonprimario, .ens2botonprimario, .cont2botonprimario) {
   background: var(--primary);
   border-color: var(--primary);
   color: #fff;
 }
 
-.app-shell .page :is(.dash2botonprimario,.ens2botonprimario,.reg2botonprimario,.cont2botonprimario):hover:not(:disabled) {
+.app-shell .page :is(.dash2botonprimario, .ens2botonprimario, .cont2botonprimario):hover:not(:disabled) {
   background: var(--primary-hover);
   border-color: var(--primary-hover);
   color: #fff;
 }
 
-.app-shell .page :is(.cont2botonmedicionparar,.reg2botonpeligro,.docbtnpeligro,.docdesconectar) {
+.app-shell .page :is(.cont2botonmedicionparar, .reg2botonpeligro, .docbtnpeligro, .docdesconectar) {
   background: var(--danger);
   border-color: var(--danger);
   color: #fff;
 }
 
-.app-shell .page :is(.cont2botonmedicionparar,.reg2botonpeligro,.docbtnpeligro,.docdesconectar):hover:not(:disabled) {
+.app-shell .page :is(.cont2botonmedicionparar, .reg2botonpeligro, .docbtnpeligro, .docdesconectar):hover:not(:disabled) {
   color: #fff;
   background: #963641;
   border-color: #963641;
@@ -314,7 +279,7 @@
   border-color: #256c49;
 }
 
-.app-shell .page :is(.dash2boton,.ens2boton,.reg2boton,.cont2boton,.docbtn,.docdesconectar):disabled {
+.app-shell .page :is(.dash2boton, .ens2boton, .reg2boton, .cont2boton, .docbtn, .docdesconectar):disabled {
   cursor: not-allowed;
   opacity: .5;
 }
@@ -325,7 +290,7 @@
   font-size: 14px;
 }
 
-.app-shell .page :is(.botondescargar,.botonborrar,.cont2programaaccionesfila .cont2boton,.docacciones .docbtn) {
+.app-shell .page :is(.botondescargar, .botonborrar, .docacciones .docbtn) {
   border-radius: var(--control-radio);
   width: 34px;
   min-width: 34px;
@@ -341,19 +306,19 @@
 }
 
 @media (prefers-reduced-motion:reduce) {
-  .app-shell .page :is(.dash2boton,.ens2boton,.reg2boton,.cont2boton,.docbtn) {
+  .app-shell .page :is(.dash2boton, .ens2boton, .reg2boton, .cont2boton, .docbtn) {
     transition: none;
   }
 }
 
-.app-shell :is(.page--control2,.page--dashboard2) .cont2modalcomprobaciones .cont2boton {
+.app-shell .page--control2 .cont2modalcomprobaciones .cont2boton {
   border-radius: var(--control-radio);
   min-height: 42px;
   padding: 10px 18px;
 }
 
 @media (width<=520px) {
-  .app-shell :is(.page--control2,.page--dashboard2) .cont2modalcomprobaciones .cont2boton {
+  .app-shell .page--control2 .cont2modalcomprobaciones .cont2boton {
     flex: auto;
   }
 }
@@ -380,10 +345,6 @@
 
 .app-shell .page--registro2 .reg2importador>.reg2boton {
   min-width: 145px;
-}
-
-.app-shell .docdesconectar:hover {
-  background: #8f2638;
 }
 
 .app-shell .page--docente .docbtn {
@@ -425,33 +386,14 @@
   min-width: 32px;
 }
 
-:is(.botondescargar,.botonborrar,.reg2importador .reg2boton) {
+:is(.botondescargar, .botonborrar, .reg2importador .reg2boton) {
   place-items: center;
   display: inline-grid;
 }
 
-:is(.botondescargar,.botonborrar,.docacciones .docbtn,.reg2itemacciones .reg2boton) svg {
+:is(.botondescargar, .botonborrar, .docacciones .docbtn, .reg2itemacciones .reg2boton) svg {
   width: 14px;
   height: 14px;
-}
-
-.page--control2 :is(.cont2conexion .cont2botonprimario) {
-  background: var(--primary);
-  border-color: var(--primary);
-  color: #fff;
-}
-
-.page--control2 :is(.cont2conexion .cont2botonprimario):hover:not(:disabled) {
-  background: var(--primary-hover);
-  border-color: var(--primary-hover);
-  color: #fff;
-}
-
-.page--control2 :is(.cont2conexion .cont2botonprimario):disabled {
-  background: var(--primary);
-  border-color: var(--primary);
-  color: #fff;
-  opacity: .48;
 }
 
 .page--control2 .cont2conexion .cont2botonsecundario:hover:not(:disabled) {

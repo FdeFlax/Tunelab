@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { leerCampo as decodificar, cortarCampo, limitesPlano, ORIENTACIONES } from '../src/aerodinamica/campo.js';
 import { pixelesPlano, colorRapidez } from '../src/aerodinamica/mapas.js';
 
-const config = { malla: [101, 71, 71], origenCm: [-50, -35, -35], pasoCm: 1 };
+const config = { malla: [101, 71, 71], origenCm: [-50, -35, -35], pasoCm: 1, aire: { velocidadMs: 1 }, curvaVelocidad: [{ velocidadMs: 1 }] };
 const leerCampo = volumen => decodificar(volumen, config);
 
 function volumeFixture() {
@@ -17,16 +17,16 @@ function volumeFixture() {
 }
 const encoded = volumeFixture();
 const field = leerCampo(encoded);
-const approx = (actual, expected) => assert.ok(Math.abs(actual - expected) < 1e-6, `${actual} != ${expected}`);
+const approx = (actual, expected) => assert.ok(Math.abs(actual - expected) < 1e-6 * Math.max(1, Math.abs(expected)), `${actual} != ${expected}`);
 
 test('los cortes desplazados corresponden al mismo punto 3D en los tres ejes', () => {
   const xy = cortarCampo(field, 'vertical', 5), xz = cortarCampo(field, 'horizontal', 2), zy = cortarCampo(field, 'transversal', 3);
-  assert.equal(xy.speed_ratio[37][53], null);
-  assert.equal(xz.speed_ratio[40][53], null);
-  assert.equal(zy.speed_ratio[37][40], null);
-  approx(xy.speed_ratio[12][23], .23 + .012 + .004);
-  approx(xz.speed_ratio[12][23], .23 + .037 + .0012);
-  approx(zy.speed_ratio[12][23], .53 + .012 + .0023);
+  assert.equal(xy.speed_ms[37][53], null);
+  assert.equal(xz.speed_ms[40][53], null);
+  assert.equal(zy.speed_ms[37][40], null);
+  approx(xy.speed_ms[12][23], .23 + .012 + .004);
+  approx(xz.speed_ms[12][23], .23 + .037 + .0012);
+  approx(zy.speed_ms[12][23], .53 + .012 + .0023);
   assert.deepEqual([zy.width, zy.height, zy.widthCm, zy.heightCm], [71, 71, 70, 70]);
   assert.equal(field.values[(53 * 71 + 37) * 71 + 40], -1);
 });
@@ -37,12 +37,28 @@ test('los extremos, la escala y el sentido de los mapas se conservan al mover lo
     for (const position of [min, 0, max]) {
       const slice = cortarCampo(field, orientation, position);
       const pixels = pixelesPlano(slice);
-      assert.deepEqual([...pixels.subarray(0, 4)], colorRapidez(slice.speed_ratio[slice.height - 1][0]));
+      assert.deepEqual([...pixels.subarray(0, 4)], colorRapidez(slice.speed_ms[slice.height - 1][0], slice.escalaMaxMs));
     }
     assert.throws(() => cortarCampo(field, orientation, max + 1));
     assert.throws(() => cortarCampo(field, orientation, .5));
   }
   assert.throws(() => cortarCampo(field, 'inclinada', 0));
+});
+
+test('1 % y 100 % usan m/s y la misma escala incluso con campos relativos idénticos', () => {
+  const curvaVelocidad = [{ velocidadMs: 0 }, { velocidadMs: 4 }, { velocidadMs: 19.8 }];
+  const bajo = decodificar(encoded, { ...config, aire: { velocidadMs: 0.16 }, curvaVelocidad });
+  const alto = decodificar(encoded, { ...config, aire: { velocidadMs: 19.8 }, curvaVelocidad });
+  assert.equal(bajo.escalaMaxMs, alto.escalaMaxMs);
+  approx(alto.escalaMaxMs, 20);
+  const a = cortarCampo(bajo, 'vertical', 5), b = cortarCampo(alto, 'vertical', 5);
+  approx(a.speed_ms[0][100], 1.004 * 0.16);
+  approx(b.speed_ms[0][100], 1.004 * 19.8);
+  assert.notDeepEqual(pixelesPlano(a), pixelesPlano(b));
+  assert.deepEqual(colorRapidez(a.speed_ms[37][53], a.escalaMaxMs), colorRapidez(b.speed_ms[37][53], b.escalaMaxMs));
+  for (const velocidadMs of [undefined, 0, -1, NaN, Infinity]) {
+    assert.throws(() => decodificar(encoded, { ...config, aire: { velocidadMs }, curvaVelocidad }));
+  }
 });
 
 test('se rechazan campos truncados, ejes alterados y valores numéricos inválidos', () => {

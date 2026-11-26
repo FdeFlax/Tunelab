@@ -29,7 +29,6 @@ async function preparar() {
     potencia_objetivo: servidor.potencia, potencia_aplicada: 75, velocidad_objetivo_ms: 8.18, velocidad_ms: 8.18,
     temperatura_c: 23.8, frecuencia_hz: 37.5, corriente_a: 9, rpm: 2250,
     estabilidad_segundos: 5, flujo_estable: true, fuente: "simulado", actualizado_en: servidor.instante,
-    programa: servidor.programa ? { ...servidor.programa } : null,
     captura: servidor.captura ? { ...servidor.captura } : null, total_muestras: servidor.muestras.length });
   const contexto = vm.createContext({ console, Date, Math, Map, Set, URL, crypto: { randomUUID },
     CustomEvent: class { constructor(type) { this.type = type; } },
@@ -43,24 +42,19 @@ async function preparar() {
       if (ruta.endsWith("/muestras")) {
         const cursor = Number(new URL(url).searchParams.get("despues_de"));
         datos = servidor.muestras.filter(m => m.id > cursor);
-      } else if (ruta.endsWith("/programa/iniciar")) {
-        servidor.programa = { ...JSON.parse(opciones.body), activo: true, estado: "estabilizando", indice_etapa: 0 };
-        if (servidor.perderInicio) { servidor.perderInicio = false; throw new Error("Respuesta perdida"); }
-        datos = respuestaEstado();
-      } else if (ruta.endsWith("/programa/detener")) {
-        servidor.programa = { ...servidor.programa, activo: false, estado: "detenido" };
-        datos = respuestaEstado();
-      } else if (ruta.endsWith("/detener") || ruta.endsWith("/apagar")) {
-        if (servidor.captura) servidor.captura.estado = "finalizada";
-        if (ruta.endsWith("/apagar")) servidor.encendido = false;
-        datos = respuestaEstado();
-      } else if (ruta.endsWith("/encender")) {
+      } else if (ruta.endsWith("/capturas")) {
+        servidor.captura = { id: 7, ...JSON.parse(opciones.body), estado: "en_curso" };
         servidor.encendido = true;
-        servidor.potencia = JSON.parse(opciones.body).potencia_porcentaje;
         servidor.tiempoMarcha = 0;
-        datos = respuestaEstado();
-      } else if (ruta.endsWith("/iniciar")) {
         if (servidor.perderInicio) { servidor.perderInicio = false; throw new Error("Respuesta perdida"); }
+        datos = respuestaEstado();
+      } else if (ruta.endsWith("/detener")) {
+        if (servidor.captura) servidor.captura.estado = "cancelada";
+        servidor.encendido = false;
+        datos = respuestaEstado();
+      } else if (ruta.endsWith("/apagar")) {
+        if (servidor.captura) servidor.captura.estado = "cancelada";
+        if (ruta.endsWith("/apagar")) servidor.encendido = false;
         datos = respuestaEstado();
       } else {
         datos = respuestaEstado();
@@ -91,22 +85,9 @@ async function preparar() {
   const identidad = await cargar("src/servicios/api/clienteApi.js");
   identidad.configurarIdentidadApi({ usuario: "alu_demo" });
   const { crearTunelApi } = await cargar("src/servicios/tunel/tunelApi.js");
-  const { finalizarCaptura } = await cargar("src/servicios/tunel/finalizarCaptura.js");
-  return { crearTunelApi, finalizarCaptura, servidor, timers, llamadas, identidad, eventos };
+  return { crearTunelApi, servidor, timers, llamadas, identidad, eventos };
 }
-const ensayos = () => [{ id: "api-ensayo-3", apiId: 3, codigo: "A-003", nombre: "Prueba", mediciones: [] }];
-
-test("encender envía cero aunque el servidor conserve una consigna anterior de 100", async () => {
-  const t = await preparar(), tunel = t.crearTunelApi();
-  t.servidor.captura = null;
-  t.servidor.encendido = false;
-  t.servidor.potencia = 100;
-  await tunel.sincronizar();
-  assert.equal(tunel.obtenerEstado().objPotPct, 100);
-  await tunel.encenderTunel();
-  assert.equal(t.llamadas.find(l => l.ruta.endsWith("/encender")).body.potencia_porcentaje, 0);
-  assert.equal(tunel.obtenerEstado().objPotPct, 0);
-});
+const ensayos = () => [{ id: "api-ensayo-3", apiId: 3, nombre: "Prueba", mediciones: [] }];
 
 test("la gráfica en directo conserva 300 lecturas como máximo y no inventa datos al desconectarse", async () => {
   const t = await preparar(), tunel = t.crearTunelApi();
@@ -140,7 +121,7 @@ test("apagar borra la gráfica en directo y el siguiente encendido comienza sin 
   t.servidor.instante = "2026-09-13T12:00:30";
   await tunel.sincronizar();
   assert.equal(tunel.obtenerEstado().lecturasEnVivo.length, 0);
-  await tunel.encenderTunel();
+  await tunel.iniciarMedicion({ ensayo_id: 3, nombre: "Prueba", consigna: 25, duracion_segundos: 20 });
   const nuevas = tunel.obtenerEstado().lecturasEnVivo;
   assert.equal(nuevas.length, 1);
   assert.equal(nuevas[0].instante, Date.parse("2026-09-13T12:00:30Z"));
@@ -160,34 +141,21 @@ test("reinicia la gráfica si al recuperar conexión el servidor ha empezado otr
   assert.equal(tunel.obtenerEstado().muestrasMedicion.length, 2);
 });
 
-test("recupera el ensayo de un programa mientras estabiliza, aunque todavía no exista captura", async () => {
-  const t = await preparar();
-  t.servidor.captura = null;
-  t.servidor.muestras = [];
-  t.servidor.programa = { ensayo_id: 3, clave: randomUUID(), estado: "estabilizando", activo: true, indice_etapa: 0 };
-  const real = t.crearTunelApi();
-  await real.sincronizar();
-  real.cargarEnsayosPersistidos(ensayos());
-  assert.equal(real.obtenerEstado().ensayoActivoId, "api-ensayo-3");
-  assert.equal(real.obtenerEstado().programa.activo, true);
-  assert.equal(real.obtenerEstado().medActiva, false);
-});
-
-test("el inicio de un programa conserva su clave tras perder la respuesta y la parada usa esa ejecución", async () => {
+test("el inicio de una medición conserva su clave tras perder la respuesta y la parada usa esa ejecución", async () => {
   const t = await preparar();
   const real = t.crearTunelApi();
   t.servidor.perderInicio = true;
-  await assert.rejects(real.iniciarPrograma(3, { encender: true }), /Respuesta perdida/);
-  await real.iniciarPrograma(3, { encender: true });
-  const inicios = t.llamadas.filter(l => l.ruta.endsWith("/programa/iniciar"));
+  await assert.rejects(real.iniciarMedicion({ ensayo_id: 3, nombre: "Prueba", consigna: 25, duracion_segundos: 20 }), /Respuesta perdida/);
+  await real.iniciarMedicion({ ensayo_id: 3, nombre: "Prueba", consigna: 25, duracion_segundos: 20 });
+  const inicios = t.llamadas.filter(l => l.ruta.endsWith("/capturas"));
   assert.equal(inicios.length, 2);
   assert.equal(inicios[0].body.clave, inicios[1].body.clave);
-  assert.ok(inicios.every(l => l.body.encender === true));
+  assert.ok(inicios.every(l => l.body.consigna === 25 && l.body.duracion_segundos === 20));
   assert.equal(t.llamadas.filter(l => l.ruta.endsWith("/encender")).length, 0);
-  await real.detenerPrograma();
-  const parada = t.llamadas.find(l => l.ruta.endsWith("/programa/detener"));
-  assert.deepEqual(parada.body, { ensayo_id: inicios[0].body.ensayo_id, clave: inicios[0].body.clave });
-  assert.equal(real.obtenerEstado().programa.activo, false);
+  await real.detenerMedicion();
+  const parada = t.llamadas.find(l => l.ruta.endsWith("/detener"));
+  assert.equal(parada.ruta, "/api/tunel/capturas/7/detener");
+  assert.equal(real.obtenerEstado().medActiva, false);
 });
 
 test("avisa a Registro cuando entre sondeos cambia la captura activa", async () => {
@@ -225,19 +193,17 @@ test("suscribirse consulta la API y recupera captura, ensayo, tiempos y objetivo
   assert.ok(t.llamadas.every(l => !l.ruta.endsWith("/muestra") && !l.body));
 });
 
-test("detener y apagar usan la captura persistida sin reenviar las muestras", async () => {
+test("apagar usa la captura persistida sin reenviar las muestras", async () => {
   const t = await preparar();
   const real = t.crearTunelApi();
   real.cargarEnsayosPersistidos(ensayos());
   await real.sincronizar();
-  const fin = await t.finalizarCaptura(real);
-  assert.equal(fin.guardada, true);
+  await real.apagarTunel();
   assert.equal(real.obtenerEstado().medActiva, false);
   assert.equal(real.obtenerEstado().resumenUltMed.totalMuestras, 2);
   assert.equal(real.obtenerEstado().resumenUltMed.ensayoNombre, "Prueba");
-  assert.equal((await t.finalizarCaptura(real, { apagar: true })).guardada, true);
+  await real.apagarTunel();
   assert.equal(t.llamadas.filter(l => l.ruta.endsWith("/mediciones/finalizar")).length, 0);
-  assert.equal(t.llamadas.find(l => l.ruta.endsWith("/detener")).body.medicion_id, 7);
   assert.equal(real.obtenerEstado().ensayos[0].mediciones.length, 1);
 });
 
@@ -267,7 +233,7 @@ test("una respuesta de sondeo antigua no reabre una captura ya detenida", async 
   await real.detenerMedicion();
   liberar();
   await lecturaAntigua;
-  assert.equal(real.obtenerEstado().capturaApi.estado, "finalizada");
+  assert.equal(real.obtenerEstado().capturaApi.estado, "cancelada");
 });
 
 test("un fallo de parada no muestra guardado correcto", async () => {
@@ -275,23 +241,8 @@ test("un fallo de parada no muestra guardado correcto", async () => {
   const real = t.crearTunelApi();
   await real.sincronizar();
   t.servidor.fallo = true;
-  await assert.rejects(t.finalizarCaptura(real), /Sin enlace/);
+  await assert.rejects(real.detenerMedicion(), /Sin enlace/);
   assert.equal(real.obtenerEstado().medActiva, true);
-});
-
-test("el reintento de inicio conserva su clave tras una respuesta perdida", async () => {
-  const t = await preparar();
-  t.servidor.captura = null;
-  t.servidor.muestras = [];
-  const real = t.crearTunelApi();
-  real.cargarEnsayosPersistidos(ensayos());
-  await real.sincronizar();
-  t.servidor.perderInicio = true;
-  await assert.rejects(real.iniciarMedicion({ nombreMed: "Prueba" }), /Respuesta perdida/);
-  await real.iniciarMedicion({ nombreMed: "Prueba" });
-  const inicios = t.llamadas.filter(l => l.ruta.endsWith("/iniciar"));
-  assert.equal(inicios.length, 2);
-  assert.equal(inicios[0].body.clave, inicios[1].body.clave);
 });
 
 test("cerrar la sesion invalida las respuestas anteriores", async () => {

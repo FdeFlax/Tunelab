@@ -423,10 +423,6 @@
 }
 
 @media (width<=680px) {
-  .inspescena {
-    grid-template-rows: clamp(360px,55dvh,520px) auto;
-  }
-
   .inspactivocabecera,
   .insppuntoscabecera {
     flex-direction: column;
@@ -434,10 +430,6 @@
 
   .inspescenalateral {
     padding: 16px 16px 0;
-  }
-
-  .page--inspeccion .inspescenainferior {
-    padding: 0;
   }
 
   .page--inspeccion .inspdetalle,
@@ -471,11 +463,6 @@
   background: var(--claro-relleno);
 }
 
-.app-shell .inspescenafondo,
-.app-shell .inspescena {
-  background-color: var(--claro-relleno);
-}
-
 .app-shell .inspactivocabecera,
 .app-shell .insppuntoscabecera {
   border-bottom-color: var(--claro-borde-suave);
@@ -487,22 +474,11 @@
 }
 
 .app-shell .page--inspeccion .visorpuntoboton {
-  left: var(--desplazamiento-etiqueta-x,0px);
-  top: var(--desplazamiento-etiqueta-y,0px);
-  border-radius: var(--control-radio);
   color: #102033;
-  white-space: nowrap;
   background: #fffffff0;
   border: 1px solid #8fa8bb;
-  align-items: center;
-  min-width: max-content;
   padding: 11px 16px;
   font-size: 17px;
-  font-weight: 800;
-  line-height: 1;
-  display: inline-flex;
-  position: absolute;
-  transform: translate(-50%,-50%);
   box-shadow: 0 10px 24px #3a4c602e;
 }
 
@@ -547,13 +523,13 @@
   color: #344f68;
 }
 
-.app-shell .page--inspeccion :is(.inspitem,.inspselectoritem,.inspselectorcontrol,.visorpuntoboton):hover {
+.app-shell .page--inspeccion :is(.inspitem, .inspselectoritem, .inspselectorcontrol, .visorpuntoboton):hover {
   background: var(--hover-recuadro-claro);
   border-color: var(--hover-borde-recuadro-claro);
   color: var(--text-main);
 }
 
-.app-shell .page--inspeccion :is(.inspitemactivo,.inspselectoritemactivo,.visorpuntobotonactivo),
-.app-shell .page--inspeccion :is(.inspitemactivo,.inspselectoritemactivo,.visorpuntobotonactivo):hover {
+.app-shell .page--inspeccion :is(.inspitemactivo, .inspselectoritemactivo, .visorpuntobotonactivo),
+.app-shell .page--inspeccion :is(.inspitemactivo, .inspselectoritemactivo, .visorpuntobotonactivo):hover {
   color: var(--text-main);
 }

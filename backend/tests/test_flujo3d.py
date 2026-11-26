@@ -15,6 +15,8 @@ from unittest.mock import patch
 os.environ.setdefault("DATABASE_URL", "sqlite://")
 from app.flujo3d_datos import MAX_BYTES, MODELO, PASOS, BYTES_CAMPO, FORMATO_CAMPO, validar_geometria, validar_resultado
 from app.flujo3d_trabajos import FlujoOcupado, GestorFlujo3D
+from app.configuracion_tunel import TUNEL, parametros_flujo
+from app.flujo3d_datos import identificar_modelo
 
 
 def cube_bytes():
@@ -31,6 +33,12 @@ def result_fixture():
 
 
 class ContratoTests(unittest.TestCase):
+    def test_no_publica_resultados_del_metodo_kbc_anterior(self):
+        resultado = result_fixture()
+        resultado['modelo'] = 'xlb-031-kbc-v5-' + MODELO.rsplit('-', 1)[-1]
+        with self.assertRaisesRegex(ValueError, 'resultado completo'):
+            validar_resultado(resultado)
+
     def test_script_arranca_sin_importar_el_motor_para_mostrar_ayuda(self):
         script = Path(__file__).resolve().parents[2] / "scripts/calcular-flujo3d.py"
         resultado = subprocess.run([sys.executable, str(script), "--help"],
@@ -90,7 +98,7 @@ class ContratoTests(unittest.TestCase):
 FAKE_WORKER = '''import argparse, json, time, base64, struct
 from pathlib import Path
 p=argparse.ArgumentParser()
-p.add_argument('--input'); p.add_argument('--output'); p.add_argument('--modelo-esperado'); a=p.parse_args()
+p.add_argument('--input'); p.add_argument('--output'); p.add_argument('--modelo-esperado'); p.add_argument('--consigna',type=float); a=p.parse_args()
 mode=Path(a.input).read_bytes()
 print('TUNELAB_FLOW '+json.dumps({'fase':'calculando','paso':200,'mensaje':'Calculando'}),flush=True)
 if mode == b'slow': time.sleep(20)
@@ -98,7 +106,7 @@ if mode == b'error':
  print('TUNELAB_FLOW '+json.dumps({'fase':'error','mensaje':'Objeto no cerrado'}),flush=True)
  raise SystemExit(2)
 volume={'formato':'rapidez-f32le-xyz-v1','malla':[101,71,71],'origen_cm':[-50,-35,-35],'paso_cm':1,'datos':base64.b64encode(struct.pack('<f',1)*101*71*71).decode('ascii')}
-Path(a.output).write_text(json.dumps({'modelo':a.modelo_esperado,'pasos':6000,'volumen':volume}))
+Path(a.output).write_text(json.dumps({'modelo':a.modelo_esperado,'consigna_pct':a.consigna,'pasos':6000,'volumen':volume}))
 '''
 
 
@@ -123,9 +131,21 @@ class TrabajosTests(unittest.TestCase):
             time.sleep(0.02)
         self.fail('el trabajo no terminó dentro del plazo de prueba')
 
-    def submit(self, data, user=7):
+    def submit(self, data, user=7, parametros=None):
         id = self.manager.reservar(user)
-        return self.manager.enviar(id, data, sys.executable)
+        return self.manager.enviar(id, data, sys.executable, parametros or parametros_flujo(TUNEL))
+
+    def test_la_consigna_llega_al_motor_y_separa_la_cache(self):
+        primero = self.submit(b'ok', parametros=parametros_flujo(TUNEL, 50))
+        self.assertEqual(self.wait(primero['id'])['resultado']['consigna_pct'], 50)
+        segundo = self.submit(b'ok', parametros=parametros_flujo(TUNEL, 60))
+        self.assertFalse(segundo['cache'])
+        self.assertEqual(self.wait(segundo['id'])['resultado']['consigna_pct'], 60)
+        repetido = self.submit(b'ok', parametros=parametros_flujo(TUNEL, 50))
+        self.assertTrue(repetido['cache'])
+        self.assertEqual(repetido['id'], primero['id'])
+        with self.assertRaises(ValueError):
+            validar_resultado(self.wait(primero['id'])['resultado'], parametros_flujo(TUNEL, 60))
 
     def test_reserva_unica_tambien_durante_subida_y_control_de_propietario(self):
         id = self.manager.reservar(7)
@@ -220,3 +240,21 @@ class RutasTests(unittest.IsolatedAsyncioTestCase):
     async def test_no_calcula_con_una_configuracion_anterior_de_la_web(self):
         self.assertEqual(await self.request('POST', '/api/flujo3d/calculos?modelo=antiguo', cube_bytes(), {'Content-Type':'application/octet-stream'}), 409)
         self.assertFalse(self.manager.ocupado())
+
+    async def test_consignas_invalidas_reposo_y_firma_de_otro_porcentaje(self):
+        for consigna in ('-1', '101', 'nan', 'inf', 'texto'):
+            for method, ruta in [('GET', 'capacidad'), ('POST', 'calculos')]:
+                self.assertEqual(await self.request(method, f'/api/flujo3d/{ruta}?consigna={consigna}'), 422)
+        self.assertEqual(await self.request('GET', '/api/flujo3d/capacidad?consigna=0'), 200)
+        self.assertEqual(await self.request('POST', '/api/flujo3d/calculos?consigna=0'), 422)
+        self.assertEqual(await self.request('POST', f'/api/flujo3d/calculos?consigna=60&modelo={MODELO}'), 409)
+        self.assertFalse(self.manager.ocupado())
+
+    async def test_envia_las_condiciones_elegidas_al_gestor(self):
+        parametros = parametros_flujo(TUNEL, 60)
+        with patch.object(self.manager, 'enviar', return_value={'id': 'prueba'}) as enviar:
+            estado = await self.request('POST', f'/api/flujo3d/calculos?consigna=60&modelo={identificar_modelo(parametros)}',
+                                        cube_bytes(), {'Content-Type': 'application/octet-stream'})
+            self.assertEqual(estado, 202)
+            self.assertEqual(enviar.call_args.args[3], parametros)
+            self.assertAlmostEqual(parametros['aire']['velocidadMs'], 11.32)

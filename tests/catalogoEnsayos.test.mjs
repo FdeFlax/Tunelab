@@ -53,7 +53,7 @@ async function montar(t, opciones) {
     for (const [nombre, fn] of Object.entries(hooks)) this.setExport(nombre, fn);
   }, { context: contexto });
   const nombresServicios = ["asegurarUsuarioApi", "listarEnsayosApi", "listarMedicionesEnsayoApi",
-    "vincularEnsayoApi", "cargarMedicionApiCompleta", "crearEnsayoDesdeApi", "leerIdentidadApi"];
+    "cargarMedicionApiCompleta", "crearEnsayoDesdeApi", "leerIdentidadApi"];
   const servicios = new vm.SyntheticModule(nombresServicios, function () {
     for (const nombre of nombresServicios) this.setExport(nombre, () => {
       throw new Error(`El catálogo debe usar las funciones recibidas: ${nombre}`);

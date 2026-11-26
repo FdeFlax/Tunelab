@@ -1,10 +1,10 @@
 import { z } from 'zod';
-import { redondear } from "../formato.js";
+import { formatearFecha, formatearHora, redondear } from "../formato.js";
 import { crearTrazas, resumirValores } from "../mediciones/analisisMedicion.js";
 import { crearZipSinCompresion } from "./zipSinCompresion.js";
 
 const FORMATO_MEDICION_TUNELAB = "tunelab.medicion";
-const VERSION_FORMATO_MEDICION = "1.2";
+const VERSION_FORMATO_MEDICION = "1.3";
 
 export const LIMITE_TAMANO_ARCHIVO_MEDICION_BYTES = 32 * 1024 * 1024;
 export const LIMITE_ARCHIVOS_IMPORTACION = 20;
@@ -113,11 +113,12 @@ function validarInstante(valor, campo) {
 
 function validarPrograma(programa) {
   if (programa == null) return null;
-  if (!esObjeto(programa) || ![1, 2].includes(programa.version) || !Array.isArray(programa.etapas) || !programa.etapas.length || programa.etapas.length > 15) {
+  if (!esObjeto(programa) || ![1, 2, 3].includes(programa.version) || !Array.isArray(programa.etapas) || !programa.etapas.length || programa.etapas.length > 15) {
     throw new Error("El programa de la medición no es válido.");
   }
   let finAnterior = -1;
-  const continua = programa.version === 2;
+  const continua = programa.version >= 2;
+  const soloEstables = programa.version === 2;
   const tiempo = (valor, campo) => validarNumeroOpcional({ valor, campo, rango: RANGOS_NUMERICOS.segundo });
   const etapas = programa.etapas.map((e, i) => {
     if (!esObjeto(e)) throw new Error("Etapa no válida.");
@@ -129,7 +130,7 @@ function validarPrograma(programa) {
     if (fin != null) finAnterior = fin;
     if (!["pendiente", "estabilizando", "registrando", "completada", "parcial"].includes(e.estado)) throw new Error("Estado de etapa no válido.");
     let tramos;
-    if (continua) {
+    if (soloEstables) {
       if (!Array.isArray(e.tramos_estables) || e.tramos_estables.length > 4000) throw new Error("Tramos estables no válidos.");
       let anterior = cambio;
       tramos = e.tramos_estables.map((t, j) => {
@@ -144,11 +145,12 @@ function validarPrograma(programa) {
     return {consigna:validarNumero({valor:e.consigna,campo:"consigna",rango:{min:1,max:100}}),
       duracion_segundos:validarNumero({valor:e.duracion_segundos,campo:"registro",rango:{min:1,max:3600}}),
       inicio_segundo:inicio,fin_segundo:fin,estado:e.estado,
-      ...(continua ? { cambio_segundo: cambio, tramos_estables: tramos } : {})};
+      ...(continua ? { cambio_segundo: cambio } : {}),
+      ...(soloEstables ? { tramos_estables: tramos } : {})};
   });
   const criterio = programa.criterio_estabilidad;
   return {version:programa.version,nombre:validarTexto({valor:programa.nombre,campo:"programa.nombre",maximo:40}),etapas,
-    ...(continua && criterio ? { criterio_estabilidad: {
+    ...(soloEstables && criterio ? { criterio_estabilidad: {
       tolerancia_ms: validarNumero({valor:criterio.tolerancia_ms,campo:"tolerancia",rango:{min:0,max:60}}),
       segundos: validarNumero({valor:criterio.segundos,campo:"espera estable",rango:RANGOS_NUMERICOS.segundo}),
     }} : {})};
@@ -165,7 +167,8 @@ function conservarResumen(original, calculado) {
 }
 
 const esquemaEnsayo = z.object({
-  codigo: textoLimitado(LIMITES_TEXTO.codigo, true),
+  id: z.number().int().positive().optional(),
+  codigo: textoLimitado(LIMITES_TEXTO.codigo, true).optional(), // Archivos anteriores a 1.3.
   nombre: textoLimitado(LIMITES_TEXTO.nombreEnsayo, true),
   objetivo: textoLimitado(LIMITES_TEXTO.objetivo),
   descripcion: textoLimitado(LIMITES_TEXTO.descripcion),
@@ -280,6 +283,7 @@ function validarMedicion(medicion, muestras) {
       maximo: LIMITES_TEXTO.hora,
     }),
     durSeg,
+    duracionPrevistaSeg: validar(z.number().int().min(1).max(3600).nullish(), medicion.duracionPrevistaSeg, 'medicion.duracionPrevistaSeg') ?? null,
     totalMuestras: muestras.length,
     estado: validarTexto({valor:medicion.estado,campo:"medicion.estado",maximo:30}) || null,
     fechaInicio: validarInstante(medicion.fechaInicio,"medicion.fechaInicio"),
@@ -301,7 +305,7 @@ function validarDocumentoMedicionTunelab(documento) {
     throw new Error("El archivo no es una medicion Tunelab valida.");
   }
 
-  if (!["1.0", "1.1", VERSION_FORMATO_MEDICION].includes(documento.version)) {
+  if (!["1.0", "1.1", "1.2", VERSION_FORMATO_MEDICION].includes(documento.version)) {
     throw new Error(`Version de archivo no compatible: ${documento.version || "desconocida"}.`);
   }
 }
@@ -339,12 +343,12 @@ export function crearDocumentoMedicionTunelab({
     fuenteTunel: FUENTES_TUNEL_VALIDAS.has(medicion.fuente) ? medicion.fuente
       : FUENTES_TUNEL_VALIDAS.has(fuenteTunel) ? fuenteTunel : "desconocida",
     ensayo: {
-      codigo: ensayo?.codigo || "SIN-CODIGO",
+      id: ensayo?.apiId ?? (typeof ensayo?.id === "number" ? ensayo.id : undefined),
       nombre: ensayo?.nombre || "Ensayo sin nombre",
       objetivo: ensayo?.objetivo || "",
       descripcion: ensayo?.descripcion || "",
-      fecha: ensayo?.fecha || "",
-      hora: ensayo?.hora || "",
+      fecha: ensayo?.fecha || (ensayo?.creado_en ? formatearFecha(ensayo.creado_en) : ""),
+      hora: ensayo?.hora || (ensayo?.creado_en ? formatearHora(ensayo.creado_en) : ""),
     },
     medicion: {
       id: medicion.id,
@@ -357,6 +361,7 @@ export function crearDocumentoMedicionTunelab({
       calibracionVersion: medicion.calibracionVersion ?? null,
       programa: medicion.programa ?? null,
       durSeg: medicion.durSeg ?? 0,
+      duracionPrevistaSeg: medicion.duracionPrevistaSeg ?? null,
       totalMuestras: medicion.totalMuestras || muestras.length,
       potConsPct: medicion.potConsPct ?? estadoTunel?.potPct ?? null,
       objetivos: {
@@ -437,7 +442,7 @@ export function descargarZipEnsayo({ ensayo, mediciones = [], fuenteTunel }) {
     }),
   ];
   const blob = crearZipSinCompresion(archivos);
-  return descargarBlob(blob, normalizarNombreArchivo(ensayo.nombre || ensayo.codigo || "ensayo") + ".zip");
+  return descargarBlob(blob, normalizarNombreArchivo(ensayo.nombre || "ensayo") + ".zip");
 }
 
 export function normalizarDocumentoMedicionTunelab(documento, nombreArchivo = "") {

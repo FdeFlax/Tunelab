@@ -135,17 +135,6 @@
   border-color: var(--claro-borde);
 }
 
-.app-shell .reg2evento,
-.app-shell .reg2vacio {
-  background-color: #f8fafc;
-}
-
-.reg2panelcabecera h3 {
-  font-size: var(--titulo-panel);
-  letter-spacing: -.02em;
-  line-height: 1.3;
-}
-
 .docpanelcabecera span {
   text-transform: uppercase;
 }
@@ -224,10 +213,6 @@
 }
 
 @media (width>=1351px) {
-  .docgrid {
-    align-items: stretch;
-  }
-
   .docgrid>.docpanel {
     height: auto;
     min-height: 0;

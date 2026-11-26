@@ -18,7 +18,11 @@ async function montar(t, iniciar = async () => ({id: 'caso-1'})) {
   let trabajo = {estado: 'calculando'};
   const pedirApi = async (ruta, opciones = {}) => {
     llamadas.push({ruta, ...opciones});
-    if (ruta.endsWith('/capacidad')) return {configurado:true,modelo:'modelo-prueba',parametros:{prueba:true}};
+    if (ruta.includes('/capacidad')) {
+      const consigna = Number(new URL(ruta, 'http://localhost').searchParams.get('consigna') ?? 100);
+      return {configurado:true,modelo:consigna === 100 ? 'modelo-prueba' : `modelo-${consigna}`,
+        parametros:{consignaPct:consigna,aire:{velocidadMs:consigna === 0 ? 0 : 11.32}}};
+    }
     if (opciones.method === 'POST') return iniciar();
     if (opciones.method === 'DELETE') return null;
     if (trabajo instanceof Error) throw trabajo;
@@ -37,11 +41,12 @@ async function montar(t, iniciar = async () => ({id: 'caso-1'})) {
   const contenedor = document.createElement('div'); document.body.append(contenedor);
   const raiz = createRoot(contenedor);
   let flujo;
-  function Prueba({objeto}) { flujo = fuente.namespace.useFlujo(objeto); return null; }
-  const render = async objeto => { await React.act(async () => raiz.render(React.createElement(query.QueryClientProvider,{client:cliente}, React.createElement(Prueba,{objeto})))); await settle(); };
+  function Prueba({objeto, consigna}) { flujo = fuente.namespace.useFlujo(objeto, consigna); return null; }
+  let objetoActual;
+  const render = async (objeto, consigna = null) => { objetoActual = objeto; await React.act(async () => raiz.render(React.createElement(query.QueryClientProvider,{client:cliente}, React.createElement(Prueba,{objeto,consigna})))); await settle(); };
   t.after(async () => { await React.act(async () => raiz.unmount()); cliente.clear(); contenedor.remove(); });
   await render({posiciones:new Float32Array(36)});
-  return {leer:()=>flujo,llamadas,render,cliente,
+  return {leer:()=>flujo,llamadas,render,cliente, cambiarConsigna:consigna=>render(objetoActual, consigna),
     terminar:async estado => { trabajo=estado; await React.act(async () => { await cliente.refetchQueries({queryKey:['calculo-flujo']}); }); await settle(); }};
 }
 
@@ -56,6 +61,37 @@ test('cancelar antes de recibir el id envía una sola orden y descarta un result
   await vista.terminar({estado:'completado',resultado:{modelo:'modelo-prueba',volumen:'antiguo'}});
   assert.equal(vista.leer().campo,null);
   assert.equal(vista.leer().activo,false);
+});
+
+test('cambiar consigna retira el mapa y envía la nueva velocidad con su configuración', async t => {
+  const vista = await montar(t);
+  await React.act(async () => vista.leer().calcular()); await settle();
+  await vista.terminar({estado:'completado',resultado:{modelo:'modelo-prueba',volumen:'actual'}});
+  await vista.cambiarConsigna(60);
+  assert.equal(vista.leer().campo, null);
+  assert.equal(vista.leer().capacidad.data.parametros.aire.velocidadMs, 11.32);
+  await React.act(async () => vista.leer().calcular()); await settle();
+  assert.match(vista.llamadas.filter(p => p.method === 'POST').at(-1).ruta, /modelo=modelo-60&consigna=60$/);
+});
+
+test('una respuesta tardía de otra consigna no se muestra', async t => {
+  let resolver;
+  const vista = await montar(t, () => new Promise(r => { resolver = r; }));
+  await React.act(async () => vista.leer().calcular()); await settle();
+  await vista.cambiarConsigna(60);
+  await React.act(async () => resolver({id:'caso-1'})); await settle();
+  assert.equal(vista.llamadas.filter(p => p.method === 'DELETE').length, 1);
+  await vista.terminar({estado:'completado',resultado:{modelo:'modelo-prueba',volumen:'viejo'}});
+  assert.equal(vista.leer().campo, null);
+});
+
+test('reposo y consignas inválidas no lanzan cálculos', async t => {
+  const vista = await montar(t);
+  for (const consigna of [0, '', -1, 101, NaN]) {
+    await vista.cambiarConsigna(consigna);
+    await React.act(async () => vista.leer().calcular()); await settle();
+  }
+  assert.equal(vista.llamadas.filter(p => p.method === 'POST').length, 0);
 });
 
 test('cambiar de GLB cancela el trabajo anterior y no muestra su mapa', async t => {

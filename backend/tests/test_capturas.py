@@ -1,6 +1,7 @@
 """Captura sin navegador, reintentos, fallos y recuperacion del servidor."""
-import asyncio
 from datetime import datetime, timedelta
+from unittest.mock import patch
+import asyncio
 from uuid import uuid4
 import unittest
 
@@ -8,8 +9,8 @@ import test_autenticacion as base
 from sqlalchemy import event, func, select
 from app.capturas import CapturadorTunel, obtener_capturador
 from app.control_tunel import ControladorTunelSimulado
-from app.datos_api import CapturaIniciar
 from app.tablas import Ensayo, EventoMedicion, Medicion, MuestraMedicion, EstadoMedicion
+from app.configuracion import configuracion
 
 
 class CapturasTests(unittest.IsolatedAsyncioTestCase):
@@ -33,94 +34,50 @@ class CapturasTests(unittest.IsolatedAsyncioTestCase):
         return await base.peticion(metodo, "/api" + ruta,
             {"X-Usuario-Uacloud": "prof_demo"} if docente else self.headers, body)
 
-    async def test_marcha_manual_sin_ensayo_no_crea_mediciones(self):
+    async def preparar(self, duracion=300):
+        _, ensayo = await self.pedir("POST", "/ensayos", {"nombre": "Persistencia"})
+        self.datos = {"ensayo_id": ensayo["id"], "clave": str(uuid4()),
+                      "nombre": "Captura", "consigna": 75, "duracion_segundos": duracion}
         await self.pedir("POST", "/tunel/conectar")
-        status, estado = await self.pedir("POST", "/tunel/encender", {"potencia_porcentaje": 100})
-        self.assertEqual(status, 200)
-        self.assertEqual(estado["potencia_objetivo"], 0)
-        status, estado = await self.pedir("POST", "/tunel/consigna", {"potencia_porcentaje": 40})
-        self.assertEqual(status, 200)
-        self.assertEqual(estado["potencia_objetivo"], 40)
-        self.controlador._estado.actualizado_en -= timedelta(seconds=10)
-        self.capturador.tick()
-        self.assertGreater(self.controlador.leer_estado()["velocidad_ms"], 0)
-        status, estado = await self.pedir("POST", "/tunel/apagar")
-        self.assertEqual(status, 200)
-        self.assertFalse(estado["encendido"])
+        status, estado = await self.pedir("POST", "/tunel/capturas", self.datos)
+        self.assertEqual(status, 200, estado)
+        return estado["captura"]["id"]
+
+    async def test_las_rutas_antiguas_no_permiten_crear_capturas(self):
+        await self.pedir("POST", "/tunel/conectar")
+        for metodo, ruta, datos in [
+            ("POST", "/tunel/encender", {"potencia_porcentaje": 100}),
+            ("POST", "/tunel/consigna", {"potencia_porcentaje": 100}),
+            ("POST", "/tunel/medicion/iniciar", {"ensayo_id": 1, "nombre": "Manual", "clave": str(uuid4())}),
+            ("POST", "/tunel/medicion/detener", {"medicion_id": 1}),
+            ("GET", "/tunel/muestra", None),
+            ("GET", "/tunel/programas/1", None),
+            ("PUT", "/tunel/programas/1", {}),
+            ("POST", "/tunel/programa/iniciar", {}),
+            ("POST", "/tunel/programa/detener", {}),
+            ("POST", "/ensayos/1/mediciones/finalizar", {"nombre": "Importada", "muestras": []}),
+            ("POST", "/eventos", {"mensaje": "Captura guardada"}),
+        ]:
+            with self.subTest(ruta=ruta):
+                self.assertEqual((await self.pedir(metodo, ruta, datos))[0], 404)
+        self.assertFalse(self.controlador.leer_estado()["encendido"])
         with self.base.sessions() as sesion:
             for tabla in (Ensayo, Medicion, MuestraMedicion):
                 self.assertEqual(sesion.scalar(select(func.count()).select_from(tabla)), 0)
 
-    async def preparar(self):
-        _, ensayo = await self.pedir("POST", "/ensayos", {"nombre": "Persistencia"})
-        await self.pedir("POST", "/tunel/conectar")
-        await self.pedir("POST", "/tunel/encender", {"potencia_porcentaje": 0})
-        await self.pedir("POST", "/tunel/consigna", {"potencia_porcentaje": 75})
-        # Adelantar el reloj del simulador sin esperar una rampa real en cada prueba.
-        self.controlador._estado.actualizado_en -= timedelta(seconds=10)
-        self.controlador.leer_estado()
-        self.controlador._estable_desde -= timedelta(seconds=5)
-        self.datos = {"ensayo_id": ensayo["id"], "clave": str(uuid4()), "nombre": "Captura"}
-        status, estado = await self.pedir("POST", "/tunel/medicion/iniciar", self.datos)
-        self.assertEqual(status, 200, estado)
-        return estado["captura"]["id"]
-
-    async def test_inicio_exige_ensayo_propietario_y_encendido_pero_no_estabilidad(self):
-        self.assertEqual((await self.pedir("POST", "/tunel/medicion/iniciar", {}))[0], 422)
-        _, ensayo = await self.pedir("POST", "/ensayos", {"nombre": "Prueba"})
-        datos = {"ensayo_id": ensayo["id"], "clave": str(uuid4()), "nombre": "Captura"}
-        self.assertEqual((await self.pedir("POST", "/tunel/medicion/iniciar", datos, docente=True))[0], 404)
-        self.assertEqual((await self.pedir("POST", "/tunel/medicion/iniciar", datos))[0], 409)
-        await self.pedir("POST", "/tunel/conectar")
-        self.assertEqual((await self.pedir("POST", "/tunel/medicion/iniciar", datos))[0], 409)
-        await self.pedir("POST", "/tunel/encender", {"potencia_porcentaje": 100})
-        await self.pedir("POST", "/tunel/consigna", {"potencia_porcentaje": 100})
-        status, estado = await self.pedir("POST", "/tunel/medicion/iniciar", datos)
-        self.assertEqual(status, 200)
-        self.assertFalse(estado["flujo_estable"])
-        _, muestras = await self.pedir("GET", f'/tunel/capturas/{estado["captura"]["id"]}/muestras')
-        self.assertFalse(muestras[0]["flujo_estable"])
-        self.assertEqual(muestras[0]["consigna_objetivo"], 100)
-
-    async def test_encendido_reinicia_consigna_incluso_con_peticion_antigua_al_cien(self):
-        await self.pedir("POST", "/tunel/conectar")
-        await self.pedir("POST", "/tunel/consigna", {"potencia_porcentaje": 100})
-        status, _ = await self.pedir("POST", "/tunel/encender", {"potencia_porcentaje": 100}, docente=True)
-        self.assertEqual(status, 409)
-        self.assertFalse(self.controlador.leer_estado()["encendido"])
-        for _ in range(2):
-            status, estado = await self.pedir("POST", "/tunel/encender", {"potencia_porcentaje": 100})
-            self.assertEqual(status, 200)
-            self.assertTrue(estado["encendido"])
-            self.assertEqual(estado["potencia_objetivo"], 0)
-            self.controlador._estado.actualizado_en -= timedelta(seconds=10)
-            self.assertEqual(self.controlador.leer_estado()["velocidad_ms"], 0)
-            _, aplicada = await self.pedir("POST", "/tunel/consigna", {"potencia_porcentaje": 50})
-            self.assertEqual(aplicada["potencia_objetivo"], 50)
-            await self.pedir("POST", "/tunel/apagar")
-            await self.pedir("POST", "/tunel/conectar")
-        with self.base.sessions() as sesion:
-            encendidos = sesion.scalars(select(EventoMedicion.mensaje).where(
-                EventoMedicion.mensaje.like("Encendido:%"))).all()
-            self.assertEqual(encendidos, ["Encendido: 0%.", "Encendido: 0%."])
-
     async def test_nombre_unico_por_ensayo_y_reintento_conserva_captura(self):
         identificador = await self.preparar()
-        await self.pedir("POST", "/tunel/medicion/detener", {"medicion_id": identificador})
+        await self.pedir("POST", f"/tunel/capturas/{identificador}/detener")
+        status, repetida = await self.pedir("POST", "/tunel/capturas", self.datos)
+        self.assertEqual(status, 200)
+        self.assertEqual(repetida["captura"]["id"], identificador)
         for nombre in ("Captura", "  CAPTURA  "):
-            status, error = await self.pedir("POST", "/tunel/medicion/iniciar",
-                {**self.datos, "clave": str(uuid4()), "nombre": nombre})
+            status, error = await self.pedir("POST", "/tunel/capturas", {**self.datos, "clave": str(uuid4()), "nombre": nombre})
             self.assertEqual(status, 409)
             self.assertIn("ese nombre", error["detail"])
             self.assertIsNone(self.capturador.activa_id)
-        status, repetida = await self.pedir("POST", "/tunel/medicion/iniciar", self.datos)
-        self.assertEqual(status, 200)
-        self.assertEqual(repetida["captura"]["id"], identificador)
-        _, ensayo = await self.pedir("POST", "/ensayos", {"nombre": "Otro ensayo"})
-        status, nueva = await self.pedir("POST", "/tunel/medicion/iniciar",
-            {**self.datos, "ensayo_id": ensayo["id"], "clave": str(uuid4())})
-        self.assertEqual(status, 200)
-        self.assertNotEqual(nueva["captura"]["id"], identificador)
+        otra = await self.preparar()
+        self.assertNotEqual(otra, identificador)
 
     async def test_captura_sin_peticiones_y_recuperacion_de_la_misma_medicion(self):
         self.capturador.arrancar()
@@ -135,15 +92,20 @@ class CapturasTests(unittest.IsolatedAsyncioTestCase):
         self.assertGreater(recuperada["total_muestras"], 1)
         _, muestras = await self.pedir("GET", f"/tunel/capturas/{identificador}/muestras")
         self.assertEqual(len(muestras), recuperada["total_muestras"])
-        self.assertTrue(all(m["instante"] and m["presion_pa"] > 0 for m in muestras))
-        _, repetida = await self.pedir("POST", "/tunel/medicion/iniciar", self.datos)
+        self.assertTrue(all(m["instante"] and m["presion_pa"] >= 0 for m in muestras))
+        _, repetida = await self.pedir("POST", "/tunel/capturas", self.datos)
         self.assertEqual(repetida["captura"]["id"], identificador)
         for _ in range(2):
-            status, final = await self.pedir("POST", "/tunel/medicion/detener", {"medicion_id": identificador})
+            status, final = await self.pedir("POST", f"/tunel/capturas/{identificador}/detener")
             self.assertEqual(status, 200)
             self.assertEqual(final["captura"]["id"], identificador)
-            self.assertEqual(final["captura"]["estado"], "finalizada")
-        self.assertAlmostEqual(final["captura"]["velocidad_media"], 8.18, places=2)
+            self.assertEqual(final["captura"]["estado"], "cancelada")
+        self.assertAlmostEqual(final["captura"]["velocidad_media"],
+                               sum(m["velocidad_ms"] for m in muestras) / len(muestras), places=2)
+        _, registradas = await self.pedir("GET", f'/ensayos/{self.datos["ensayo_id"]}/mediciones')
+        self.assertEqual([m["id"] for m in registradas], [identificador])
+        _, informe = await self.pedir("GET", f"/mediciones/{identificador}/muestras")
+        self.assertEqual(len(informe), len(muestras))
         with self.base.sessions() as sesion:
             self.assertEqual(sesion.scalar(select(func.count(Medicion.id))), 1)
 
@@ -179,7 +141,7 @@ class CapturasTests(unittest.IsolatedAsyncioTestCase):
     async def test_otro_usuario_no_puede_leer_ni_detener_la_captura(self):
         identificador = await self.preparar()
         self.assertEqual((await self.pedir("GET", f"/tunel/capturas/{identificador}/muestras", docente=True))[0], 404)
-        self.assertEqual((await self.pedir("POST", "/tunel/medicion/detener", {"medicion_id": identificador}, docente=True))[0], 404)
+        self.assertEqual((await self.pedir("POST", f"/tunel/capturas/{identificador}/detener", docente=True))[0], 404)
 
     async def test_apagado_y_liberacion_docente_finalizan_con_muestras(self):
         for docente in (False, True):
@@ -187,22 +149,97 @@ class CapturasTests(unittest.IsolatedAsyncioTestCase):
             ruta = "/tunel/docente/desconectar" if docente else "/tunel/apagar"
             self.assertEqual((await self.pedir("POST", ruta, docente=docente))[0], 200)
             with self.base.sessions() as sesion:
-                self.assertEqual(sesion.get(Medicion, identificador).estado, EstadoMedicion.finalizada)
+                self.assertEqual(sesion.get(Medicion, identificador).estado, EstadoMedicion.cancelada)
                 self.assertEqual(sesion.scalar(select(func.count(MuestraMedicion.id)).where(MuestraMedicion.medicion_id == identificador)), 1)
 
-    async def test_no_borrar_ni_cambiar_consigna_durante_captura(self):
+    async def test_no_borrar_durante_captura(self):
         identificador = await self.preparar()
         self.assertEqual((await self.pedir("DELETE", f"/mediciones/{identificador}"))[0], 409)
         self.assertEqual((await self.pedir("DELETE", f'/ensayos/{self.datos["ensayo_id"]}'))[0], 409)
-        self.assertEqual((await self.pedir("POST", "/tunel/consigna", {"potencia_porcentaje": 20}))[0], 409)
 
-    async def test_reintento_antiguo_no_detiene_captura_nueva(self):
-        anterior = await self.preparar()
-        await self.pedir("POST", "/tunel/medicion/detener", {"medicion_id": anterior})
-        nueva = {**self.datos, "clave": str(uuid4()), "nombre": "Captura 2"}
-        _, estado = await self.pedir("POST", "/tunel/medicion/iniciar", nueva)
-        actual = estado["captura"]["id"]
-        _, repetida = await self.pedir("POST", "/tunel/medicion/detener", {"medicion_id": anterior})
-        self.assertEqual(repetida["captura"]["id"], anterior)
-        self.assertEqual(self.capturador.activa_id, actual)
-        self.assertTrue(self.controlador.leer_estado()["midiendo"])
+    async def test_fallo_en_primera_muestra_no_deja_medicion_vacia(self):
+        def fallar(conn, cursor, statement, parameters, context, executemany):
+            if statement.startswith("INSERT INTO muestras_medicion"):
+                raise RuntimeError("Fallo inyectado")
+        event.listen(self.base.engine, "before_cursor_execute", fallar)
+        try:
+            with self.assertRaisesRegex(RuntimeError, "Fallo inyectado"):
+                await self.preparar()
+        finally:
+            event.remove(self.base.engine, "before_cursor_execute", fallar)
+        self.assertFalse(self.controlador.leer_estado()["encendido"])
+        with self.base.sessions() as sesion:
+            self.assertEqual(sesion.scalar(select(func.count(Medicion.id))), 0)
+            self.assertEqual(sesion.scalar(select(func.count(MuestraMedicion.id))), 0)
+            self.assertEqual(sesion.scalar(select(func.count(EventoMedicion.id)).where(EventoMedicion.medicion_id.is_not(None))), 0)
+
+    async def test_una_consigna_hasta_el_fin_sin_esperar_estabilidad(self):
+        class Reloj:
+            actual = datetime(2026, 11, 23, 10)
+            @classmethod
+            def utcnow(cls):
+                return cls.actual
+        with patch("app.control_tunel.datetime", Reloj), patch("app.capturas.datetime", Reloj):
+            self.controlador.aplicar_consigna(100)
+            with patch.object(self.controlador, 'encender', wraps=self.controlador.encender) as encender:
+                identificador = await self.preparar(duracion=3)
+                await self.pedir('POST', '/tunel/capturas', self.datos)
+                encender.assert_called_once_with(0)
+            for segundo in range(1, 4):
+                Reloj.actual += timedelta(seconds=1)
+                self.controlador._estable_desde = None
+                self.capturador.tick()
+                estado = self.controlador.leer_estado()
+                self.assertEqual(estado['encendido'], segundo < 3)
+            with self.base.sessions() as sesion:
+                medicion = sesion.get(Medicion, identificador)
+                self.assertEqual(medicion.estado, EstadoMedicion.finalizada)
+                self.assertEqual(medicion.duracion_segundos, 3)
+                self.assertEqual(medicion.duracion_prevista_segundos, 3)
+                self.assertIsNone(medicion.programa)
+                muestras = sesion.scalars(select(MuestraMedicion).where(MuestraMedicion.medicion_id == identificador)).all()
+                self.assertEqual(len(muestras), 4)
+                self.assertTrue(all(m.consigna_objetivo == 75 for m in muestras))
+            self.assertIsNone(self.capturador.activa_id)
+
+    async def test_un_ciclo_retrasado_cierra_con_el_tiempo_real(self):
+        identificador = await self.preparar(duracion=2)
+        with self.base.sessions.begin() as sesion:
+            sesion.get(Medicion, identificador).fecha_inicio -= timedelta(seconds=5)
+        self.capturador.tick()
+        with self.base.sessions() as sesion:
+            medicion = sesion.get(Medicion, identificador)
+            self.assertEqual(medicion.estado, EstadoMedicion.finalizada)
+            self.assertGreaterEqual(medicion.duracion_segundos, 5)
+        self.assertFalse(self.controlador.leer_estado()['encendido'])
+
+    async def test_reintentar_parada_antigua_no_detiene_la_nueva(self):
+        identificador = await self.preparar()
+        await self.pedir('POST', f'/tunel/capturas/{identificador}/detener')
+        status, nueva = await self.pedir('POST', '/tunel/capturas', {**self.datos, 'nombre':'Otra', 'clave':str(uuid4())})
+        self.assertEqual(status, 200)
+        await self.pedir('POST', f'/tunel/capturas/{identificador}/detener')
+        self.assertEqual(self.capturador.activa_id, nueva['captura']['id'])
+        self.assertTrue(self.controlador.leer_estado()['encendido'])
+
+    async def test_validacion_propiedad_y_cupo_antes_de_encender(self):
+        _, ensayo = await self.pedir('POST', '/ensayos', {'nombre':'Límites'})
+        datos = {'ensayo_id':ensayo['id'], 'clave':str(uuid4()), 'nombre':'Captura', 'consigna':25, 'duracion_segundos':2}
+        self.assertEqual((await self.pedir('POST', '/tunel/capturas', datos))[0], 409)
+        await self.pedir('POST', '/tunel/conectar')
+        self.assertEqual((await self.pedir('POST', '/tunel/capturas', datos, docente=True))[0], 404)
+        for cambios in ({'consigna':0}, {'consigna':101}, {'consigna':25.123}, {'duracion_segundos':0},
+                        {'duracion_segundos':301}, {'duracion_segundos':1.5}, {'nombre':' '}, {'etapas':[]}):
+            self.assertEqual((await self.pedir('POST', '/tunel/capturas', {**datos, **cambios}))[0], 422, cambios)
+        with patch.object(configuracion, 'limite_mediciones_por_ensayo', 0):
+            self.assertEqual((await self.pedir('POST', '/tunel/capturas', datos))[0], 409)
+        self.assertFalse(self.controlador.leer_estado()['encendido'])
+        with self.base.sessions() as sesion:
+            self.assertEqual(sesion.scalar(select(func.count(Medicion.id))), 0)
+
+    async def test_no_se_edita_ni_se_inicia_otra_durante_una_captura(self):
+        await self.preparar()
+        self.assertEqual((await self.pedir('PUT', f'/ensayos/{self.datos["ensayo_id"]}', {'nombre':'Cambio'}))[0], 409)
+        self.assertEqual((await self.pedir('POST', '/tunel/capturas', {**self.datos, 'nombre':'Otra', 'clave':str(uuid4())}))[0], 409)
+        self.assertEqual((await self.pedir('POST', '/tunel/capturas', {**self.datos, 'consigna':50}))[0], 409)
+        self.assertEqual(self.controlador.leer_estado()['potencia_objetivo'], 75)

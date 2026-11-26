@@ -17,3 +17,14 @@ test("agrupa las mediciones importadas por ensayo y acumula sus muestras", () =>
   assert.equal(grupos[0].totalMuestras, 10);
   assert.equal(grupos[0].archivos.length, 2);
 });
+
+test("distingue ensayos con igual nombre por su ID y agrupa un ensayo renombrado", () => {
+  const grupos = agruparArchivosPorEnsayo([
+    { ensayo: { id: 1, nombre: "Prueba" } },
+    { ensayo: { id: 2, nombre: "Prueba" } },
+    { ensayo: { id: 1, nombre: "Renombrado" } },
+  ]);
+  assert.equal(grupos.length, 2);
+  assert.equal(grupos[0].archivos.length, 2);
+  assert.equal(grupos[1].archivos.length, 1);
+});

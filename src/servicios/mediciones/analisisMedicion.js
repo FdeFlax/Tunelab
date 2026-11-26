@@ -19,18 +19,19 @@ export function resumirValores(valores = []) {
 }
 
 export function analizarEtapas(medicion) {
-  const continua = medicion.programa?.version === 2;
+  const continua = [2, 3].includes(medicion.programa?.version);
+  const soloEstables = medicion.programa?.version === 2;
   return (medicion.programa?.etapas || []).map((etapa, indice) => {
     const inicio = continua ? etapa.cambio_segundo : etapa.inicio_segundo;
     const fin = etapa.fin_segundo;
     const muestras = esNumero(inicio) ? (medicion.muestras || []).filter(m =>
       (continua && indice > 0 ? m.segundo > inicio : m.segundo >= inicio) && (!esNumero(fin) || m.segundo <= fin)) : [];
-    const muestrasEstables = continua ? muestras.filter(m => m.flujoEstable === true) : muestras;
-    return { ...etapa, indice, muestras, muestrasEstables,
-      registroSeg: continua ? (etapa.tramos_estables || []).reduce((s, t) => s + (esNumero(t.fin) ? t.fin - t.inicio : 0), 0)
+    const muestrasResumen = soloEstables ? muestras.filter(m => m.flujoEstable === true) : muestras;
+    return { ...etapa, indice, muestras, muestrasResumen,
+      registroSeg: soloEstables ? (etapa.tramos_estables || []).reduce((s, t) => s + (esNumero(t.fin) ? t.fin - t.inicio : 0), 0)
         : esNumero(inicio) && esNumero(fin) ? Math.max(0, fin - inicio) : null,
-      velocidad: resumirValores(muestrasEstables.map(m => m.velMs)),
-      caudal: resumirValores(muestrasEstables.map(m => m.caudalM3s)),
+      velocidad: resumirValores(muestrasResumen.map(m => m.velMs)),
+      caudal: resumirValores(muestrasResumen.map(m => m.caudalM3s)),
     };
   });
 }
@@ -89,14 +90,14 @@ export function prepararSerie(datos = []) {
   return segmentos;
 }
 
-export function prepararGrafica(series) {
-  const datasets = series.flatMap(s => prepararSerie(s.datos).map(segmento => ({
-    label: s.nombre, borderColor: s.color, pointRadius: segmento.length === 1 ? 3 : 0,
+export function prepararGrafica({ nombre, color, datos }) {
+  const datasets = prepararSerie(datos).map(segmento => ({
+    label: nombre, borderColor: color, pointRadius: segmento.length === 1 ? 3 : 0,
     data: segmento.map(p => ({ x: p.segundo, y: p.valor })),
-  })));
+  }));
   return {
     datasets,
-    resumenes: series.map(s => resumirValores(s.datos.filter(p => esNumero(p.segundo)).map(p => p.valor))),
+    resumen: resumirValores(datos.filter(p => esNumero(p.segundo)).map(p => p.valor)),
     consultas: datasets.flatMap((d, datasetIndex) => d.data.map((p, index) => ({ ...p, datasetIndex, index }))).sort((a, b) => a.x - b.x),
   };
 }

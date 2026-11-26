@@ -1,4 +1,3 @@
-import ComparadorMediciones from "../components/mediciones/ComparadorMediciones.jsx";
 import { InformeMedicionComun } from "../components/mediciones/InformeMedicion";
 import { AccionesRegistro, BusquedaRegistro, EstadoVacioRegistro2 } from "../components/mediciones/ControlesRegistro.jsx";
 import useRegistro from "../logicaPantallas/useRegistro.js";
@@ -10,7 +9,6 @@ function PaginaRegistro() {
   const {
     medicionesApi, conteoMedicionesApi, setMedicionApiSeleccionadaId,
     setRevision, errorDetalle, cargandoDetalle,
-    comparadas, setComparadas, puedeComparar, textoComparar,
     errorApi, archivosCargados,
     setArchivoSeleccionadoId, errorImportacion, importando,
     busquedaEnsayos, setBusquedaEnsayos, busquedaMediciones,
@@ -24,7 +22,7 @@ function PaginaRegistro() {
     descargarMedicionRegistro, descargarMedicionApiRegistro, descargarMedicionImportadaRegistro,
     borrarMedicionApiRegistro, borrarMedicionImportadaRegistro, borrarMedicionRegistro,
     descargarEnsayoApiRegistro, descargarEnsayoImportadoRegistro, borrarEnsayoApiRegistro,
-    borrarEnsayoImportadoRegistro, anadirAlComparador,
+    borrarEnsayoImportadoRegistro,
   } = useRegistro();
 
   return (
@@ -257,9 +255,6 @@ function PaginaRegistro() {
         </div>}
         <InformeMedicionComun
           cargando={usaApi && Boolean(medicionApiSeleccionada) && cargandoDetalle}
-          onComparar={medicionSeleccionada ? anadirAlComparador : null}
-          puedeComparar={puedeComparar}
-          textoComparar={textoComparar}
           medicion={medicionSeleccionada}
           titulo="Informe de medición"
           onDescargar={medicionSeleccionada ? descargarMedicionRegistro : null}
@@ -267,9 +262,6 @@ function PaginaRegistro() {
           nombreEnsayo={(usaApi ? ensayoApiSeleccionado?.nombre : ensayoArchivoSeleccionado?.nombre) || ""}
         />
       </section>
-      {comparadas.length > 0 && <ComparadorMediciones mediciones={comparadas}
-        onQuitar={clave => setComparadas(actual => actual.filter(item => item.clave !== clave))}
-        onLimpiar={() => setComparadas([])} />}
     </div>
   );
 }

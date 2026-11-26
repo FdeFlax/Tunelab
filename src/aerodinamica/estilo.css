@@ -1,66 +1,378 @@
+/* Contenedor y controles de Aerodinámica */
+
 .aerodinamica-lab {
   container-type: inline-size;
   color: var(--text-main);
   font-size: 14px;
   line-height: 1.5;
 }
-.aerodinamica-lab * { box-sizing: border-box; }
-.aerodinamica-lab [hidden] { display: none !important; }
-.aerodinamica-lab :is(button, input, select) { font: inherit; }
-.aerodinamica-lab :is(button, input, select, a):focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
-.aerodinamica-lab .laboratorio { background: #fff; border: 1px solid var(--claro-borde); border-radius: var(--tarjeta-radio); }
-.aerodinamica-lab :is(.configuracion, .resultados) { min-width: 0; padding: 24px; }
-.aerodinamica-lab button { min-height: 38px; padding: 8px 14px; border: 1px solid var(--control-borde); border-radius: var(--control-radio); background: #f7f9fb; color: inherit; font-weight: 500; line-height: 20px; cursor: pointer; }
-.aerodinamica-lab button:hover:not(:disabled) { background: var(--hover-recuadro-claro); border-color: var(--hover-borde-recuadro-claro); }
-.aerodinamica-lab button:disabled { opacity: .5; cursor: default; }
-.aerodinamica-lab button.primario { display: inline-flex; align-items: center; justify-content: center; gap: 8px; background: var(--primary); border-color: var(--primary); color: #fff; }
-.aerodinamica-lab button.primario:hover:not(:disabled) { background: var(--primary-hover); border-color: var(--primary-hover); }
-.aerodinamica-lab button.primario[aria-busy="true"] { opacity: 1; }
-.aerodinamica-lab button.primario > span { color: inherit; }
-.aerodinamica-lab .indicador-calculo { width: 14px; height: 14px; flex: 0 0 14px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: aero-girar 0.8s linear infinite; }
-@keyframes aero-girar { to { transform: rotate(360deg); } }
-@media (prefers-reduced-motion: reduce) { .aerodinamica-lab .indicador-calculo { animation: none; } }
-.aerodinamica-lab .acciones-laboratorio { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
-.aerodinamica-lab .acciones-calculo { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 8px; margin-left: auto; }
-.aerodinamica-lab .archivo-info { margin: 12px 0 0; min-width: 0; overflow-wrap: anywhere; color: var(--text-soft); }
-.aerodinamica-lab #estado-carga:not(:empty) { margin-top: 12px; }
-.aerodinamica-lab .control { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
-.aerodinamica-lab .control > label { display: block; margin: 0; font-size: 14px; font-weight: 500; line-height: 20px; color: var(--text-main); }
-.aerodinamica-lab .rango-con-valor { display: grid; grid-template-columns: minmax(0, 1fr) 68px; align-items: center; gap: 12px; height: 38px; }
-.aerodinamica-lab output { display: flex; justify-content: center; align-items: center; min-height: 38px; font-weight: 400; font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--text-main); }
-.aerodinamica-lab input[type="range"] { width: 100%; height: 38px; min-height: 38px; margin: 0; padding: 0; border: 0; accent-color: var(--primary); cursor: pointer; background: transparent; }
-.aerodinamica-lab input[type="range"]:disabled { cursor: default; }
-.aerodinamica-lab .estado-calculo { display: grid; gap: 8px; min-width: 0; margin-top: 20px; }
-.aerodinamica-lab .estado-calculo:has(#acceso-flujo[hidden]):has(#estado-flujo:empty) { display: none; }
-.aerodinamica-lab .ayuda { margin: 0; color: var(--text-soft); overflow-wrap: anywhere; }
-.aerodinamica-lab .ayuda:empty { display: none; }
-.aerodinamica-lab .ayuda.error { color: #a02e3d; }
-.aerodinamica-lab .ayuda.aviso { color: #80531a; }
-.aerodinamica-lab .ayuda.correcto { color: #32624b; }
-.aerodinamica-lab .bloqueo-flujo { margin-top: 20px; padding: 12px; background: #f7f8fa; border-left: 2px solid #b3bbc5; }
-.aerodinamica-lab .bloqueo-flujo p { margin: 8px 0; }
-.aerodinamica-lab #detalle-limites-flujo { color: var(--text-soft); }
-.aerodinamica-lab .resultados { border-top: 1px solid var(--claro-borde); }
-.aerodinamica-lab .vacio { display: grid; place-items: center; min-height: 280px; background: #f7f9fb; color: var(--text-soft); padding: 24px; text-align: center; }
-.aerodinamica-lab .vacio:has(.vista-objeto:not([hidden])) { padding: 0; }
-.aerodinamica-lab .vista-objeto { width: 100%; height: clamp(280px, 36vw, 400px); display: grid; place-items: center; }
-.aerodinamica-lab .vista-objeto canvas { width: 100%; height: 100%; image-rendering: auto; cursor: default; }
-.aerodinamica-lab .vista-objeto canvas:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
-.aerodinamica-lab .planos-flujo { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
-.aerodinamica-lab .plano-flujo { min-width: 0; }
-.aerodinamica-lab .plano-flujo h3 { margin: 0 0 12px; display: flex; align-items: center; justify-content: space-between; font-size: 16px; font-weight: 600; line-height: 24px; }
-.aerodinamica-lab .direccion-viento { color: var(--primary); font-size: 24px; font-weight: 400; }
-.aerodinamica-lab .plano-flujo > .control { margin-top: 16px; }
-.aerodinamica-lab .mapa { margin: 0; }
-.aerodinamica-lab .superficie-mapa { display: grid; place-items: center; background: #f7f9fb; min-width: 0; aspect-ratio: 101 / 71; }
-.aerodinamica-lab canvas { display: block; width: 100%; height: auto; image-rendering: pixelated; }
-.aerodinamica-lab #mapa-transversal { width: calc(100% * 71 / 101); }
+
+.aerodinamica-lab * {
+  box-sizing: border-box;
+}
+
+.aerodinamica-lab [hidden] {
+  display: none !important;
+}
+
+.aerodinamica-lab :is(button, input, select) {
+  font: inherit;
+}
+
+.aerodinamica-lab :is(button, input, select, a):focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 3px;
+}
+
+.aerodinamica-lab .laboratorio {
+  background: #fff;
+  border: 1px solid var(--claro-borde);
+  border-radius: var(--tarjeta-radio);
+}
+
+.aerodinamica-lab :is(.configuracion, .resultados) {
+  min-width: 0;
+  padding: 24px;
+}
+
+.aerodinamica-lab button {
+  min-height: 38px;
+  padding: 8px 14px;
+  border: 1px solid var(--control-borde);
+  border-radius: var(--control-radio);
+  background: #f7f9fb;
+  color: inherit;
+  font-weight: 500;
+  line-height: 20px;
+  cursor: pointer;
+}
+
+.aerodinamica-lab button:hover:not(:disabled) {
+  background: var(--hover-recuadro-claro);
+  border-color: var(--hover-borde-recuadro-claro);
+}
+
+.aerodinamica-lab button:disabled {
+  opacity: .5;
+  cursor: default;
+}
+
+.aerodinamica-lab button.primario {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+
+.aerodinamica-lab button.primario:hover:not(:disabled) {
+  background: var(--primary-hover);
+  border-color: var(--primary-hover);
+}
+
+.aerodinamica-lab button.primario[aria-busy="true"] {
+  opacity: 1;
+}
+
+.aerodinamica-lab button.primario > span {
+  color: inherit;
+}
+
+.aerodinamica-lab .indicador-calculo {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 14px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: aero-girar 0.8s linear infinite;
+}
+
+@keyframes aero-girar {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aerodinamica-lab .indicador-calculo {
+    animation: none;
+  }
+}
+
+/* Importación y configuración */
+
+.aerodinamica-lab .acciones-laboratorio {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.aerodinamica-lab .acciones-calculo {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.aerodinamica-lab .archivo-info {
+  margin: 12px 0 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--text-soft);
+}
+
+.aerodinamica-lab .entrada-flujo {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.aerodinamica-lab .entrada-flujo label {
+  margin: 0;
+  font-weight: 500;
+}
+
+.aerodinamica-lab .entrada-flujo input {
+  width: 100px;
+  min-height: 38px;
+  padding: 8px 10px;
+  border: 1px solid var(--control-borde);
+  border-radius: var(--control-radio);
+  background: #fff;
+  color: inherit;
+}
+
+.aerodinamica-lab .entrada-flujo span {
+  font-variant-numeric: tabular-nums;
+}
+
+.aerodinamica-lab .medidas-objeto {
+  flex-basis: 100%;
+  font-variant-numeric: tabular-nums;
+}
+
+.aerodinamica-lab #estado-carga:not(:empty) {
+  margin-top: 12px;
+}
+
+/* Posición de los cortes */
+
+.aerodinamica-lab .control {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.aerodinamica-lab .control > label {
+  display: block;
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  color: var(--text-main);
+}
+
+.aerodinamica-lab .rango-con-valor {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 68px;
+  align-items: center;
+  gap: 12px;
+  height: 38px;
+}
+
+.aerodinamica-lab output {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 38px;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--text-main);
+}
+
+.aerodinamica-lab input[type="range"] {
+  width: 100%;
+  height: 38px;
+  min-height: 38px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  accent-color: var(--primary);
+  cursor: pointer;
+  background: transparent;
+}
+
+.aerodinamica-lab input[type="range"]:disabled {
+  cursor: default;
+}
+
+/* Avisos del cálculo */
+
+.aerodinamica-lab .estado-calculo {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  margin-top: 20px;
+}
+
+.aerodinamica-lab .ayuda {
+  margin: 0;
+  color: var(--text-soft);
+  overflow-wrap: anywhere;
+}
+
+.aerodinamica-lab .ayuda:empty {
+  display: none;
+}
+
+.aerodinamica-lab .bloqueo-flujo {
+  margin-top: 20px;
+  padding: 12px;
+  background: #f7f8fa;
+  border-left: 2px solid #b3bbc5;
+}
+
+.aerodinamica-lab .bloqueo-flujo p {
+  margin: 8px 0;
+}
+
+.aerodinamica-lab #detalle-limites-flujo {
+  color: var(--text-soft);
+}
+
+/* Vista previa y mapas de velocidad */
+
+.aerodinamica-lab .resultados {
+  border-top: 1px solid var(--claro-borde);
+}
+
+.aerodinamica-lab .escala-flujo {
+  display: grid;
+  grid-template-columns: auto minmax(32px, 1fr) auto;
+  align-items: center;
+  gap: 4px 8px;
+  max-width: 280px;
+  margin-bottom: 20px;
+  font-variant-numeric: tabular-nums;
+}
+
+.aerodinamica-lab .escala-flujo > span:first-child {
+  grid-column: 1 / -1;
+}
+
+.aerodinamica-lab .escala-flujo > span {
+  white-space: nowrap;
+}
+
+.aerodinamica-lab .barra-escala {
+  height: 8px;
+}
+
+.aerodinamica-lab .vacio {
+  display: grid;
+  place-items: center;
+  min-height: 280px;
+  background: #f7f9fb;
+  color: var(--text-soft);
+  padding: 24px;
+  text-align: center;
+}
+
+.aerodinamica-lab .vacio:has(.vista-objeto:not([hidden])) {
+  padding: 0;
+}
+
+.aerodinamica-lab .vista-objeto {
+  width: 100%;
+  height: clamp(280px, 36vw, 400px);
+  display: grid;
+  place-items: center;
+}
+
+.aerodinamica-lab .vista-objeto canvas {
+  width: 100%;
+  height: 100%;
+  image-rendering: auto;
+  cursor: default;
+}
+
+.aerodinamica-lab .vista-objeto canvas:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: -2px;
+}
+
+.aerodinamica-lab .planos-flujo {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+}
+
+.aerodinamica-lab .plano-flujo {
+  min-width: 0;
+}
+
+.aerodinamica-lab .plano-flujo h3 {
+  margin: 0 0 12px;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 24px;
+}
+
+.aerodinamica-lab .plano-flujo > .control {
+  margin-top: 16px;
+}
+
+.aerodinamica-lab .mapa {
+  margin: 0;
+}
+
+.aerodinamica-lab .superficie-mapa {
+  display: grid;
+  place-items: center;
+  background: #f7f9fb;
+  min-width: 0;
+  aspect-ratio: 101 / 71;
+}
+
+.aerodinamica-lab canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  image-rendering: pixelated;
+}
+
+.aerodinamica-lab #mapa-transversal {
+  width: calc(100% * 71 / 101);
+}
 
 @container (max-width: 760px) {
-  .aerodinamica-lab .planos-flujo { grid-template-columns: minmax(0, 1fr); gap: 28px; }
+  .aerodinamica-lab .planos-flujo {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 28px;
+  }
 }
+
 @container (max-width: 480px) {
-  .aerodinamica-lab :is(.configuracion, .resultados) { padding: 20px; }
-  .aerodinamica-lab .acciones-laboratorio { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .aerodinamica-lab .acciones-calculo { grid-column: 1 / -1; }
+  .aerodinamica-lab :is(.configuracion, .resultados) {
+    padding: 20px;
+  }
+
+  .aerodinamica-lab .acciones-laboratorio {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .aerodinamica-lab .acciones-calculo {
+    grid-column: 1 / -1;
+  }
 }

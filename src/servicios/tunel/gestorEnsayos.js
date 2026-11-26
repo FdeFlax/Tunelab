@@ -1,25 +1,17 @@
 import {
   actualizarEnsayoEnLista,
-  crearEnsayo,
   convertirMedicionAResumen,
   eliminarMedicionDeEnsayos,
-  generarCodigoEnsayo,
 } from "./estadoTunel";
+import { crearEnsayoDesdeApi } from "../mediciones/adaptarRegistros.js";
 
 export function crearGestorEnsayos({ obtenerEstado, registrarEvento }) {
   function crearNuevoEnsayo(datos) {
     const estado = obtenerEstado();
-    const codigo = datos?.codigo || generarCodigoEnsayo(estado.ensayos);
-    const ensayoNuevo = crearEnsayo({
-      codigo,
-      nombre: datos?.nombre || "Ensayo pendiente",
-      objetivo: datos?.objetivo || "Pendiente de definir",
-      descripcion: datos?.descripcion || "",
-    });
+    const ensayoNuevo = crearEnsayoDesdeApi(datos);
 
-    registrarEvento(`Ensayo ${ensayoNuevo.codigo} preparado`, {
+    registrarEvento(`Ensayo ${ensayoNuevo.nombre} preparado`, {
       ensayos: [ensayoNuevo, ...estado.ensayos],
-      etiquetaEnsayo: ensayoNuevo.codigo,
       ensayoActivoId: ensayoNuevo.id,
       resumenUltMed: null,
     });
@@ -40,7 +32,6 @@ export function crearGestorEnsayos({ obtenerEstado, registrarEvento }) {
 
     registrarEvento("Ensayos guardados cargados", {
       ensayos: ensayosPersistidos,
-      etiquetaEnsayo: ensayoActivo?.codigo || "Sin ficha preparada",
       ensayoActivoId: ensayoActivo?.id || null,
       resumenUltMed: convertirMedicionAResumen(ensayoActivo?.mediciones?.[0] || null),
     });
@@ -53,8 +44,7 @@ export function crearGestorEnsayos({ obtenerEstado, registrarEvento }) {
       return null;
     }
 
-    registrarEvento(`Ensayo ${ensayoSeleccionado.codigo} activado`, {
-      etiquetaEnsayo: ensayoSeleccionado.codigo,
+    registrarEvento(`Ensayo ${ensayoSeleccionado.nombre} activado`, {
       ensayoActivoId: ensayoSeleccionado.id,
     });
 
@@ -72,10 +62,8 @@ export function crearGestorEnsayos({ obtenerEstado, registrarEvento }) {
     const ensayosActualizados = actualizarEnsayoEnLista(estado.ensayos, idEnsayo, cambios);
     const ensayoActualizado = ensayosActualizados.find((ensayo) => ensayo.id === idEnsayo);
 
-    registrarEvento(`Ensayo ${ensayoActualizado.codigo} actualizado`, {
+    registrarEvento(`Ensayo ${ensayoActualizado.nombre} actualizado`, {
       ensayos: ensayosActualizados,
-      etiquetaEnsayo:
-        estado.ensayoActivoId === idEnsayo ? ensayoActualizado.codigo : estado.etiquetaEnsayo,
     });
 
     return ensayoActualizado;

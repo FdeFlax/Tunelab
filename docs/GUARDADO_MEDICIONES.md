@@ -1,29 +1,59 @@
-# Guardado al terminar una captura
+# Guardado de mediciones
 
-Corrección del 9 de septiembre de 2026 del hallazgo 2 de la auditoría.
+## Funcionamiento actual — 23/11/2026
 
-Antes, `Detener medicion` enviaba la captura a la API, mientras que `Apagar tunel` solo conservaba el informe en memoria. Registro consulta la API y no encontraba esa medición.
+Cada medición tiene un nombre, una consigna y una duración. No hay secuencias ni
+borradores de programas en el servidor. Para comparar 25 %, 50 % y 75 % se realizan
+tres mediciones dentro del mismo ensayo.
 
-Ambas acciones de Control utilizan ahora `finalizarCaptura`. Primero se ejecuta la parada solicitada y después se envían la nueva medición y todas sus muestras. El guardado se asocia al ensayo que estaba activo al terminar. Apagar sin una captura activa no vuelve a enviar el informe anterior; detener nuevamente una captura ya finalizada tampoco crea otro registro.
+1. El usuario conecta su sesión al simulador, selecciona el ensayo e introduce
+   nombre, consigna (1–100 %, pasos de 0,1) y duración (1–300 segundos, máximo 5 minutos).
+2. Tras la comprobación previa, `POST /api/tunel/capturas` envía `ensayo_id`,
+   `nombre`, `consigna`, `duracion_segundos` y una `clave` UUID.
+3. El servidor valida propiedad, cupo y nombre único dentro del ensayo. Enciende
+   a cero, aplica la consigna indicada e inicia el registro con su primera muestra.
+4. `CapturadorTunel` adquiere muestras periódicamente aunque se cierre el navegador.
+   Registra también la transición; no espera a que el flujo sea estable.
+5. Al alcanzar la duración prevista finaliza la medición y apaga el túnel. La sesión
+   permanece conectada para poder preparar otra medición.
+6. `POST /api/tunel/capturas/{medicion_id}/detener` cancela antes del plazo, apaga
+   el túnel y conserva las muestras parciales. El apagado y la liberación docente
+   también conservan lo registrado.
 
-La API recibe ahora esa captura completa mediante una única petición a `POST /ensayos/{ensayo_id}/mediciones/finalizar`. El backend exige al menos una muestra y confirma conjuntamente la medición, sus muestras y el evento de auditoría. Si falla la validación o la transacción, revierte todo: no queda una medición vacía en Registro.
+El ciclo de adquisición se ejecuta aproximadamente una vez por segundo. El cierre
+ocurre en el primer ciclo que alcanza el plazo; se guarda la duración real además
+de `duracion_prevista_segundos`. No se inventan muestras para rellenar retrasos.
 
-La pantalla muestra «Medición guardada en Registro» después de completar el envío de muestras. Si falla, muestra un aviso para descargar el informe antes de recargar o cerrar la página. El apagado no espera al guardado para enviar la orden de parada. Un error de guardado tampoco impide intentar liberar la conexión después de apagar. La API ya crea el evento de finalización, por lo que se ha eliminado el segundo evento redundante enviado por Control.
+La clave de inicio permite reintentar una solicitud sin crear otra medición. Una
+parada repetida dirigida a una medición antigua no detiene una nueva. Si falla el
+almacenamiento, se apaga el simulador y se conservan las muestras confirmadas.
+Tras un reinicio, las capturas interrumpidas quedan marcadas como error.
 
-## Verificación
+## Datos y archivos
 
-Desde la raíz del proyecto:
+- Las relaciones usan el ID numérico del ensayo, sin códigos adicionales `A-001`.
+- El nombre del ensayo puede repetirse; el de la medición es único en su ensayo.
+- Se eliminó la tabla `programas_etapas` con la migración `0a63de149258`.
+- Las mediciones nuevas tienen `programa = null`. El campo JSON se conserva solo
+  para consultar informes históricos por etapas; no ejecuta ninguna secuencia.
+- La exportación JSON 1.3 incluye la consigna y la duración prevista y real.
+  Continúan siendo legibles los archivos 1.0, 1.1 y 1.2.
+- El formulario se envía al iniciar. Ya no hay autoguardado de configuración;
+  cambiar de ensayo o recargar descarta el borrador, pero no una captura en curso.
 
-```powershell
-node --experimental-vm-modules --test --test-isolation=none tests/finalizarCaptura.test.mjs
-npx eslint src/pages/PaginaControl2.jsx src/servicios/tunel/finalizarCaptura.js
-npm run build
-```
+## Simplificación realizada
 
-Las siete pruebas automáticas de frontend pasan. Ejecutan el simulador y los servicios de finalización y API del proyecto con el reloj de captura controlado y respuestas HTTP simuladas. Cubren 25 muestras al apagar, parada seguida de apagado sin duplicar, apagado sin captura, el fallo de la petición completa, la obligación de tener ensayo activo y ensayo sin vínculo con la base de datos. Las 15 pruebas de backend incluyen una captura con medición, dos muestras y evento, además del rechazo de una captura vacía sin crear filas.
+Se retiraron `programador_etapas.py`, `datos_programa.py`, sus rutas de consulta,
+guardado, inicio y parada, y `autoguardadoPrograma.js`. La captura y su temporizador
+se gestionan en `capturas.py`, sin coordinar otra ejecución paralela.
 
-También se verificó la web compilada contra FastAPI y SQLite en memoria: se creó un ensayo, se capturaron 33 muestras y se apagó durante la medición. Registro mostró la captura y, tras recargar el navegador, recuperó sus 33 muestras. No se utilizó MySQL ni hardware. ESLint de los archivos modificados y la compilación terminaron correctamente; persiste el aviso previo de tamaño del visor 3D.
+Se mantienen las comprobaciones de permisos, límites, nombres, idempotencia,
+guardado transaccional y recuperación. El historial del diseño por etapas está en
+[ENSAYOS_POR_ETAPAS.md](ENSAYOS_POR_ETAPAS.md), marcado como documentación histórica.
 
-## Alcance pendiente
+## Comprobación
 
-Esta corrección cubre la parada y el apagado solicitados desde Control, con guardado transaccional de la captura completa. Falta recuperación automática al cerrar el navegador e idempotencia: si el navegador pierde la respuesta después de que el servidor confirme, un reintento podría duplicar la medición. La liberación forzada por un docente y el funcionamiento con hardware requieren su propia verificación.
+`backend/tests/test_capturas.py` cubre adquisición sin navegador, plazo sin esperar
+estabilidad, cierre con retraso, cancelación, reintentos, permisos, límites,
+fallos de escritura y recuperación. Usa SQLite aislado, no la base del laboratorio.
+Las pruebas del frontend comprueban el formulario, inicio/parada y sincronización.

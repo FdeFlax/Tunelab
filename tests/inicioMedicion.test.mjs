@@ -5,7 +5,7 @@ import { motivoBloqueoMedicion } from "../src/servicios/tunel/estadoTunel.js";
 const ensayo = { mediciones: [] };
 const preparado = {
   permiteCtrl: true, bloqSeg: false, estadoTunel: "RUNNING", flujoEstable: true,
-  medActiva: false, programa: null, limitesUso: { medicionesPorEnsayo: 3 },
+  medActiva: false, limitesUso: { medicionesPorEnsayo: 3 },
 };
 
 test("permite iniciar desde apagado o registrar la transición con el túnel encendido", () => {
@@ -17,7 +17,7 @@ test("permite iniciar desde apagado o registrar la transición con el túnel enc
   for (const cambio of [
     { permiteCtrl: false }, { bloqSeg: true }, { estadoTunel: "PARANDO" },
     { estadoTunel: "ERROR" }, { estadoTunel: "DESCONECTADO" },
-    { medActiva: true }, { programa: { activo: true, estado: "estabilizando" } },
+    { medActiva: true },
   ]) {
     assert.ok(motivoBloqueoMedicion({ ...preparado, ...cambio }, ensayo, true), JSON.stringify(cambio));
   }
@@ -30,7 +30,7 @@ test("respeta el límite del ensayo y vuelve a permitir medir tras liberar espac
 });
 
 test("una ejecución terminada o un error histórico no bloquean una nueva medición", () => {
-  const tunel = { ...preparado, programa: { activo: false, estado: "completado" },
+  const tunel = { ...preparado, medActiva: false,
     errorCaptura: "Captura anterior interrumpida" };
   assert.equal(motivoBloqueoMedicion(tunel, ensayo, true), "");
 });

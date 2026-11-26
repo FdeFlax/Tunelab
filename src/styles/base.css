@@ -13,6 +13,8 @@
   }
 }
 
+/* Variables compartidas */
+
 :root {
   --bg-main: #f1f4f7;
   --text-main: #1c2b3a;
@@ -62,6 +64,8 @@
   --analisis-secundario: var(--text-soft);
 }
 
+/* Estilos básicos y accesibilidad */
+
 * {
   box-sizing: border-box;
 }
@@ -80,15 +84,15 @@ select {
   font: inherit;
 }
 
-:where(button,a[href],summary,select,[role=button],[role=tab],input[type=button],input[type=submit],input[type=reset],input[type=checkbox],input[type=radio],input[type=range],input[type=file]):not(:disabled):not([aria-disabled=true]) {
+:where(button, a[href], summary, select, [role=button], [role=tab], input[type=button], input[type=submit], input[type=reset], input[type=checkbox], input[type=radio], input[type=range], input[type=file]):not(:disabled):not([aria-disabled=true]) {
   cursor: pointer;
 }
 
-:where(button,select,input,[role=button],[role=tab]):where(:disabled,[aria-disabled=true]) {
+:where(button, select, input, [role=button], [role=tab]):where(:disabled, [aria-disabled=true]) {
   cursor: not-allowed;
 }
 
-:is(button,input,textarea,select,summary,a,[tabindex]):focus-visible {
+:is(button, input, textarea, select, summary, a, [tabindex]):focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 3px;
 }
@@ -117,27 +121,29 @@ select {
   }
 }
 
+/* Páginas y paneles comunes */
+
 .page {
   gap: var(--seccion-gap);
   min-width: 0;
   display: grid;
 }
 
-:is(.ens2panel h3,.reg2panel h3,.dash2seccioncabecera h2,.dash2seccioncabecera h3,.dash2paneleventoscabecera h4) {
+:is(.ens2panel h3, .reg2panel h3, .dash2seccioncabecera h2, .dash2seccioncabecera h3, .dash2paneleventoscabecera h4) {
   margin: 0;
 }
 
-:is(.ens2panel,.reg2panel) {
+:is(.ens2panel, .reg2panel) {
   align-content: start;
 }
 
-:is(.ens2vacio p,.reg2vacio p) {
+:is(.ens2vacio p, .reg2vacio p) {
   margin: 0;
   line-height: 1.6;
 }
 
 @media (width<=820px) {
-  :is(.ens2panelcabecera,.reg2panelcabecera,.dash2seccioncabecera,.dash2paneleventoscabecera) {
+  :is(.ens2panelcabecera, .reg2panelcabecera, .dash2seccioncabecera, .dash2paneleventoscabecera) {
     flex-direction: column;
     align-items: stretch;
   }
@@ -203,26 +209,26 @@ body,
   background: var(--claro-relleno);
 }
 
-.app-shell .page :is(.cont2grid,.ens2gridprincipal,.reg2navegador,.docgrid,.dash2operacion,.dash2inferior) {
+.app-shell .page :is(.cont2grid, .ens2gridprincipal, .reg2navegador, .docgrid, .dash2operacion, .dash2inferior) {
   background: 0 0;
 }
 
-:is(.dash2seccioncabecera h2,.dash2seccioncabecera h3,.dash2paneleventoscabecera h4,.dash2panelprincipal h2,.ens2panel h3,.reg2panel h3,.docpanelcabecera h3,.dochistorialcabecera h3,.insppuntoscabecera h3,.inspactivotitulo) {
+:is(.dash2seccioncabecera h2, .dash2seccioncabecera h3, .dash2paneleventoscabecera h4, .dash2panelprincipal h2, .ens2panel h3, .reg2panel h3, .docpanelcabecera h3, .dochistorialcabecera h3, .insppuntoscabecera h3, .inspactivotitulo) {
   font-weight: 700;
 }
 
-:is(.dash2estadoflotante span,.dash2tarjeta span,.ens2campo span,.docpanelcabecera span,.inspselectoretiqueta) {
+:is(.dash2estadoflotante span, .dash2tarjeta span, .ens2campo span, .docpanelcabecera span, .inspselectoretiqueta) {
   letter-spacing: .02em;
   font-size: 11px;
 }
 
-:is(.cont2panelcabecera,.ens2panelcabecera,.reg2panelcabecera,.docpanelcabecera,.dochistorialcabecera,.dash2seccioncabecera,.dash2paneleventoscabecera,.inspactivocabecera,.insppuntoscabecera) {
+:is(.cont2panelcabecera, .ens2panelcabecera, .reg2panelcabecera, .docpanelcabecera, .dochistorialcabecera, .dash2seccioncabecera, .dash2paneleventoscabecera, .inspactivocabecera, .insppuntoscabecera) {
   border-bottom: 0;
   gap: 16px;
   padding-bottom: 0;
 }
 
-:is(.page--ensayo2 .ens2panelcabecera,.page--registro2 .reg2panelcabecera,.page--docente .docpanelcabecera,.page--docente .dochistorialcabecera) {
+:is(.page--ensayo2 .ens2panelcabecera, .page--registro2 .reg2panelcabecera, .page--docente .docpanelcabecera, .page--docente .dochistorialcabecera) {
   border-bottom: 0;
   justify-content: space-between;
   align-items: flex-start;
@@ -232,11 +238,11 @@ body,
   display: flex;
 }
 
-:is(.dash2card,.cont2panel,.ens2panel,.reg2panel,.docpanel) {
+:is(.dash2card, .cont2panel, .ens2panel, .reg2panel, .docpanel) {
   display: grid;
 }
 
-.app-shell .page :is(.dash2card,.cont2panel,.ens2panel,.reg2panel,.docpanel,.docinforme,.dochistorial,.inspactivo,.insppuntos) {
+.app-shell .page :is(.dash2card, .cont2panel, .ens2panel, .reg2panel, .docpanel, .docinforme, .dochistorial, .inspactivo, .insppuntos) {
   gap: var(--seccion-gap);
   min-width: 0;
   padding: var(--tarjeta-espacio);
@@ -257,18 +263,18 @@ body,
   }
 }
 
-.app-shell .page :is(.cont2conexion,.docusotunel) {
+.app-shell .page :is(.cont2conexion, .docusotunel) {
   padding: 16px var(--tarjeta-espacio);
   border-radius: var(--tarjeta-radio);
   box-shadow: none;
 }
 
-.app-shell .page :is(.cont2conexion:not(.cont2conexionocupada),.docusotunel:not(.docusotunelactivo)) {
+.app-shell .page :is(.cont2conexion:not(.cont2conexionocupada), .docusotunel:not(.docusotunelactivo)) {
   border-color: var(--tarjeta-borde);
   background: var(--claro-fondo);
 }
 
-.app-shell .page :is(.cont2panel h3,.cont2modal h3,.ens2panel h3,.reg2panel h3,.docpanelcabecera h3,.dochistorialcabecera h3,.dash2seccioncabecera h2,.dash2seccioncabecera h3,.inspactivotitulo,.insppuntoscabecera h3) {
+.app-shell .page :is(.cont2panel h3, .cont2modal h3, .ens2panel h3, .reg2panel h3, .docpanelcabecera h3, .dochistorialcabecera h3, .dash2seccioncabecera h2, .dash2seccioncabecera h3, .inspactivotitulo, .insppuntoscabecera h3) {
   font-size: var(--titulo-panel);
   letter-spacing: -.02em;
   margin: 0;

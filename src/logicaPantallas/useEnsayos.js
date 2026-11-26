@@ -5,7 +5,6 @@ import {
   asegurarUsuarioApi,
   listarEnsayosApi,
   listarMedicionesEnsayoApi,
-  vincularEnsayoApi,
   cargarMedicionApiCompleta,
 } from "../servicios/api/registroApi";
 import { crearEnsayoDesdeApi } from "../servicios/mediciones/adaptarRegistros";
@@ -121,7 +120,6 @@ export function useEnsayosPersistidos(usuario, accionesTunel) {
         const guardados = await Promise.all(ensayos.map(async ensayo => {
           const mediciones = await listarMedicionesEnsayoApi(ensayo.id);
           if (cancelado) return null;
-          vincularEnsayoApi(ensayo.codigo, ensayo);
           return crearEnsayoDesdeApi(ensayo, mediciones);
         }));
 

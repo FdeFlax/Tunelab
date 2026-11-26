@@ -1,5 +1,5 @@
 """Regresion del acceso: ejecutar desde backend con unittest discover -s tests."""
-import asyncio
+from datetime import datetime
 import json
 import os
 import unittest
@@ -18,7 +18,7 @@ from sqlalchemy.pool import StaticPool
 from app.base_datos import Base, obtener_sesion
 from app.configuracion import Configuracion, configuracion
 from app.main import app
-from app.tablas import Ensayo, EventoMedicion, Medicion, MuestraMedicion, RolUsuario, Usuario
+from app.tablas import Ensayo, EstadoMedicion, EventoMedicion, Medicion, MuestraMedicion, RolUsuario, Usuario
 from app.websocket_tunel import gestor_websocket_tunel
 
 
@@ -134,6 +134,8 @@ class AutenticacionTests(unittest.IsolatedAsyncioTestCase):
         docente = {"X-Usuario-Uacloud": "prof_demo"}
         status, trial = await peticion("POST", "/api/ensayos", alumno, {"nombre": "Prueba"})
         self.assertEqual(status, 200)
+        self.assertIsInstance(trial['id'], int)
+        self.assertNotIn('codigo', trial)
         self.assertEqual((await peticion("GET", f'/api/ensayos/{trial["id"]}/mediciones', docente))[0], 404)
         status, trials = await peticion("GET", "/api/docente/ensayos", docente)
         self.assertEqual(status, 200)
@@ -143,16 +145,15 @@ class AutenticacionTests(unittest.IsolatedAsyncioTestCase):
         self.demo()
         headers = {"X-Usuario-Uacloud": "alu_demo"}
         _, ensayo = await peticion("POST", "/api/ensayos", headers, {"nombre": "Para borrar"})
-        _, medicion = await peticion(
-            "POST",
-            f'/api/ensayos/{ensayo["id"]}/mediciones/finalizar',
-            headers,
-            {
-                "nombre": "Medición temporal",
-                "muestras": [{"instante": "2026-09-12T12:00:00", "velocidad_ms": 4.5}],
-            },
-        )
-        self.assertEqual(medicion["estado"], "finalizada")
+        with self.sessions.begin() as session:
+            medicion = Medicion(ensayo_id=ensayo["id"], nombre="Medición temporal",
+                                estado=EstadoMedicion.finalizada)
+            session.add(medicion)
+            session.flush()
+            medicion_id = medicion.id
+            session.add(MuestraMedicion(medicion_id=medicion_id, instante=datetime.utcnow(), velocidad_ms=4.5))
+            session.add(EventoMedicion(ensayo_id=ensayo["id"], medicion_id=medicion_id,
+                                      tipo="info", mensaje="Captura finalizada"))
         self.assertEqual((await peticion("DELETE", f'/api/ensayos/{ensayo["id"]}', headers))[0], 200)
 
         with self.sessions() as session:
@@ -162,77 +163,10 @@ class AutenticacionTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(
                 session.scalar(select(func.count(EventoMedicion.id)).where(
                     (EventoMedicion.ensayo_id == ensayo["id"])
-                    | (EventoMedicion.medicion_id == medicion["id"])
+                    | (EventoMedicion.medicion_id == medicion_id)
                 )),
                 0,
             )
-
-    async def test_finalizar_medicion_guarda_captura_completa_en_una_transaccion(self):
-        self.demo()
-        headers = {"X-Usuario-Uacloud": "alu_demo"}
-        _, ensayo = await peticion("POST", "/api/ensayos", headers, {"nombre": "Captura completa"})
-        status, medicion = await peticion(
-            "POST",
-            f'/api/ensayos/{ensayo["id"]}/mediciones/finalizar',
-            headers,
-            {
-                "nombre": "Barrido",
-                "velocidad_objetivo": 5,
-                "muestras": [
-                    {"instante": "2026-09-12T12:00:00", "velocidad_ms": 4.8},
-                    {"instante": "2026-09-12T12:00:01", "velocidad_ms": 5.1},
-                ],
-            },
-        )
-
-        self.assertEqual(status, 200)
-        self.assertEqual(medicion["estado"], "finalizada")
-        with self.sessions() as session:
-            self.assertEqual(session.scalar(select(func.count(Medicion.id))), 1)
-            self.assertEqual(
-                session.scalar(select(func.count(MuestraMedicion.id)).where(
-                    MuestraMedicion.medicion_id == medicion["id"]
-                )),
-                2,
-            )
-            self.assertEqual(
-                session.scalar(select(func.count(EventoMedicion.id)).where(
-                    EventoMedicion.medicion_id == medicion["id"]
-                )),
-                1,
-            )
-
-    async def test_finalizar_medicion_rechaza_una_captura_sin_muestras(self):
-        self.demo()
-        headers = {"X-Usuario-Uacloud": "alu_demo"}
-        _, ensayo = await peticion("POST", "/api/ensayos", headers, {"nombre": "Sin muestras"})
-        status, _ = await peticion(
-            "POST",
-            f'/api/ensayos/{ensayo["id"]}/mediciones/finalizar',
-            headers,
-            {"nombre": "Incompleta", "muestras": []},
-        )
-
-        self.assertEqual(status, 422)
-        with self.sessions() as session:
-            self.assertEqual(session.scalar(select(func.count(Medicion.id))), 0)
-            self.assertEqual(session.scalar(select(func.count(MuestraMedicion.id))), 0)
-
-    async def test_finalizar_rechaza_nombre_duplicado_sin_modificar_el_original(self):
-        self.demo()
-        headers = {"X-Usuario-Uacloud": "alu_demo"}
-        _, ensayo = await peticion("POST", "/api/ensayos", headers, {"nombre": "Prueba"})
-        ruta = f'/api/ensayos/{ensayo["id"]}/mediciones/finalizar'
-        datos = {"nombre": "Medición 1", "muestras": [{"instante": "2026-09-12T12:00:00", "velocidad_ms": 4.8}]}
-        status, original = await peticion("POST", ruta, headers, datos)
-        self.assertEqual(status, 200)
-        status, error = await peticion("POST", ruta, headers, {**datos, "nombre": "  MEDICIÓN   1 "})
-        self.assertEqual(status, 409)
-        self.assertIn("ese nombre", error["detail"])
-        with self.sessions() as session:
-            self.assertEqual(session.scalar(select(func.count(Medicion.id))), 1)
-            self.assertEqual(session.scalar(select(func.count(MuestraMedicion.id))), 1)
-            self.assertEqual(session.get(Medicion, original["id"]).nombre, datos["nombre"])
 
     async def test_demo_rechaza_cliente_remoto_y_sin_cliente(self):
         self.demo()

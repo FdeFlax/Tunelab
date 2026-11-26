@@ -7,14 +7,6 @@ function crearHoraEvento(fecha = new Date()) {
   });
 }
 
-function crearFechaCorta(fecha = new Date()) {
-  return fecha.toLocaleDateString("es-ES", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
-}
-
 function crearIdentificador() {
   return `${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
 }
@@ -31,34 +23,6 @@ export function crearEvento({ nivel, mensaje, etiqueta }) {
     etiqueta,
     mensaje,
   };
-}
-
-export function crearEnsayo({ codigo, nombre, objetivo, descripcion = "" }) {
-  return {
-    id: crearIdentificador(),
-    codigo,
-    nombre,
-    objetivo,
-    descripcion,
-    fecha: crearFechaCorta(),
-    hora: crearHoraEvento(),
-    estado: "Preparado",
-    mediciones: [],
-  };
-}
-
-export function generarCodigoEnsayo(ensayos = []) {
-  const maximo = ensayos.reduce((mayor, ensayo) => {
-    const coincidencia = String(ensayo.codigo || "").match(/A-(\d+)/);
-
-    if (!coincidencia) {
-      return mayor;
-    }
-
-    return Math.max(mayor, Number(coincidencia[1]));
-  }, 0);
-
-  return `A-${String(maximo + 1).padStart(3, "0")}`;
 }
 
 export function limitarAlarmasPorCategoria(alarmas) {
@@ -89,7 +53,6 @@ export function limitarAlarmasPorCategoria(alarmas) {
 export function crearEstadoTunelBase() {
   return {
     modoControl: "Control por software",
-    etiquetaEnsayo: "Sin ficha preparada",
     ensayoActivoId: null,
     ensayos: [],
     prioridadPanel: "Normal",
@@ -194,11 +157,24 @@ export function obtenerEnsayoActivo(estadoTunel) {
   return estadoTunel.ensayos.find((ensayo) => ensayo.id === estadoTunel.ensayoActivoId) || null;
 }
 
+export function validarMedicion(datos) {
+  if (!datos.nombre.trim()) return "Escribe el nombre de la medición.";
+  if (datos.nombre.trim().length > 40) return "El nombre admite hasta 40 caracteres.";
+  if (!Number.isFinite(datos.consigna) || datos.consigna < 1 || datos.consigna > 100) {
+    return "La consigna debe estar entre 1 y 100 %.";
+  }
+  if (Number(datos.consigna.toFixed(1)) !== datos.consigna) return "La consigna admite como máximo un decimal.";
+  if (!Number.isInteger(datos.duracion_segundos) || datos.duracion_segundos < 1 || datos.duracion_segundos > 300) {
+    return "La duración debe ser un número entero entre 1 y 300 segundos.";
+  }
+  return "";
+}
+
 export function motivoBloqueoMedicion(tunel, ensayo, puedeOperar) {
   if (!ensayo) return "Selecciona un ensayo antes de medir.";
   if (!puedeOperar || !tunel.permiteCtrl) return "Conecta el túnel para iniciar la medición.";
   if (tunel.bloqSeg) return "Revisa los avisos de seguridad antes de medir.";
-  if (tunel.programa?.activo || tunel.medActiva) return "Ya hay una medición en curso.";
+  if (tunel.medActiva) return "Ya hay una medición en curso.";
   if (!["READY", "RUNNING"].includes(tunel.estadoTunel)) return "El túnel no está disponible para iniciar la medición.";
   const limite = Number(tunel.limitesUso?.medicionesPorEnsayo || 15);
   if ((ensayo.mediciones?.length || 0) >= limite) return "Este ensayo ha alcanzado el límite de mediciones.";

@@ -24,6 +24,10 @@ export const ORIENTACIONES = Object.freeze({
 });
 export function leerCampo(volume, configuracion) {
   const { malla: shape, origenCm: origin, pasoCm: step } = configuracion;
+  const entradaMs = configuracion.aire?.velocidadMs;
+  // Umbral visual común: desde 20 m/s se usa el rojo, sin limitar los datos.
+  const escalaMaxMs = 20;
+  if (!Number.isFinite(entradaMs) || entradaMs <= 0) throw new Error('Falta la velocidad de entrada del mapa.');
   const bytes = shape.reduce((p, n) => p * n, 1) * 4;
   if (volume?.formato !== 'rapidez-f32le-xyz-v1' || volume.paso_cm !== step || !Array.isArray(volume.malla) || volume.malla.length !== 3 || volume.malla.some((n, i) => n !== shape[i]) || !Array.isArray(volume.origen_cm) || volume.origen_cm.length !== 3 || volume.origen_cm.some((n, i) => n !== origin[i]) || typeof volume.datos !== 'string' || volume.datos.length !== 4 * Math.ceil(bytes / 3)) throw new Error('El volumen recibido está incompleto o no es compatible.');
   const raw = atob(volume.datos);
@@ -34,13 +38,15 @@ export function leerCampo(volume, configuracion) {
   for (let i = 0; i < values.length; i++) {
     const value = view.getFloat32(i * 4, true);
     if (!Number.isFinite(value) || value !== -1 && (value < 0 || value > 15)) throw new Error('El volumen contiene valores inválidos.');
-    values[i] = value;
+    // El servidor entrega U/Uentrada; el mapa utiliza m/s y conserva la máscara sólida.
+    values[i] = value === -1 ? -1 : value * entradaMs;
   }
   return {
     shape,
     origin,
     step,
-    values
+    values,
+    escalaMaxMs
   };
 }
 export function limitesPlano(field, orientation) {
@@ -66,7 +72,7 @@ export function cortarCampo(field, orientation, position) {
     height = field.shape[axes.v];
   const xyz = [0, 0, 0];
   xyz[axes.normal] = indice;
-  const speed_ratio = Array.from({
+  const speed_ms = Array.from({
     length: height
   }, (_, v) => {
     xyz[axes.v] = v;
@@ -81,7 +87,8 @@ export function cortarCampo(field, orientation, position) {
   return {
     width,
     height,
-    speed_ratio,
+    speed_ms,
+    escalaMaxMs: field.escalaMaxMs,
     orientation,
     position,
     widthCm: (width - 1) * step,

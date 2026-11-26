@@ -12,7 +12,7 @@ import threading
 from time import monotonic
 from uuid import uuid4
 
-from app.flujo3d_datos import MODELO, PASOS, MAX_RESULTADO_BYTES, validar_resultado
+from app.flujo3d_datos import MODELO, FLUJO, PASOS, MAX_RESULTADO_BYTES, identificar_modelo, validar_resultado
 
 log = logging.getLogger(__name__)
 
@@ -31,6 +31,8 @@ class Trabajo:
     paso: int = 0
     fin: float | None = None
     firma: str = ""
+    modelo: str = MODELO
+    parametros: dict = field(default_factory=lambda: FLUJO)
     resultado: dict | None = None
     error: str = ""
     cancelar: threading.Event = field(default_factory=threading.Event)
@@ -99,10 +101,12 @@ class GestorFlujo3D:
                 job.estado, job.mensaje = "cancelando", "Deteniendo el cálculo…"
             return self._publico(job)
 
-    def enviar(self, id, datos, python):
+    def enviar(self, id, datos, python, parametros=FLUJO):
         with self.lock:
             job = self.trabajos[id]
-            job.firma = hashlib.sha256(MODELO.encode() + datos).hexdigest()
+            job.parametros = parametros
+            job.modelo = identificar_modelo(parametros)
+            job.firma = hashlib.sha256(job.modelo.encode() + datos).hexdigest()
             for other in self.trabajos.values():
                 if other.id != id and other.usuario == job.usuario and other.firma == job.firma and other.estado == "completado":
                     cached = self._publico(other, cache=True)
@@ -140,7 +144,8 @@ class GestorFlujo3D:
                 input_path, output_path = Path(directory) / "geometria.bin", Path(directory) / "mapas.json"
                 input_path.write_bytes(datos)
                 command = [python, str(self.raiz / "scripts/calcular-flujo3d.py"), "--input", str(input_path),
-                           "--output", str(output_path), "--modelo-esperado", MODELO]
+                           "--output", str(output_path), "--modelo-esperado", job.modelo,
+                           "--consigna", str(job.parametros['consignaPct'])]
                 environment = {**os.environ, "PYTHONUTF8": "1", "PYTHONUNBUFFERED": "1", "OMP_NUM_THREADS": "2", "OPENBLAS_NUM_THREADS": "2"}
                 with subprocess.Popen(command, cwd=self.raiz, env=environment, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                       text=True, encoding="utf-8", errors="replace",
@@ -175,7 +180,7 @@ class GestorFlujo3D:
                     elif timed_out:
                         final_message = "El cálculo ha superado el límite de 120 segundos y se ha detenido. Prueba una geometría más sencilla."
                     elif process.returncode == 0 and output_path.is_file() and output_path.stat().st_size < MAX_RESULTADO_BYTES:
-                        result = validar_resultado(json.loads(output_path.read_text(encoding="utf-8")))
+                        result = validar_resultado(json.loads(output_path.read_text(encoding="utf-8")), job.parametros)
                         final_state, final_message = "completado", "Mapas de flujo calculados."
                     else:
                         final_message = job.error or final_message

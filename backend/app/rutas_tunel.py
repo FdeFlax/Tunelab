@@ -1,13 +1,11 @@
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from app.base_datos import obtener_sesion
 from app.capturas import CapturadorTunel, obtener_capturador
-from app.datos_api import (CapturaIniciar, CapturaDetener, MuestraRespuesta, TunelConexionRespuesta,
-                          TunelConsignaCrear, TunelEstadoRespuesta, TunelMuestraRespuesta)
-from app.datos_programa import ProgramaConfig, ProgramaOrden, ProgramaRespuesta
+from app.datos_api import CapturaIniciar, MuestraRespuesta, TunelConexionRespuesta, TunelEstadoRespuesta
 from app.tablas import EventoMedicion, UsoTunel, Usuario
 from app.usuario_actual import obtener_usuario_actual, obtener_usuario_docente
 from app.websocket_tunel import gestor_websocket_tunel
@@ -53,84 +51,22 @@ async def conectar(usuario: Usuario = Depends(obtener_usuario_actual),
     return respuesta
 
 
-def aplicar_orden(capturador, sesion, usuario, datos, encender=False):
-    with capturador.bloqueo:
-        capturador.propietario(sesion, usuario.id)
-        capturador.programador.exigir_control_manual()
-        if capturador.activa_id or capturador.error_pendiente:
-            raise HTTPException(409, "Deten la captura antes de cambiar la consigna")
-        potencia = 0 if encender else datos.potencia_porcentaje
-        if encender:
-            capturador.controlador.encender(potencia)
-        else:
-            capturador.controlador.aplicar_consigna(potencia)
-        sesion.add(EventoMedicion(tipo="info", mensaje=f"{'Encendido' if encender else 'Consigna'}: {potencia}%."))
-        sesion.commit()
-        return capturador.estado(usuario.id)
-
-
-@router.post("/consigna", response_model=TunelEstadoRespuesta)
-def consigna(datos: TunelConsignaCrear, usuario: Usuario = Depends(obtener_usuario_actual),
-             capturador: CapturadorTunel = Depends(obtener_capturador), sesion: Session = Depends(obtener_sesion)):
-    return aplicar_orden(capturador, sesion, usuario, datos)
-
-
-@router.post("/encender", response_model=TunelEstadoRespuesta)
-def encender(datos: TunelConsignaCrear, usuario: Usuario = Depends(obtener_usuario_actual),
-             capturador: CapturadorTunel = Depends(obtener_capturador), sesion: Session = Depends(obtener_sesion)):
-    return aplicar_orden(capturador, sesion, usuario, datos, encender=True)
-
-
-@router.post("/medicion/iniciar", response_model=TunelEstadoRespuesta)
-def iniciar(datos: CapturaIniciar, usuario: Usuario = Depends(obtener_usuario_actual),
-            capturador: CapturadorTunel = Depends(obtener_capturador)):
+@router.post("/capturas", response_model=TunelEstadoRespuesta)
+def iniciar_captura(datos: CapturaIniciar, usuario: Usuario = Depends(obtener_usuario_actual),
+                     capturador: CapturadorTunel = Depends(obtener_capturador)):
     return capturador.iniciar(usuario.id, datos)
 
 
-@router.get("/programas/{ensayo_id}", response_model=ProgramaRespuesta | None)
-def ver_programa(ensayo_id: int, usuario: Usuario = Depends(obtener_usuario_actual),
-                 capturador: CapturadorTunel = Depends(obtener_capturador)):
-    return capturador.programador.consultar(usuario.id, ensayo_id)
-
-
-@router.put("/programas/{ensayo_id}", response_model=ProgramaRespuesta)
-def guardar_programa(ensayo_id: int, datos: ProgramaConfig, usuario: Usuario = Depends(obtener_usuario_actual),
+@router.post("/capturas/{medicion_id}/detener", response_model=TunelEstadoRespuesta)
+def detener_captura(medicion_id: int, usuario: Usuario = Depends(obtener_usuario_actual),
                      capturador: CapturadorTunel = Depends(obtener_capturador)):
-    return capturador.programador.guardar(usuario.id, ensayo_id, datos)
-
-
-@router.post("/programa/iniciar", response_model=TunelEstadoRespuesta)
-def iniciar_programa(datos: ProgramaOrden, usuario: Usuario = Depends(obtener_usuario_actual),
-                     capturador: CapturadorTunel = Depends(obtener_capturador)):
-    capturador.programador.iniciar(usuario.id, datos)
-    return capturador.estado(usuario.id)
-
-
-@router.post("/programa/detener", response_model=TunelEstadoRespuesta)
-def detener_programa(datos: ProgramaOrden, usuario: Usuario = Depends(obtener_usuario_actual),
-                     capturador: CapturadorTunel = Depends(obtener_capturador)):
-    capturador.programador.detener(usuario.id, datos)
-    return capturador.estado(usuario.id)
-
-
-@router.post("/medicion/detener", response_model=TunelEstadoRespuesta)
-def detener(datos: CapturaDetener, usuario: Usuario = Depends(obtener_usuario_actual),
-            capturador: CapturadorTunel = Depends(obtener_capturador)):
-    return capturador.detener(usuario.id, datos.medicion_id)
+    return capturador.detener(usuario.id, medicion_id)
 
 
 @router.get("/capturas/{medicion_id}/muestras", response_model=list[MuestraRespuesta])
 def muestras(medicion_id: int, despues_de: int = Query(default=0, ge=0),
              usuario: Usuario = Depends(obtener_usuario_actual), capturador: CapturadorTunel = Depends(obtener_capturador)):
     return capturador.muestras(usuario.id, medicion_id, despues_de)
-
-
-@router.get("/muestra", response_model=TunelMuestraRespuesta)
-def muestra(usuario: Usuario = Depends(obtener_usuario_actual), capturador: CapturadorTunel = Depends(obtener_capturador),
-            sesion: Session = Depends(obtener_sesion)):
-    with capturador.bloqueo:
-        capturador.propietario(sesion, usuario.id)
-        return capturador.controlador.leer_muestra()
 
 
 @router.post("/apagar", response_model=TunelEstadoRespuesta)

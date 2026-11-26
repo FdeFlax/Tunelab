@@ -1,17 +1,45 @@
-.page--control2 :is(.cont2conexion span,.cont2conexion strong,.cont2campoestado span,.cont2campoestado strong,.cont2campo span,.cont2alerta strong,.cont2alertahora,.cont2campo input) {
+.page--control2 :is(.cont2conexion span, .cont2conexion strong, .cont2campoestado span, .cont2campoestado strong, .cont2campo span, .cont2alerta strong, .cont2alertahora, .cont2campo input) {
   font-weight: 400;
 }
 
-.page--control2 :is(.cont2conexion span,.cont2campoestado span,.cont2campo span) {
+.page--control2 :is(.cont2conexion span, .cont2campoestado span, .cont2campo span) {
   font-size: 12px;
 }
 
+/* Paneles y lecturas del túnel */
+
 .cont2grid {
   grid-template-columns: repeat(2,minmax(0,1fr));
-  grid-template-areas: "programa programa""seguridad estado";
+  grid-template-areas: "registro registro""seguridad estado";
   align-items: stretch;
   display: grid;
   gap: var(--seccion-gap);
+}
+
+.cont2datos {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+
+.cont2datos :is(th, td) {
+  border: 1px solid var(--claro-borde);
+  padding: 12px;
+  text-align: center;
+}
+
+.cont2datos th {
+  background: var(--claro-suave);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.page--control2 .cont2datos td {
+  color: var(--text-main);
+  font-size: 20px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .cont2panel {
@@ -80,6 +108,8 @@
   grid-template-columns: repeat(2,minmax(0,1fr));
 }
 
+/* Comprobación previa a la medición */
+
 .cont2popupfondo {
   z-index: 80;
   background: #07122085;
@@ -111,7 +141,7 @@
   display: flex;
 }
 
-.app-shell :is(.page--control2,.page--dashboard2) .cont2modalcomprobaciones {
+.app-shell .page--control2 .cont2modalcomprobaciones {
   border: 1px solid var(--tarjeta-borde);
   border-radius: var(--tarjeta-radio);
   background: #fff;
@@ -120,13 +150,6 @@
   max-height: calc(100dvh - 48px);
   padding: 28px;
   overflow-y: auto;
-}
-
-.app-shell :is(.page--control2,.page--dashboard2) .cont2modalintroduccion {
-  color: #53677b;
-  margin: 8px 0 0;
-  font-size: 14px;
-  line-height: 1.6;
 }
 
 .cont2checklist {
@@ -138,15 +161,7 @@
   display: grid;
 }
 
-.cont2checklist legend {
-  letter-spacing: 1.2px;
-  text-transform: uppercase;
-  margin-bottom: 12px;
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.app-shell :is(.page--control2,.page--dashboard2) .cont2checkitem {
+.app-shell .page--control2 .cont2checkitem {
   min-height: 48px;
   color: var(--text-main);
   border-radius: var(--control-radio);
@@ -161,18 +176,18 @@
   display: grid;
 }
 
-.app-shell :is(.page--control2,.page--dashboard2) .cont2checkitem:hover {
+.app-shell .page--control2 .cont2checkitem:hover {
   background: #f7f9fb;
   border-color: #aabccc;
 }
 
-.app-shell :is(.page--control2,.page--dashboard2) .cont2checkitem span {
+.app-shell .page--control2 .cont2checkitem span {
   color: inherit;
   font-size: 14px;
   line-height: 1.45;
 }
 
-.app-shell :is(.page--control2,.page--dashboard2) .cont2potenciaconfirmacion {
+.app-shell .page--control2 .cont2potenciaconfirmacion {
   border-radius: var(--control-radio);
   background: #f7f9fb;
   border: 1px solid #d6e0e8;
@@ -188,7 +203,7 @@
 }
 
 @media (width<=520px) {
-  .app-shell :is(.page--control2,.page--dashboard2) .cont2modalcomprobaciones {
+  .app-shell .page--control2 .cont2modalcomprobaciones {
     gap: 18px;
     padding: 18px;
   }
@@ -199,91 +214,45 @@
   padding: 10px 12px;
 }
 
-.cont2programa {
-  grid-area: programa;
+/* Registro de la medición */
+
+.cont2registro {
+  grid-area: registro;
 }
 
-.app-shell .page--control2 .cont2panel.cont2programa {
+.app-shell .page--control2 .cont2panel.cont2registro {
   gap: 28px;
 }
 
-.page--control2 .cont2programacabecera {
-  flex-direction: row;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding-bottom: 20px;
-  border-bottom: 1px solid var(--claro-borde);
+.cont2registroform .cont2accionmedicion {
+  justify-self: end;
 }
 
-.cont2programacabecera .cont2accionmedicion {
-  margin-left: auto;
-}
-
-.cont2programaform,
-.cont2programaprogreso {
+.cont2registroform {
   gap: 28px;
   display: grid;
 }
 
-.cont2programaform p {
+.cont2registroform p {
   margin: 0;
 }
 
-.cont2programaresumen {
-  grid-template-columns: minmax(0,560px);
+.cont2registrocampos {
+  grid-template-columns: repeat(2,minmax(0,1fr));
   align-items: start;
   gap: 20px;
   display: grid;
 }
 
-.cont2programaensayo {
+.cont2registroprogreso {
   display: grid;
-  gap: 6px;
-  min-width: 0;
-}
-
-.cont2programaensayo>span {
-  font-size: var(--titulo-interior);
-  font-weight: 700;
-}
-
-.cont2programaensayo>strong {
-  font-size: 14px;
-  font-weight: 400;
-  line-height: 1.5;
-  overflow-wrap: anywhere;
-}
-
-.page--control2 .cont2programaetapas legend {
-  color: var(--text-main);
-  letter-spacing: 0;
-  text-transform: none;
-  font-size: 16px;
-  font-weight: 700;
-}
-
-.cont2programaetapas {
-  border: 0;
-  min-width: 0;
-  margin: 0;
-  padding: 0;
-}
-
-.cont2programaetapas legend {
-  margin-bottom: 12px;
-}
-
-.cont2programaaccionesfila {
-  flex-wrap: nowrap;
-  gap: 8px;
-  display: flex;
+  grid-template-columns: minmax(0,1fr) auto;
   align-items: center;
-  justify-content: center;
+  gap: 16px;
+  font-variant-numeric: tabular-nums;
 }
 
-.cont2programaprogreso progress {
+.cont2registroprogreso progress {
   width: 100%;
   height: 10px;
   accent-color: var(--primary);
@@ -292,20 +261,20 @@
 @media (width<=1180px) {
   .cont2grid {
     grid-template-columns: 1fr;
-    grid-template-areas: "programa""seguridad""estado";
+    grid-template-areas: "registro""seguridad""estado";
   }
 }
 
 @media (width<=900px) {
-  .cont2programaresumen,
+  .cont2registrocampos,
   .cont2tablasistema {
     grid-template-columns: 1fr;
   }
 }
 
 @media (width<=680px) {
-  .app-shell .page--control2 .cont2panel.cont2programa,
-  .cont2programaform {
+  .app-shell .page--control2 .cont2panel.cont2registro,
+  .cont2registroform {
     gap: 24px;
   }
 
@@ -315,6 +284,8 @@
     align-items: flex-start;
   }
 }
+
+/* Conexión y ocupación */
 
 .cont2conexionacciones {
   gap: 10px;
@@ -368,10 +339,6 @@
 .app-shell .cont2modal {
   background: var(--claro-fondo);
   border-color: #b8c8d5;
-}
-
-.app-shell .cont2checklist legend {
-  color: #5f7183;
 }
 
 .app-shell .cont2potenciaconfirmacion span {
@@ -434,12 +401,6 @@
   border: 0;
 }
 
-.cont2panelcabecera h3 {
-  font-size: var(--titulo-panel);
-  letter-spacing: -.02em;
-  line-height: 1.3;
-}
-
 .app-shell .cont2conexion {
   color: var(--text-main);
   border-color: #c5d2de;
@@ -474,11 +435,11 @@
   font-size: 10.5px;
 }
 
-.app-shell :is(.page--control2,.page--dashboard2) .cont2popupfondo {
+.app-shell .page--control2 .cont2popupfondo {
   background-color: #06121f2e;
 }
 
-.app-shell :is(.page--control2,.page--dashboard2) .cont2popupfondo .cont2modalcomprobaciones {
+.app-shell .page--control2 .cont2popupfondo .cont2modalcomprobaciones {
   backdrop-filter: none;
   background-color: #fff;
 }
@@ -570,7 +531,7 @@
 }
 
 .app-shell .page--control2 .cont2paneltitulo>div,
-.app-shell .page--control2 .cont2conexion :is(.cont2conexionestado,.cont2conexionestadofila,.cont2conexionacciones) {
+.app-shell .page--control2 .cont2conexion :is(.cont2conexionestado, .cont2conexionestadofila, .cont2conexionacciones) {
   background: 0 0;
 }
 

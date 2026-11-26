@@ -1,8 +1,7 @@
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, Field
-from app.datos_programa import ProgramaRespuesta
+from pydantic import BaseModel, ConfigDict, Field
 
 
 # Estos modelos definen los datos que entran y salen por la API.
@@ -18,7 +17,6 @@ class EnsayoActualizar(EnsayoCrear):
 
 class EnsayoRespuesta(BaseModel):
     id: int
-    codigo: str
     nombre: str
     objetivo: str | None
     descripcion: str | None
@@ -30,19 +28,6 @@ class EnsayoRespuesta(BaseModel):
     model_config = {"from_attributes": True}
 
 
-class MedicionCrear(BaseModel):
-    nombre: str = Field(min_length=1, max_length=80)
-    velocidad_objetivo: float | None = Field(default=None, ge=0, le=25)
-    potencia_objetivo: float | None = Field(default=None, ge=0, le=100)
-    temperatura_objetivo: float | None = None
-    duracion_segundos: int | None = Field(default=None, ge=0)
-    velocidad_media: float | None = Field(default=None, ge=0)
-    velocidad_maxima: float | None = Field(default=None, ge=0)
-    velocidad_minima: float | None = Field(default=None, ge=0)
-    temperatura_media: float | None = None
-    potencia_media: float | None = Field(default=None, ge=0, le=100)
-
-
 class MedicionRespuesta(BaseModel):
     id: int
     ensayo_id: int
@@ -52,6 +37,7 @@ class MedicionRespuesta(BaseModel):
     potencia_objetivo: float | None
     temperatura_objetivo: float | None
     duracion_segundos: int | None
+    duracion_prevista_segundos: int | None = None
     velocidad_media: float | None
     velocidad_maxima: float | None
     velocidad_minima: float | None
@@ -98,27 +84,6 @@ class EnsayoDocenteRespuesta(EnsayoRespuesta):
     ultima_medicion_en: datetime | None = None
 
 
-class MuestraCrear(BaseModel):
-    instante: datetime
-    velocidad_ms: float | None = Field(default=None, ge=0)
-    temperatura_c: float | None = None
-    potencia_porcentaje: float | None = Field(default=None, ge=0, le=100)
-    frecuencia_hz: float | None = Field(default=None, ge=0)
-    corriente_a: float | None = Field(default=None, ge=0)
-    rpm: int | None = Field(default=None, ge=0)
-
-
-class MedicionFinalizar(MedicionCrear):
-    muestras: list[MuestraCrear] = Field(min_length=1, max_length=20000)
-
-
-class EventoCrear(BaseModel):
-    tipo: str = Field(default="info", min_length=1, max_length=30)
-    mensaje: str = Field(min_length=1, max_length=500)
-    ensayo_id: int | None = None
-    medicion_id: int | None = None
-
-
 class MuestraRespuesta(BaseModel):
     id: int
     medicion_id: int
@@ -158,10 +123,6 @@ class TunelConexionRespuesta(BaseModel):
 
     model_config = {"from_attributes": True}
 
-class TunelConsignaCrear(BaseModel):
-    potencia_porcentaje: float = Field(ge=0, le=100)
-
-
 class TunelEstadoRespuesta(BaseModel):
     conectado_fisico: bool
     encendido: bool
@@ -182,26 +143,12 @@ class TunelEstadoRespuesta(BaseModel):
     captura: MedicionRespuesta | None = None
     total_muestras: int = 0
     error_captura: str | None = None
-    programa: ProgramaRespuesta | None = None
 
 
 class CapturaIniciar(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True, allow_inf_nan=False)
     ensayo_id: int = Field(gt=0)
     clave: UUID
-    nombre: str = Field(min_length=1, max_length=80)
-
-
-class CapturaDetener(BaseModel):
-    medicion_id: int = Field(gt=0)
-
-
-class TunelMuestraRespuesta(BaseModel):
-    instante: datetime
-    velocidad_ms: float
-    temperatura_c: float
-    potencia_porcentaje: float
-    frecuencia_hz: float
-    corriente_a: float
-    rpm: int
-    fuente: str
-
+    nombre: str = Field(min_length=1, max_length=40)
+    consigna: float = Field(ge=1, le=100, multiple_of=0.1)
+    duracion_segundos: int = Field(ge=1, le=300, strict=True)

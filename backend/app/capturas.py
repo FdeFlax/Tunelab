@@ -11,7 +11,6 @@ from app.control_tunel import CALIBRACION
 from app.configuracion_tunel import TUNEL
 from app.datos_api import MedicionRespuesta, MuestraRespuesta
 from app.ensayos import exigir_nombre_medicion_disponible
-from app.programador_etapas import ProgramadorEtapas
 from app.tablas import Ensayo, EstadoMedicion, EventoMedicion, Medicion, MuestraMedicion, UsoTunel
 
 logger = logging.getLogger(__name__)
@@ -27,7 +26,6 @@ class CapturadorTunel:
         self.hilo = None
         self.activa_id = None
         self.error_pendiente = None
-        self.programador = ProgramadorEtapas(self)
 
     @staticmethod
     def propietario(sesion, usuario_id):
@@ -54,23 +52,9 @@ class CapturadorTunel:
         ultimo_instante = sesion.scalar(select(func.max(MuestraMedicion.instante)).where(MuestraMedicion.medicion_id == medicion.id))
         medicion.fecha_fin = (ultimo_instante or medicion.fecha_inicio) if estado == EstadoMedicion.error else datetime.utcnow()
         medicion.duracion_segundos = max(0, int((medicion.fecha_fin - medicion.fecha_inicio).total_seconds()))
-        if medicion.programa:
-            # El JSON se reasigna para que SQLAlchemy persista también los cambios internos.
-            etapas = []
-            for etapa in medicion.programa["etapas"]:
-                if etapa["estado"] in ("registrando", "estabilizando"):
-                    fin = max(etapa.get("cambio_segundo") or etapa["inicio_segundo"] or 0,
-                              (medicion.fecha_fin - medicion.fecha_inicio).total_seconds())
-                    etapa = {**etapa, "estado": "parcial", "fin_segundo": fin}
-                    if "tramos_estables" in etapa:
-                        etapa["tramos_estables"] = [{**t, "fin": max(t["inicio"], fin)} if t["fin"] is None else t
-                                                    for t in etapa["tramos_estables"]]
-                etapas.append(etapa)
-            medicion.programa = {**medicion.programa, "etapas": etapas}
 
     def recuperar_interrumpidas(self):
         with self.bloqueo, self.sesiones.begin() as sesion:
-            self.programador.recuperar_interrumpidos(sesion)
             for medicion in sesion.scalars(select(Medicion).where(
                 Medicion.captura_clave.is_not(None), Medicion.estado == EstadoMedicion.en_curso
             )):
@@ -112,20 +96,27 @@ class CapturadorTunel:
                             self.cerrar_registro(sesion, medicion, EstadoMedicion.error)
                             self.evento(sesion, medicion, "Captura interrumpida por fallo de almacenamiento; muestras confirmadas conservadas.", "error")
                     self.error_pendiente = None
+                terminar = None
                 if self.activa_id is not None:
                     with self.sesiones.begin() as sesion:
                         medicion = sesion.get(Medicion, self.activa_id)
                         if not medicion or medicion.estado != EstadoMedicion.en_curso:
-                            self.controlador.detener_medicion()
+                            self.controlador.apagar()
                             self.activa_id = None
                         else:
+                            propietario = sesion.get(Ensayo, medicion.ensayo_id).usuario_id
+                            self.propietario(sesion, propietario)
+                            if not self.controlador.leer_estado()["encendido"]:
+                                raise RuntimeError("El túnel se ha apagado durante la medición")
                             muestra = self.controlador.leer_muestra()
                             muestra.pop("fuente", None)
                             sesion.add(MuestraMedicion(medicion_id=medicion.id, **muestra))
                             medicion.duracion_segundos = max(0, int((muestra["instante"] - medicion.fecha_inicio).total_seconds()))
-                self.programador.tick()
+                            if medicion.duracion_prevista_segundos is not None and medicion.duracion_segundos >= medicion.duracion_prevista_segundos:
+                                terminar = (propietario, medicion.id)
+                if terminar:
+                    self.detener(*terminar, estado_final=EstadoMedicion.finalizada)
             except Exception:
-                self.programador.fallar()
                 self.error_pendiente = self.activa_id or self.error_pendiente
                 self.activa_id = None
                 self.controlador.apagar()
@@ -141,60 +132,66 @@ class CapturadorTunel:
         estado["total_muestras"] = sesion.scalar(select(func.count(MuestraMedicion.id)).where(
             MuestraMedicion.medicion_id == medicion.id)) if medicion else 0
         estado["error_captura"] = "No se pudo guardar; captura detenida. Recuperando el estado del registro." if self.error_pendiente else None
-        estado["programa"] = self.programador.estado_usuario(sesion, usuario_id)
         return estado
 
     def estado(self, usuario_id, captura_id=None):
         with self.bloqueo, self.sesiones() as sesion:
             return self._estado(sesion, usuario_id, captura_id)
 
-    def iniciar(self, usuario_id, datos, interno=False, programa=None):
+    def iniciar(self, usuario_id, datos):
         with self.bloqueo:
-            if not interno:
-                self.programador.exigir_control_manual()
-            with self.sesiones.begin() as sesion:
-                ensayo = sesion.get(Ensayo, datos.ensayo_id)
-                if not ensayo or ensayo.usuario_id != usuario_id:
-                    raise HTTPException(404, "Ensayo no encontrado")
-                anterior = sesion.scalar(select(Medicion).where(Medicion.captura_clave == str(datos.clave)))
-                if anterior:
-                    if anterior.ensayo_id != ensayo.id:
-                        raise HTTPException(409, "Esta clave pertenece a otra captura")
-                    return self._estado(sesion, usuario_id, anterior.id)
-                self.propietario(sesion, usuario_id)
-                if self.activa_id or self.error_pendiente:
-                    raise HTTPException(409, "Ya hay una captura activa o pendiente de recuperar")
-                nombre = datos.nombre.strip() or "Medicion"
-                exigir_nombre_medicion_disponible(sesion, ensayo.id, nombre)
-                if sesion.scalar(select(func.count(Medicion.id)).where(Medicion.ensayo_id == ensayo.id)) >= configuracion.limite_mediciones_por_ensayo:
-                    raise HTTPException(409, "Este ensayo ha alcanzado el limite de mediciones")
-                estado = self.controlador.leer_estado()
-                if not estado["encendido"]:
-                    raise HTTPException(409, "Enciende el túnel antes de registrar")
-                medicion = Medicion(ensayo_id=ensayo.id, nombre=nombre,
-                    captura_clave=str(datos.clave), estado=EstadoMedicion.en_curso,
-                    fecha_inicio=datetime.utcnow(), duracion_segundos=0,
-                    potencia_objetivo=estado["potencia_objetivo"], velocidad_objetivo=estado["velocidad_objetivo_ms"],
-                    fuente=estado["fuente"], calibracion_version=CALIBRACION["version"], programa=programa)
-                sesion.add(medicion)
-                sesion.flush()
-                identificador = medicion.id
-                muestra = self.controlador.leer_muestra()
-                muestra.pop("fuente", None)
-                sesion.add(MuestraMedicion(medicion_id=identificador, **muestra))
-                self.evento(sesion, medicion, "Captura iniciada; adquisicion y guardado a cargo del servidor.")
-            self.activa_id = identificador
+            arrancando = False
+            identificador = None
             try:
-                self.controlador.iniciar_medicion()
+                with self.sesiones.begin() as sesion:
+                    ensayo = sesion.get(Ensayo, datos.ensayo_id)
+                    if not ensayo or ensayo.usuario_id != usuario_id:
+                        raise HTTPException(404, "Ensayo no encontrado")
+                    anterior = sesion.scalar(select(Medicion).where(Medicion.captura_clave == str(datos.clave)))
+                    if anterior:
+                        if (anterior.ensayo_id != ensayo.id or anterior.nombre != datos.nombre
+                                or float(anterior.potencia_objetivo) != datos.consigna
+                                or anterior.duracion_prevista_segundos != datos.duracion_segundos):
+                            raise HTTPException(409, "Esta clave pertenece a otra solicitud de medición")
+                        return self._estado(sesion, usuario_id, anterior.id)
+                    self.propietario(sesion, usuario_id)
+                    if self.activa_id or self.error_pendiente:
+                        raise HTTPException(409, "Ya hay una captura activa o pendiente de recuperar")
+                    exigir_nombre_medicion_disponible(sesion, ensayo.id, datos.nombre)
+                    total = sesion.scalar(select(func.count(Medicion.id)).where(Medicion.ensayo_id == ensayo.id))
+                    if total >= configuracion.limite_mediciones_por_ensayo:
+                        raise HTTPException(409, "Este ensayo ha alcanzado el límite de mediciones")
+                    if self.controlador.leer_estado()["fuente"] != "simulado":
+                        raise HTTPException(409, "La medición está disponible para el simulador del servidor")
+
+                    arrancando = True
+                    self.controlador.encender(0)
+                    estado = self.controlador.aplicar_consigna(datos.consigna)
+                    self.controlador.iniciar_medicion()
+                    medicion = Medicion(ensayo_id=ensayo.id, nombre=datos.nombre,
+                        captura_clave=str(datos.clave), estado=EstadoMedicion.en_curso,
+                        fecha_inicio=datetime.utcnow(), duracion_segundos=0,
+                        duracion_prevista_segundos=datos.duracion_segundos,
+                        potencia_objetivo=datos.consigna, velocidad_objetivo=estado["velocidad_objetivo_ms"],
+                        fuente=estado["fuente"], calibracion_version=CALIBRACION["version"])
+                    sesion.add(medicion)
+                    sesion.flush()
+                    identificador = medicion.id
+                    muestra = self.controlador.leer_muestra()
+                    muestra.pop("fuente", None)
+                    sesion.add(MuestraMedicion(medicion_id=identificador, **muestra))
+                    self.evento(sesion, medicion,
+                        f"Medición iniciada: {datos.consigna:g}%, duración de {datos.duracion_segundos} s.")
             except Exception:
-                self.error_pendiente, self.activa_id = identificador, None
+                if arrancando:
+                    self.controlador.apagar()
+                    self.error_pendiente = identificador
                 raise
+            self.activa_id = identificador
             return self.estado(usuario_id, identificador)
 
-    def detener(self, usuario_id, medicion_id, interno=False):
+    def detener(self, usuario_id, medicion_id, estado_final=EstadoMedicion.cancelada):
         with self.bloqueo:
-            if not interno:
-                self.programador.exigir_control_manual()
             try:
                 with self.sesiones.begin() as sesion:
                     medicion = sesion.scalar(select(Medicion).join(Ensayo).where(
@@ -208,9 +205,10 @@ class CapturadorTunel:
                             raise HTTPException(503, "El guardado esta pendiente de recuperar")
                         if self.activa_id != medicion.id:
                             raise HTTPException(409, "La captura no esta activa en este servidor")
-                        self.controlador.detener_medicion()
-                        self.cerrar_registro(sesion, medicion)
-                        self.evento(sesion, medicion, "Captura finalizada con las muestras confirmadas por el servidor.")
+                        self.controlador.apagar()
+                        self.cerrar_registro(sesion, medicion, estado_final)
+                        mensaje = "Medición completada." if estado_final == EstadoMedicion.finalizada else "Medición detenida; muestras parciales conservadas."
+                        self.evento(sesion, medicion, mensaje)
                 if self.activa_id == medicion_id:
                     self.activa_id = None
             except HTTPException:
@@ -229,7 +227,6 @@ class CapturadorTunel:
                 propietario = uso.usuario_id if uso and uso.conectado else None
                 if propietario is not None and propietario != usuario_id and not forzar:
                     raise HTTPException(409, "El tunel esta ocupado por otro usuario")
-            self.programador.cancelar(propietario)
             self.controlador.apagar()
             if self.activa_id:
                 self.detener(propietario, self.activa_id)

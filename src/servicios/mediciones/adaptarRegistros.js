@@ -69,6 +69,7 @@ function convertirMedicion(medicion, muestrasApi, eventosApi, docente) {
     fecha: docente ? formatearFechaHora(medicion.creado_en) : formatearFecha(medicion.creado_en),
     ...(docente ? {} : { hora: formatearHora(medicion.creado_en) }),
     durSeg: medicion.duracion_segundos ?? muestras.length,
+    duracionPrevistaSeg: medicion.duracion_prevista_segundos ?? null,
     totalMuestras: muestras.length,
     objVelMs: numero(medicion.velocidad_objetivo),
     objPotPct: numero(medicion.potencia_objetivo),
@@ -116,7 +117,6 @@ export function crearEnsayoDesdeApi(ensayo, mediciones = []) {
   return {
     id: `api-ensayo-${ensayo.id}`,
     apiId: ensayo.id,
-    codigo: ensayo.codigo,
     nombre: ensayo.nombre,
     objetivo: ensayo.objetivo || 'Sin objetivo definido',
     descripcion: ensayo.descripcion || '',

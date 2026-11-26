@@ -107,7 +107,7 @@
     "mediciones": [
       {
         "id": "foto-1",
-        "consignaPct": null,
+        "consignaPct": 100,
         "velocidadMs": 19.8,
         "velocidadMediaMs": 19.3,
         "temperaturaC": 22.2,
@@ -116,7 +116,7 @@
       },
       {
         "id": "foto-2",
-        "consignaPct": null,
+        "consignaPct": 75,
         "velocidadMs": 14.5,
         "velocidadMediaMs": 14,
         "temperaturaC": 21.9,
@@ -125,7 +125,7 @@
       },
       {
         "id": "foto-3",
-        "consignaPct": null,
+        "consignaPct": 50,
         "velocidadMs": 9.2,
         "velocidadMediaMs": 9,
         "temperaturaC": 21.7,
@@ -134,7 +134,7 @@
       },
       {
         "id": "foto-4",
-        "consignaPct": null,
+        "consignaPct": 25,
         "velocidadMs": 4,
         "velocidadMediaMs": 0.9,
         "temperaturaC": 21.4,
@@ -143,7 +143,7 @@
       },
       {
         "id": "foto-5",
-        "consignaPct": null,
+        "consignaPct": 0,
         "velocidadMs": 0,
         "velocidadMediaMs": 0,
         "temperaturaC": 21.2,

@@ -10,7 +10,7 @@
   display: flex;
 }
 
-:is(.dash2seccioncabecera>div,.dash2paneleventoscabecera>div) {
+:is(.dash2seccioncabecera>div, .dash2paneleventoscabecera>div) {
   gap: 7px;
   display: grid;
 }
@@ -312,7 +312,7 @@
   border-color: var(--claro-borde-suave);
 }
 
-.app-shell .page--dashboard2 .dash2ultimacuerpo :is(.dash2ultimaprincipal,.dash2ultimadatos>div) {
+.app-shell .page--dashboard2 .dash2ultimacuerpo :is(.dash2ultimaprincipal, .dash2ultimadatos>div) {
   background: 0 0;
 }
 
@@ -357,14 +357,13 @@
 }
 
 @media (width<=760px) {
-
   .dash2visor {
     height: 360px;
   }
 
   .dash2rejillapanel,
-.dash2panelacciones,
-.dash2ultimadatos {
+  .dash2panelacciones,
+  .dash2ultimadatos {
     grid-template-columns: 1fr;
   }
 
@@ -377,10 +376,6 @@
 .app-shell .dash2estadoflotante {
   background: #ffffffe6;
   border-color: #b8c8d5;
-}
-
-.app-shell .dash2tabs button {
-  border-left-color: #d3dde6;
 }
 
 .app-shell .dash2medidorfondo {
@@ -425,6 +420,7 @@
 }
 
 .app-shell .dash2tabs button {
+  border-left-color: #d3dde6;
   color: #4f6377;
   background: 0 0;
 }
@@ -444,7 +440,6 @@
   border-color: var(--claro-borde);
   box-shadow: none;
   color: var(--text-main);
-  background-color: var(--claro-fondo);
 }
 
 .app-shell .dash2card span {

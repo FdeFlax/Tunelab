@@ -4,11 +4,11 @@
   overscroll-behavior: contain;
 }
 
-:is(.reg2lista,.dash2eventoslista,.doclista,.docmedicioneslista)::-webkit-scrollbar {
+:is(.reg2lista, .dash2eventoslista, .doclista, .docmedicioneslista)::-webkit-scrollbar {
   width: 8px;
 }
 
-:is(.reg2lista,.dash2eventoslista,.doclista,.docmedicioneslista)::-webkit-scrollbar-thumb {
+:is(.reg2lista, .dash2eventoslista, .doclista, .docmedicioneslista)::-webkit-scrollbar-thumb {
   background: #8297b54d;
 }
 
@@ -23,7 +23,7 @@
   cursor: pointer;
 }
 
-.reg2itemensayo :is(.reg2itemfecha,.reg2itemcodigo),
+.reg2itemensayo :is(.reg2itemfecha, .reg2itemcodigo),
 .doclista .docitem span {
   font-style: normal;
   font-weight: 400;
@@ -206,12 +206,12 @@
   overflow-y: auto;
 }
 
-:is(.reg2lista,.doclista,.docmedicioneslista,.dochistoriallista)::-webkit-scrollbar-track {
+:is(.reg2lista, .doclista, .docmedicioneslista, .dochistoriallista)::-webkit-scrollbar-track {
   background: var(--lista-scroll-pista);
   margin-block: 0;
 }
 
-:is(.reg2item,.docitem,.docmedicion) {
+:is(.reg2item, .docitem, .docmedicion) {
   border: 1px solid var(--tarjeta-lista-borde);
   border-radius: var(--control-radio);
   text-align: left;
@@ -229,11 +229,11 @@
   padding-right: 82px;
 }
 
-:is(.reg2item,.docitem):hover {
+:is(.reg2item, .docitem):hover {
   transform: none;
 }
 
-:is(.reg2itemfecha,.reg2itemcodigo,.docitem span,.docitem small,.docitem em,.docmedicion span,.reg2item span) {
+:is(.reg2itemfecha, .reg2itemcodigo, .docitem span, .docitem small, .docitem em, .docmedicion span, .reg2item span) {
   color: var(--tarjeta-lista-secundario);
   letter-spacing: 0;
   text-transform: none;
@@ -242,7 +242,7 @@
   line-height: 1.4;
 }
 
-:is(.reg2item strong,.docitem strong,.docmedicion strong) {
+:is(.reg2item strong, .docitem strong, .docmedicion strong) {
   color: var(--tarjeta-lista-texto);
   overflow-wrap: anywhere;
   font-size: 14px;
@@ -258,15 +258,15 @@
   right: 8px;
 }
 
-:is(.dash2estadoflotante span,.dash2estadoflotante small,.dash2tarjeta span,.dash2tarjeta small,.dash2alertamini,.dash2tabs button,.ens2campo span,.ens2campo input,.ens2campo textarea,.docpanelcabecera span,.docpanelcabecera>strong,.docmedicion span,.inspselectoretiqueta,.inspselectorvalor,.inspactivotexto) {
+:is(.dash2estadoflotante span, .dash2estadoflotante small, .dash2tarjeta span, .dash2tarjeta small, .dash2alertamini, .dash2tabs button, .ens2campo span, .ens2campo input, .ens2campo textarea, .docpanelcabecera span, .docpanelcabecera>strong, .docmedicion span, .inspselectoretiqueta, .inspselectorvalor, .inspactivotexto) {
   font-weight: 400;
 }
 
-:is(.dash2estadoflotante strong,.dash2tarjeta strong,.dash2medidor strong,.docmedicion strong,.docusotuneldatos strong) {
+:is(.dash2estadoflotante strong, .dash2tarjeta strong, .dash2medidor strong, .docmedicion strong, .docusotuneldatos strong) {
   font-weight: 500;
 }
 
-:is(.dash2estadoflotante small,.dash2tarjeta small,.dash2medidor strong small,.docmedicion span,.inspactivotexto) {
+:is(.dash2estadoflotante small, .dash2tarjeta small, .dash2medidor strong small, .docmedicion span, .inspactivotexto) {
   font-size: 12px;
 }
 
@@ -274,110 +274,19 @@
   padding-bottom: 0;
 }
 
-.app-shell :is(.reg2item,.reg2itemensayo,.reg2itemmedicion,.docitem,.docmedicion,.inspitem,.inspselectoritem,.inspselectorcontrol,.visorpuntoboton):hover {
+.app-shell :is(.reg2item, .reg2itemensayo, .reg2itemmedicion, .docitem, .docmedicion, .inspitem, .inspselectoritem, .inspselectorcontrol, .visorpuntoboton):hover {
   background: var(--hover-recuadro-claro);
   border-color: var(--hover-borde-recuadro-claro);
   color: var(--text-main);
 }
 
-.app-shell :is(.reg2itemseleccionado,.reg2itemensayo.reg2itemseleccionado,.reg2itemmedicion.reg2itemseleccionado,.docitemactivo,.inspitemactivo,.inspselectoritemactivo,.visorpuntobotonactivo),
-.app-shell :is(.reg2itemseleccionado,.reg2itemensayo.reg2itemseleccionado,.reg2itemmedicion.reg2itemseleccionado,.docitemactivo,.inspitemactivo,.inspselectoritemactivo,.visorpuntobotonactivo):hover,
-.app-shell .page--registro2 :is(.reg2itemseleccionado,.reg2itemensayo.reg2itemseleccionado,.reg2itemmedicion.reg2itemseleccionado),
+.app-shell :is(.reg2itemseleccionado, .reg2itemensayo.reg2itemseleccionado, .reg2itemmedicion.reg2itemseleccionado, .docitemactivo, .inspitemactivo, .inspselectoritemactivo, .visorpuntobotonactivo),
+.app-shell :is(.reg2itemseleccionado, .reg2itemensayo.reg2itemseleccionado, .reg2itemmedicion.reg2itemseleccionado, .docitemactivo, .inspitemactivo, .inspselectoritemactivo, .visorpuntobotonactivo):hover,
+.app-shell .page--registro2 :is(.reg2itemseleccionado, .reg2itemensayo.reg2itemseleccionado, .reg2itemmedicion.reg2itemseleccionado),
 .app-shell .page--docente .docitemactivo,
-.app-shell .page--registro2 :is(.reg2itemensayo.reg2itemseleccionado,.reg2itemmedicion.reg2itemseleccionado) .reg2itemacciones {
+.app-shell .page--registro2 :is(.reg2itemensayo.reg2itemseleccionado, .reg2itemmedicion.reg2itemseleccionado) .reg2itemacciones {
   background: var(--seleccion-recuadro-claro);
   border-color: var(--seleccion-borde-recuadro-claro);
-}
-
-.cont2programatablaenvoltura {
-  border: 1px solid var(--claro-borde);
-  border-radius: var(--tabla-radio);
-  overflow-x: auto;
-}
-
-.cont2programatabla {
-  border-collapse: collapse;
-  table-layout: fixed;
-  width: 100%;
-  min-width: 680px;
-}
-
-.cont2programatabla :is(th,td) {
-  border-bottom: 1px solid var(--claro-borde-suave);
-  text-align: left;
-  vertical-align: middle;
-  padding: 12px 16px;
-  font-size: 14px;
-  line-height: 1.4;
-}
-
-.cont2programatabla thead {
-  background: var(--claro-suave);
-}
-
-.cont2programatabla thead th {
-  color: var(--text-soft);
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.cont2programatabla th:first-child {
-  text-align: center;
-  width: 56px;
-}
-
-.cont2programatabla th:nth-child(2) {
-  width: 24%;
-}
-
-.cont2programatabla th:nth-child(5) {
-  text-align: center;
-  width: 152px;
-}
-
-.cont2programatabla :is(th,td):is(:nth-child(3),:nth-child(4)) {
-  text-align: center;
-}
-
-.cont2programatabla tbody td:nth-child(2) {
-  color: var(--text-soft);
-  overflow-wrap: anywhere;
-}
-
-.cont2programatabla tbody tr.cont2programaetapa--activa {
-  background: #edf5fb;
-}
-
-.cont2programatabla .cont2programaanadir {
-  padding: 0;
-  border-top: 1px solid var(--claro-borde-suave);
-  border-bottom: 0;
-}
-
-.cont2programaanadir button {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  min-height: 44px;
-  padding: 12px 16px;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  color: var(--primary);
-  font: inherit;
-  font-weight: 600;
-  text-align: left;
-  cursor: pointer;
-}
-
-.cont2programaanadir button:hover:not(:disabled) {
-  background: #f3f6f9;
-}
-
-.cont2programaanadir button:disabled {
-  opacity: .5;
-  cursor: not-allowed;
 }
 
 .ens2tablaenvoltorio {
@@ -534,7 +443,7 @@
   font-weight: 500;
 }
 
-.app-shell .page--docente :is(.docgrid,.docpanelcabecera,.doclista,.docacciones,.docdetalletablas,.docmediciones,.docmedicioneslista) {
+.app-shell .page--docente :is(.docgrid, .docpanelcabecera, .doclista, .docacciones, .docdetalletablas, .docmediciones, .docmedicioneslista) {
   background: 0 0;
 }
 
@@ -549,7 +458,7 @@
   overflow: hidden;
 }
 
-.app-shell .page--docente .docdetalletabla :is(th,td) {
+.app-shell .page--docente .docdetalletabla :is(th, td) {
   border: 0;
   border-bottom: 1px solid var(--claro-borde-suave);
 }
@@ -559,9 +468,8 @@
   width: 175px;
 }
 
-.cont2programatabla tbody tr:last-child :is(th,td),
 .ens2tablaensayos tr:last-child td,
-.app-shell .page--docente .docdetalletabla tr:last-child :is(th,td) {
+.app-shell .page--docente .docdetalletabla tr:last-child :is(th, td) {
   border-bottom: 0;
 }
 
@@ -604,7 +512,7 @@
   width: 100%;
 }
 
-:is(.docdetalletabla th,.docdetalletabla td) {
+:is(.docdetalletabla th, .docdetalletabla td) {
   text-align: left;
 }
 

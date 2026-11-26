@@ -52,10 +52,9 @@ export default function useRegistro() {
     setRevision, error: errorApi, setError: setErrorApi, recargar: cargarEnsayosApi,
   } = useCatalogoEnsayos({ listarEnsayos: listarEnsayosApi, listarMediciones: listarMedicionesEnsayoApi,
     mensajeError: "No se ha podido conectar con MySQL." });
-  const [comparadas, setComparadas] = useState([]);
   const archivos = useArchivosRegistro();
   const {
-    archivosCargados, setArchivosCargados, archivoSeleccionadoId, setArchivoSeleccionadoId,
+    archivosCargados, setArchivosCargados, setArchivoSeleccionadoId,
     setGrupoArchivoSeleccionadoId, errorImportacion, setErrorImportacion, importando,
     inputArchivoRef, ensayosImportados, archivoSeleccionado, medicionArchivoSeleccionada,
     grupoArchivoSeleccionado,
@@ -121,7 +120,6 @@ export default function useRegistro() {
 
   function limpiarArchivos() {
     setArchivosCargados([]);
-    setComparadas(actual => actual.filter(item => item.origen === "api"));
     setArchivoSeleccionadoId(null);
     setGrupoArchivoSeleccionadoId(null);
     setErrorImportacion("");
@@ -180,7 +178,6 @@ export default function useRegistro() {
 
     try {
       await borrarMedicionApi(medicion.id);
-      setComparadas(actual => actual.filter(item => item.clave !== `api:${medicion.id}`));
       const restantes = medicionesApi.filter((item) => item.id !== medicion.id);
       setMedicionesApi(restantes);
       setMedicionApiSeleccionadaId((actual) => (actual === medicion.id ? restantes[0]?.id || null : actual));
@@ -201,7 +198,6 @@ export default function useRegistro() {
     if (!confirmado) return;
 
     const restantes = archivosCargados.filter((item) => item.id !== archivo.id);
-    setComparadas(actual => actual.filter(item => item.clave !== `archivo:${archivo.id}`));
     setArchivosCargados(restantes);
     setArchivoSeleccionadoId((actual) => (actual === archivo.id ? restantes[0]?.id || null : actual));
   }
@@ -256,7 +252,6 @@ export default function useRegistro() {
 
     try {
       await borrarEnsayoApi(ensayo.id);
-      setComparadas(actual => actual.filter(item => item.origen !== "api" || item.ensayoId !== ensayo.id));
       setEnsayosApi((actuales) => actuales.filter((item) => item.id !== ensayo.id));
       setMedicionesApi([]);
       setMedicionApiSeleccionadaId(null);
@@ -276,7 +271,6 @@ export default function useRegistro() {
 
     if (!confirmado) return;
 
-    setComparadas(actual => actual.filter(item => item.origen !== "archivo" || item.ensayoId !== grupo.id));
     setArchivosCargados((actuales) =>
       actuales.filter((archivo) => crearClaveEnsayoImportado(archivo.ensayo) !== grupo.id)
     );
@@ -284,28 +278,9 @@ export default function useRegistro() {
     setGrupoArchivoSeleccionadoId(null);
   }
 
-  const claveComparacion = usaApi ? `api:${medicionApiSeleccionadaId}` : `archivo:${archivoSeleccionadoId}`;
-  const enComparador = comparadas.some(item => item.clave === claveComparacion);
-  const sinMuestras = !medicionSeleccionada?.muestras?.length;
-  const enCurso = medicionSeleccionada?.estado === "en_curso";
-  const comparadorLleno = comparadas.length >= 4;
-  const puedeComparar = !sinMuestras && !enCurso && !enComparador && !comparadorLleno;
-  const textoComparar = enComparador ? "En el comparador" : enCurso ? "Medición en curso" :
-    sinMuestras ? "Sin muestras" : comparadorLleno ? "Límite: 4 mediciones" : "Añadir al comparador";
-
-  function anadirAlComparador() {
-    if (!puedeComparar) return;
-    const ensayo = usaApi ? ensayoApiSeleccionado : ensayoArchivoSeleccionado;
-    setComparadas(actual => actual.length >= 4 || actual.some(item => item.clave === claveComparacion) ? actual :
-      [...actual, { clave: claveComparacion, origen: usaApi ? "api" : "archivo",
-        ensayoId: usaApi ? ensayo.id : grupoArchivoSeleccionado.id,
-        ensayoNombre: ensayo.nombre, medicion: medicionSeleccionada }]);
-  }
-
   return {
     medicionesApi, conteoMedicionesApi, setMedicionApiSeleccionadaId,
     setRevision, errorDetalle, cargandoDetalle,
-    comparadas, setComparadas, puedeComparar, textoComparar,
     errorApi, archivosCargados,
     setArchivoSeleccionadoId, errorImportacion, importando,
     busquedaEnsayos, setBusquedaEnsayos, busquedaMediciones,
@@ -319,6 +294,6 @@ export default function useRegistro() {
     descargarMedicionRegistro, descargarMedicionApiRegistro, descargarMedicionImportadaRegistro,
     borrarMedicionApiRegistro, borrarMedicionImportadaRegistro, borrarMedicionRegistro,
     descargarEnsayoApiRegistro, descargarEnsayoImportadoRegistro, borrarEnsayoApiRegistro,
-    borrarEnsayoImportadoRegistro, anadirAlComparador,
+    borrarEnsayoImportadoRegistro,
   };
 }

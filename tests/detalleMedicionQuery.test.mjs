@@ -21,7 +21,7 @@ async function montar(t, cargar) {
     leerIdentidadApi: () => ({ identificador: usuario }),
     cargarMedicionApiCompleta: cargar,
     asegurarUsuarioApi() {}, listarEnsayosApi() {}, listarMedicionesEnsayoApi() {},
-    vincularEnsayoApi() {}, crearEnsayoDesdeApi() {},
+    crearEnsayoDesdeApi() {},
   };
   const dependencias = { react: React, '@tanstack/react-query': query };
   const modulo = new vm.SourceTextModule(readFileSync(new URL('../src/logicaPantallas/useEnsayos.js', import.meta.url), 'utf8'), { context: contexto });

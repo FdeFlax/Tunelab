@@ -6,7 +6,7 @@ import { leerCampo } from './campo.js';
 const finalizado = estado => ['completado', 'error', 'cancelado'].includes(estado);
 const errorDefinitivo = error => [401, 404].includes(error?.respuesta?.status);
 
-export function useFlujo(objeto) {
+export function useFlujo(objeto, consigna = null) {
   const usuario = leerIdentidadApi()?.identificador;
   const montado = useRef(false);
   const ocupado = useRef(false);
@@ -16,13 +16,15 @@ export function useFlujo(objeto) {
   const [campo, setCampo] = useState(null);
   const [aviso, setAviso] = useState('');
   const [cancelacionPedida, setCancelacionPedida] = useState(false);
+  const consignaValida = consigna === null || (typeof consigna === 'number' && Number.isFinite(consigna) && consigna >= 0 && consigna <= 100);
   const capacidad = useQuery({
-    queryKey: ['capacidad-flujo', usuario],
-    queryFn: ({ signal }) => pedirApi('/flujo3d/capacidad', { signal }),
+    queryKey: ['capacidad-flujo', usuario, consigna],
+    queryFn: ({ signal }) => pedirApi(`/flujo3d/capacidad${consigna === null ? '' : `?consigna=${consigna}`}`, { signal }),
+    enabled: consignaValida,
     staleTime: Infinity, gcTime: 0, refetchOnWindowFocus: false,
   });
   const inicio = useMutation({
-    mutationFn: datos => pedirApi(`/flujo3d/calculos?modelo=${encodeURIComponent(datos.modelo)}`, {
+    mutationFn: datos => pedirApi(`/flujo3d/calculos?modelo=${encodeURIComponent(datos.modelo)}&consigna=${datos.parametros.consignaPct}`, {
       method: 'POST', headers: { 'Content-Type': 'application/octet-stream' },
       body: datos.objeto.posiciones, signal: AbortSignal.timeout(25000),
     }),
@@ -50,15 +52,15 @@ export function useFlujo(objeto) {
   });
 
   useEffect(() => { montado.current = true; return () => { montado.current = false; }; }, []);
-  useEffect(() => { setCampo(null); setAviso(''); }, [objeto]);
+  useEffect(() => { setCampo(null); setAviso(''); }, [objeto, consigna]);
   const cancelarTrabajo = cancelacion.mutate;
   useEffect(() => {
-    if (!trabajo || !(cancelacionPedida || trabajo.objeto !== objeto) || cancelacionAutomatica.current === trabajo.id) return;
+    if (!trabajo || !(cancelacionPedida || trabajo.objeto !== objeto || trabajo.consigna !== consigna) || cancelacionAutomatica.current === trabajo.id) return;
     cancelacionAutomatica.current = trabajo.id;
     cancelando.current = true;
     setCancelacionPedida(true);
     cancelarTrabajo(trabajo.id);
-  }, [trabajo, objeto, cancelacionPedida, cancelarTrabajo]);
+  }, [trabajo, objeto, consigna, cancelacionPedida, cancelarTrabajo]);
 
   useEffect(() => {
     if (!trabajo) return;
@@ -70,23 +72,24 @@ export function useFlujo(objeto) {
     }
     const resultado = consulta.data;
     if (!resultado || !finalizado(resultado.estado)) return;
-    if (resultado.estado === 'completado' && trabajo.objeto === objeto && !cancelacionPedida) {
+    if (resultado.estado === 'completado' && trabajo.objeto === objeto && trabajo.consigna === consigna && !cancelacionPedida) {
       try {
         if (resultado.resultado.modelo !== trabajo.modelo) throw new Error('Configuración diferente.');
         setCampo(leerCampo(resultado.resultado.volumen, trabajo.parametros));
         setAviso('');
       } catch { setAviso('No se ha podido representar el resultado recibido. Vuelve a calcular para recuperarlo.'); }
-    } else setAviso(trabajo.objeto !== objeto ? 'Puedes calcular el nuevo objeto.' : resultado.mensaje || 'Cálculo cancelado.');
+    } else setAviso(trabajo.objeto !== objeto || trabajo.consigna !== consigna ? '' : resultado.mensaje || 'Cálculo cancelado.');
     ocupado.current = false;
     setTrabajo(null);
-  }, [consulta.data, consulta.error, trabajo, objeto, cancelacionPedida]);
+  }, [consulta.data, consulta.error, trabajo, objeto, consigna, cancelacionPedida]);
 
   function calcular() {
-    if (!objeto || ocupado.current || inicio.isPending || trabajo || !capacidad.data?.configurado) return;
+    if (!objeto || ocupado.current || inicio.isPending || trabajo || !consignaValida || capacidad.isFetching
+        || !capacidad.data?.configurado || !(capacidad.data.parametros.aire.velocidadMs > 0)) return;
     ocupado.current = true; cancelando.current = false;
     setCampo(null); setAviso(''); setCancelacionPedida(false);
     cancelacionAutomatica.current = null;
-    inicio.mutate({ objeto, modelo: capacidad.data.modelo, parametros: capacidad.data.parametros });
+    inicio.mutate({ objeto, consigna, modelo: capacidad.data.modelo, parametros: capacidad.data.parametros });
   }
   function cancelar() {
     if (cancelando.current) return;
@@ -98,6 +101,6 @@ export function useFlujo(objeto) {
       cancelarTrabajo(trabajo.id);
     }
   }
-  return { capacidad, campo, calcular, cancelar, activo: inicio.isPending || Boolean(trabajo), cancelacionPedida,
+  return { capacidad, campo, calcular, cancelar, consignaValida, activo: inicio.isPending || Boolean(trabajo), cancelacionPedida,
     aviso: consulta.isError && !errorDefinitivo(consulta.error) ? 'Se ha perdido la conexión. Intentando recuperar el cálculo…' : aviso };
 }

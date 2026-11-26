@@ -49,7 +49,6 @@ class Ensayo(Base):
     __tablename__ = "ensayos"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    codigo: Mapped[str] = mapped_column(String(30), unique=True, nullable=False)
     nombre: Mapped[str] = mapped_column(String(80), nullable=False)
     objetivo: Mapped[str | None] = mapped_column(String(160))
     descripcion: Mapped[str | None] = mapped_column(Text)
@@ -79,6 +78,7 @@ class Medicion(Base):
     fecha_inicio: Mapped[datetime | None] = mapped_column(fecha_precisa)
     fecha_fin: Mapped[datetime | None] = mapped_column(fecha_precisa)
     duracion_segundos: Mapped[int | None] = mapped_column(Integer)
+    duracion_prevista_segundos: Mapped[int | None] = mapped_column(Integer)
     velocidad_media: Mapped[float | None] = mapped_column(DECIMAL(6, 2))
     velocidad_maxima: Mapped[float | None] = mapped_column(DECIMAL(6, 2))
     velocidad_minima: Mapped[float | None] = mapped_column(DECIMAL(6, 2))
@@ -88,23 +88,6 @@ class Medicion(Base):
 
     ensayo: Mapped[Ensayo] = relationship(back_populates="mediciones")
     muestras: Mapped[list["MuestraMedicion"]] = relationship(back_populates="medicion")
-
-
-class ProgramaEtapas(Base):
-    __tablename__ = "programas_etapas"
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    ensayo_id: Mapped[int] = mapped_column(ForeignKey("ensayos.id"), unique=True, nullable=False)
-    nombre: Mapped[str] = mapped_column(String(40), nullable=False)
-    etapas: Mapped[list] = mapped_column(JSON, nullable=False)
-    estado: Mapped[str] = mapped_column(String(20), default="borrador", nullable=False)
-    clave: Mapped[str | None] = mapped_column(String(36))
-    indice_etapa: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
-    mediciones: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
-    fase_desde: Mapped[datetime | None] = mapped_column(fecha_precisa)
-    iniciado_en: Mapped[datetime | None] = mapped_column(DateTime)
-    finalizado_en: Mapped[datetime | None] = mapped_column(DateTime)
-    mensaje: Mapped[str | None] = mapped_column(String(250))
 
 
 class MuestraMedicion(Base):

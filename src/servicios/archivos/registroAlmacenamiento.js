@@ -23,7 +23,9 @@ export function guardarArchivosRegistro(archivos) {
 }
 
 export function crearClaveEnsayoImportado(ensayo = {}) {
-  return `${ensayo.codigo || "SIN-CODIGO"}::${ensayo.nombre || "Sin nombre"}`;
+  if (ensayo.id) return `ensayo-${ensayo.id}`;
+  // Los archivos antiguos conservan su agrupación aunque no tengan ID.
+  return JSON.stringify([ensayo.codigo, ensayo.nombre, ensayo.fecha, ensayo.hora]);
 }
 
 export function agruparArchivosPorEnsayo(archivos) {

@@ -4,7 +4,7 @@ Fecha de comprobación: 16 de noviembre de 2026.
 
 Tunelab integra la representación 3D de un túnel de viento, la preparación de ensayos, un simulador de operación y el registro de mediciones. También permite estudiar objetos GLB mediante un cálculo aerodinámico experimental con XLB. La revisión conserva la distribución visual y las funciones existentes y comprueba las bibliotecas incorporadas en la refactorización.
 
-Las pruebas automáticas y los recorridos de la web descritos aquí han terminado correctamente. **El cálculo XLB del elipsoide original de 20 cm a 19,8 m/s sigue siendo numéricamente inestable.** Se mantiene el rechazo de ese resultado. Otros dos casos concretos terminan, pero todavía no existe validación experimental de los mapas.
+Las pruebas automáticas y los recorridos de la refactorización descritos aquí terminaron correctamente. **En aquella revisión, el cálculo KBC del elipsoide original de 20 cm a 19,8 m/s seguía siendo numéricamente inestable.** Se mantuvo el rechazo de ese resultado. La actualización posterior a Smagorinsky se documenta al final; todavía no existe validación experimental de los mapas.
 
 ## Bibliotecas y responsabilidades
 
@@ -187,3 +187,51 @@ Es una copia del proyecto y del estado de cambios previo a esta revisión. No in
 - [Implementación oficial del stepper de XLB 0.3.1](https://github.com/Autodesk/XLB/blob/v0.3.1/xlb/operator/stepper/nse_stepper.py): referencia del motor efectivamente utilizado, incluida la implementación Warp. El artículo de 2024 describe la biblioteca basada en JAX; la versión instalada incorpora Warp.
 
 En la memoria conviene explicar qué necesidad resuelve cada biblioteca y qué integración aporta el proyecto. La aportación incluye el modelo del túnel, la interfaz, la organización de ensayos y mediciones, los permisos, las reglas de operación, el tratamiento de geometrías y la comunicación de resultados. No se atribuye al proyecto la implementación de Chart.js, los controles de Drei o el método físico de XLB.
+
+## Pruebas posteriores con el huevo y la galleta (16/11/2026)
+
+Estas pruebas son independientes de la refactorización anterior. **La alternativa Smagorinsky se probó primero mediante copias temporales del script. Posteriormente, el usuario autorizó su incorporación a la web, descrita en el apartado siguiente.**
+
+Se revisaron `gal-b-fried-egg-5383.glb` y `gal-b-cookie-5379.glb`, proporcionados desde Descargas. La geometría usada en las pruebas se obtuvo ejecutando las mismas funciones `importarGLB` y `geometriaAjustada` del frontend, a 20 cm de lado mayor y sin giro.
+
+- Huevo: 9610 triángulos, sólido cerrado, dimensiones 20 × 3,40597 × 19,29263 cm. KBC reproduce valores NaN al comprobar el paso 2000.
+- Galleta original: 10383 triángulos y 573 bordes abiertos distribuidos en seis contornos. Trimesh confirma el mismo defecto antes y después del procesamiento del frontend.
+- Galleta cerrada: se rellenaron los seis contornos con las operaciones de Blender, se triangularon las caras añadidas y se recalcularon las normales. La copia tiene 10944 triángulos, cero bordes abiertos y cuatro componentes de volumen positivo; conserva las dimensiones exteriores. No se sobrescribió el original. El relleno incorpora superficies que no existían y debe entenderse como una preparación geométrica, no como recuperación de una geometría física conocida.
+
+La copia está en `output/aerodinamica-modelos/gal-b-cookie-5379-cerrada.glb`. El archivo `revision-cierre.json` y la imagen `revision-geometria-galleta.png`, en esa misma carpeta, registran la reparación.
+
+Se probó `SmagorinskyLESBGK`, ya implementado en XLB 0.3.1, con su coeficiente predeterminado 0,17. Es un cambio de modelo: añade una aproximación de la turbulencia no resuelta. El coeficiente no está calibrado para este túnel. Se mantuvieron las medidas de foto-1, la viscosidad molecular derivada de ellas, D3Q27, FP32, las condiciones de contorno y las comprobaciones de fallo numérico.
+
+| Geometría y configuración | Resultado |
+| --- | --- |
+| Huevo, KBC, celda de 1 cm | NaN en el control del paso 2000. |
+| Huevo, Smagorinsky, celda de 1 cm | Completa 6000 pasos; 10,04 s en esta ejecución. |
+| Huevo, Smagorinsky, celda de 2/3 cm | Completa 9000 pasos; 34,19 s. Conserva el tiempo físico de la prueba anterior y Reynolds. |
+| Huevo, Smagorinsky, celda de 1 cm, ejecución prolongada | Completa 24000 pasos; 27,44 s. |
+| Galleta cerrada, KBC, celda de 1 cm | NaN en el control del paso 2800. |
+| Galleta cerrada, Smagorinsky, celda de 1 cm | Completa 6000 pasos; 10,05 s. |
+
+Una prueba inicial de celda de 0,5 cm no llegó a ejecutarse porque excedía el límite de dos millones de nodos de la configuración; se conservó ese límite. La comparación posterior usa 151 × 106 × 106 nodos.
+
+La comparación entre las dos mallas del huevo, al mismo tiempo físico y en 58859 puntos coincidentes que son fluido en ambas, da una diferencia absoluta media de rapidez relativa de 0,04935 y percentil 95 de 0,19573. **No se ha demostrado independencia de malla, convergencia temporal ni precisión experimental.** Terminar estas ejecuciones respalda la alternativa como candidata para mejorar la estabilidad, no como validación del gemelo digital.
+
+Reproducción: `tmp/diagnosticar-glb-usuario.mjs`, `tmp/cerrar-galleta-blender.py` y `tmp/probar-ajustes-flujo.py`. Registros: `tmp/huevo-les.log`, `tmp/huevo-les-fina.log`, `tmp/huevo-les-larga.log`, `tmp/galleta-cerrada-kbc.log` y `tmp/galleta-cerrada-les.log`. Los resultados experimentales están identificados como tales y no se introducen en la caché de la aplicación.
+
+Referencias de esta alternativa: [modelos disponibles en XLB](https://autodesk.github.io/XLB/), [Smagorinsky (1963)](https://doi.org/10/bhd6ks) y [relleno de huecos de Blender](https://docs.blender.org/manual/en/latest/modeling/meshes/editing/mesh/cleanup.html#fill-holes). Estas referencias justifican los métodos empleados, no los resultados de esta configuración concreta.
+
+## Incorporación de Smagorinsky a la web (16/11/2026)
+
+Tras la autorización del usuario se activó `collision_type="SmagorinskyLESBGK"` en `scripts/calcular-flujo3d.py`. Se usa el coeficiente predeterminado 0,17 de XLB 0.3.1 y se registran el nombre de la clase utilizada y su coeficiente real como `modelo_colision` y `coeficiente_smagorinsky` en cada resultado.
+
+`backend/app/flujo3d_datos.py` identifica ahora el cálculo como `xlb-031-smagorinsky-v6-<firma>`. Esto separa los resultados de los anteriores de KBC y mantiene la comprobación de correspondencia entre la API, el proceso de cálculo y la web. Se reinició únicamente la API local, con el túnel apagado y sin mediciones ni cálculos activos, y se recargó la página.
+
+No se modificaron las lecturas de `shared/tunel.json`, la viscosidad molecular, la malla de 1 cm, los 6000 pasos, las condiciones de contorno ni los umbrales de fallo. La reparación de la galleta se entrega como archivo separado: la web sigue rechazando el original abierto y no repara automáticamente los GLB.
+
+Validación de la integración:
+
+- Las 12 pruebas de `test_flujo3d.py` y las 9 de `test_configuracion_tunel.py` pasan. Se añadió una comprobación que rechaza un resultado con la firma anterior de KBC. Se usó `unittest` desde `backend`; el módulo de configuración requiere descubrimiento con `-s tests` por su importación del auxiliar `test_flujo3d`.
+- Pasan las 11 pruebas de campo, planos y ciclo de cálculo React seleccionadas para este cambio.
+- Desde la web, el huevo original y la galleta cerrada completan 6000 pasos y muestran los tres mapas. La API confirma `SmagorinskyLESBGK`, coeficiente 0,17 y contrato v6 en ambos. Los tiempos del proceso fueron 9,34 y 9,30 segundos, respectivamente.
+- Evidencias en `output/revision-smagorinsky/`: `huevo-web.png`, `galleta-web.png` y `resultados-web.json` (metadatos sin el campo volumétrico).
+
+La comprobación verifica la ejecución del software en esos casos. Continúan pendientes la independencia de malla, la convergencia temporal y la validación frente a medidas del túnel real.

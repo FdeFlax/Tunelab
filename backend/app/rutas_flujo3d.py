@@ -6,7 +6,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from starlette.concurrency import run_in_threadpool
 
 from app.configuracion import configuracion
-from app.flujo3d_datos import MAX_BYTES, MODELO, PASOS, FLUJO, validar_geometria
+from app.configuracion_tunel import TUNEL, parametros_flujo
+from app.flujo3d_datos import MAX_BYTES, identificar_modelo, validar_geometria
 from app.flujo3d_trabajos import FlujoOcupado
 from app.usuario_actual import obtener_usuario_actual
 
@@ -28,17 +29,31 @@ def obtener_gestor(request: Request):
 
 
 @router.get("/capacidad")
-def capacidad(usuario=Depends(obtener_usuario_actual), gestor=Depends(obtener_gestor)):
+def capacidad(consigna: float | None = Query(None, ge=0, le=100, allow_inf_nan=False),
+              usuario=Depends(obtener_usuario_actual), gestor=Depends(obtener_gestor)):
+    parametros = condiciones_calculo(consigna)
     return {"configurado": configuracion.flujo3d_habilitado and python_motor().is_file(),
-            "ocupado": gestor.ocupado(), "modelo": MODELO, "pasos": PASOS, "parametros": FLUJO,
+            "ocupado": gestor.ocupado(), "modelo": identificar_modelo(parametros),
+            "pasos": parametros['pasos'], "parametros": parametros,
             "mensaje": "El cálculo se ejecuta en el servidor; el navegador solo recibe los mapas."}
+
+
+def condiciones_calculo(consigna):
+    try:
+        return parametros_flujo(TUNEL, consigna)
+    except ValueError as error:
+        raise HTTPException(422, str(error)) from error
 
 
 @router.post("/calculos", status_code=202)
 async def calcular(request: Request, modelo: str | None = Query(None),
+                   consigna: float | None = Query(None, ge=0, le=100, allow_inf_nan=False),
                    usuario=Depends(obtener_usuario_actual), gestor=Depends(obtener_gestor)):
-    if modelo is not None and modelo != MODELO:
+    parametros = condiciones_calculo(consigna)
+    if modelo is not None and modelo != identificar_modelo(parametros):
         raise HTTPException(409, "La configuración ha cambiado. Recarga la página antes de calcular.")
+    if parametros['aire']['velocidadMs'] <= 0:
+        raise HTTPException(422, "El túnel está en reposo. Selecciona una consigna mayor que cero para calcular.")
     if not configuracion.flujo3d_habilitado or not python_motor().is_file():
         raise HTTPException(503, "El motor 3D no está configurado en el servidor.")
     if request.headers.get("content-type", "").split(";")[0] != "application/octet-stream":
@@ -60,7 +75,7 @@ async def calcular(request: Request, modelo: str | None = Query(None),
                 chunks.append(chunk)
         data = b"".join(chunks)
         await run_in_threadpool(validar_geometria, data)
-        return gestor.enviar(id, data, python_motor())
+        return gestor.enviar(id, data, python_motor(), parametros)
     except (ValueError, TimeoutError) as error:
         gestor.abandonar(id)
         raise HTTPException(422, str(error) or "La recepción del objeto ha tardado demasiado.") from error

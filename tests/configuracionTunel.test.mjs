@@ -62,7 +62,7 @@ test('una sección distinta genera los tres mapas y límites independientes del 
     const { min, step } = limitesPlano(field, orientation);
     const plane = cortarCampo(field, orientation, min + 7 * step);
     assert.equal(pixelesPlano(plane).length, plane.width * plane.height * 4);
-    assert.ok(plane.speed_ratio.flat().every(Number.isFinite));
+    assert.ok(plane.speed_ms.flat().every(Number.isFinite));
   }
   assert.equal(evaluarObjeto({ cerrado: true, medidas: [10, 10, 13], tamano: 13 }, config).titulo, 'Revisa el tamaño');
   assert.ok(maximoTamano([10, 10, 13], 13, config) < 13);

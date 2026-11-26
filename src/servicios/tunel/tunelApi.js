@@ -1,10 +1,9 @@
-import { crearEstadoTunelBase, limitarValor, limitarAlarmasPorCategoria } from "./estadoTunel";
+import { crearEstadoTunelBase, limitarAlarmasPorCategoria } from "./estadoTunel";
 import { crearGestorEnsayos } from "./gestorEnsayos";
 import { calcularMagnitudesDerivadas, calcularCargaAerodinamicaRelativaPct } from "./fichaTunel";
 import { crearMedicionDesdeApi, instanteApiMs } from "../mediciones/adaptarRegistros";
 import { leerIdentidadApi } from "../api/clienteApi";
-import { obtenerIdEnsayoApi } from "../api/registroApi";
-import { aplicarConsignaTunelApi, apagarTunelApi, encenderTunelApi, iniciarMedicionTunelApi, detenerMedicionTunelApi, leerMuestrasCapturaApi, verEstadoTunelApi, iniciarProgramaEtapasApi, detenerProgramaEtapasApi } from "../api/controlApi";
+import { apagarTunelApi, leerMuestrasCapturaApi, verEstadoTunelApi, iniciarMedicionApi, detenerMedicionApi } from "../api/controlApi";
 function estadoInicial() {
   return {
     ...crearEstadoTunelBase(),
@@ -14,7 +13,6 @@ function estadoInicial() {
     bloqSeg: true,
     capturaApi: null,
     errorCaptura: null,
-    programa: null,
     lecturasEnVivo: [],
     ultimaOrden: "Esperando al servidor",
     daq: "Pendiente de servidor",
@@ -32,7 +30,6 @@ export function crearTunelApi() {
   let ordenEnCurso = false;
   const suscriptores = new Set();
   const identidad = () => leerIdentidadApi()?.identificador;
-  const claveInicio = () => `tunelab_inicio_captura_${identidad()}`;
   function publicar(cambios) {
     estado = {
       ...estado,
@@ -57,14 +54,6 @@ export function crearTunelApi() {
     });
   }
   function integrarCaptura() {
-    const programa = ultimaRespuesta?.programa;
-    if (programa?.activo) {
-      const ensayo = estado.ensayos.find(e => Number(e.apiId ?? obtenerIdEnsayoApi(e.codigo)) === programa.ensayo_id);
-      if (ensayo) publicar({
-        ensayoActivoId: ensayo.id,
-        etiquetaEnsayo: ensayo.codigo
-      });
-    }
     const captura = ultimaRespuesta?.captura;
     if (!captura) {
       publicar({
@@ -76,7 +65,7 @@ export function crearTunelApi() {
       return;
     }
     const registro = crearMedicionDesdeApi(captura, muestrasApi);
-    const ensayo = estado.ensayos.find(e => Number(e.apiId ?? obtenerIdEnsayoApi(e.codigo)) === captura.ensayo_id);
+    const ensayo = estado.ensayos.find(e => e.apiId === captura.ensayo_id);
     const activa = captura.estado === "en_curso";
     publicar({
       capturaApi: captura,
@@ -96,7 +85,6 @@ export function crearTunelApi() {
         } : e),
         ...(activa ? {
           ensayoActivoId: ensayo.id,
-          etiquetaEnsayo: ensayo.codigo
         } : {})
       } : {})
     });
@@ -157,11 +145,10 @@ export function crearTunelApi() {
       cargaAerodinamicaRelativaPct: calcularCargaAerodinamicaRelativaPct(datos.velocidad_ms),
       estabilidadFlujoSeg: datos.estabilidad_segundos,
       flujoEstable: datos.flujo_estable,
-      programa: datos.programa ?? null,
       errorCaptura: datos.error_captura || (captura?.estado === "error" ? "Captura interrumpida. Las muestras confirmadas se conservan en Registro." : null)
     });
     integrarCaptura();
-    if (anterior?.captura?.estado === "en_curso" && (captura?.estado !== "en_curso" || captura?.id !== anterior.captura.id) || datos.programa?.clave && (datos.programa.indice_etapa !== anterior?.programa?.indice_etapa || datos.programa.estado !== anterior?.programa?.estado)) {
+    if (anterior?.captura?.estado === "en_curso" && (captura?.estado !== "en_curso" || captura?.id !== anterior.captura.id)) {
       window.dispatchEvent(new CustomEvent("tunelab:registro-actualizado"));
     }
     return true;
@@ -244,74 +231,32 @@ export function crearTunelApi() {
       };
     },
     obtenerEstado: () => estado,
-    async actualizarPotencia(potencia) {
-      try {
-        return await ordenar(() => aplicarConsignaTunelApi(limitarValor(Number(potencia) || 0, 0, 100)));
-      } catch (error) {
-        registrarEvento(error.detalle || "No se pudo aplicar la consigna");
-        return false;
-      }
-    },
     crearEnsayo: gestorEnsayos.crearNuevoEnsayo,
     cargarEnsayosPersistidos(ensayos) {
       gestorEnsayos.cargarEnsayosPersistidos(ensayos);
       integrarCaptura();
     },
     activarEnsayo(id) {
-      if (!estado.programa?.activo) gestorEnsayos.activarEnsayo(id);
+      if (!estado.medActiva) gestorEnsayos.activarEnsayo(id);
     },
     actualizarEnsayo: gestorEnsayos.actualizarEnsayo,
     eliminarMedicion: gestorEnsayos.eliminarMedicion,
-    encenderTunel: () => ordenar(encenderTunelApi),
     apagarTunel: () => ordenar(apagarTunelApi),
-    async iniciarPrograma(ensayoId, { encender = false } = {}) {
-      const clave = `tunelab_inicio_programa_${identidad()}_${ensayoId}`;
-      const intento = window.sessionStorage.getItem(clave) || crypto.randomUUID();
-      window.sessionStorage.setItem(clave, intento);
-      const respuesta = await ordenar(() => iniciarProgramaEtapasApi({
-        ensayo_id: ensayoId,
-        clave: intento,
-        encender,
-      }));
+    async iniciarMedicion(datos) {
+      const clave = `tunelab_inicio_medicion_${identidad()}_${datos.ensayo_id}`;
+      const solicitud = JSON.stringify(datos);
+      const pendiente = JSON.parse(window.sessionStorage.getItem(clave) || "null");
+      const intento = pendiente?.solicitud === solicitud ? pendiente.clave : crypto.randomUUID();
+      window.sessionStorage.setItem(clave, JSON.stringify({ solicitud, clave: intento }));
+      const respuesta = await ordenar(() => iniciarMedicionApi({ ...datos, clave: intento }));
       window.sessionStorage.removeItem(clave);
       return respuesta;
     },
-    detenerPrograma() {
-      const programa = estado.programa;
-      if (!programa?.clave) return Promise.reject(new Error("No hay un programa que detener"));
-      return ordenar(() => detenerProgramaEtapasApi({
-        ensayo_id: programa.ensayo_id,
-        clave: programa.clave
-      }));
-    },
-    async iniciarMedicion(opciones = {}) {
-      const ensayo = estado.ensayos.find(e => e.id === estado.ensayoActivoId);
-      const ensayoId = ensayo?.apiId ?? obtenerIdEnsayoApi(ensayo?.codigo);
-      if (!ensayoId) throw new Error("Prepara y selecciona un ensayo guardado antes de medir");
-      if (estado.medActiva) return true;
-      if (estado.estadoTunel !== "RUNNING") throw new Error("Enciende el túnel antes de registrar");
-      const nombre = String(opciones.nombreMed || "Medicion").trim();
-      let intento;
-      try {
-        intento = JSON.parse(window.sessionStorage.getItem(claveInicio()));
-      } catch {/* Crear una clave nueva. */}
-      if (intento?.ensayo_id !== ensayoId || intento?.nombre !== nombre) {
-        intento = {
-          ensayo_id: ensayoId,
-          nombre,
-          clave: crypto.randomUUID()
-        };
-        window.sessionStorage.setItem(claveInicio(), JSON.stringify(intento));
-      }
-      await ordenar(() => iniciarMedicionTunelApi(intento));
-      window.sessionStorage.removeItem(claveInicio());
-      return true;
-    },
     detenerMedicion() {
-      const id = estado.capturaApi?.id;
-      if (!id) return Promise.reject(new Error("No hay una captura que detener"));
-      return ordenar(() => detenerMedicionTunelApi(id));
-    }
+      const captura = estado.capturaApi;
+      if (!captura || captura.estado !== "en_curso") return Promise.reject(new Error("No hay una medición que detener"));
+      return ordenar(() => detenerMedicionApi(captura.id));
+    },
   };
 }
 export default crearTunelApi();

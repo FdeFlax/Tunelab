@@ -5,17 +5,14 @@ from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 
 from app.base_datos import obtener_sesion
-from app.ensayos import crear_ensayo_guardado, exigir_nombre_medicion_disponible
+from app.ensayos import crear_ensayo_guardado
 from app.rutas_tunel import router as router_tunel
-from app.configuracion import configuracion
 from app.datos_api import (
     EnsayoActualizar,
     EnsayoCrear,
     EnsayoDocenteRespuesta,
     EnsayoRespuesta,
-    EventoCrear,
     EventoRespuesta,
-    MedicionFinalizar,
     MedicionRespuesta,
     MuestraRespuesta,
     UltimaMedicionUsuarioRespuesta,
@@ -28,7 +25,6 @@ from app.tablas import (
     EventoMedicion,
     Medicion,
     MuestraMedicion,
-    ProgramaEtapas,
     Usuario,
 )
 from app.websocket_tunel import gestor_websocket_tunel
@@ -92,17 +88,7 @@ def guardar_evento(
     )
 
 
-def exigir_ensayo_sin_programa(sesion: Session, ensayo_id: int):
-    activo = sesion.scalar(select(ProgramaEtapas.id).where(
-        ProgramaEtapas.ensayo_id == ensayo_id,
-        ProgramaEtapas.estado.in_(("estabilizando", "registrando")),
-    ))
-    if activo:
-        raise HTTPException(409, "Detén el programa por etapas antes de modificar el ensayo o sus mediciones")
-
-
 def borrar_medicion_contenido(sesion: Session, medicion: Medicion):
-    exigir_ensayo_sin_programa(sesion, medicion.ensayo_id)
     if medicion.estado == EstadoMedicion.en_curso:
         raise HTTPException(409, "Deten la captura antes de borrar la medicion")
     sesion.execute(delete(EventoMedicion).where(EventoMedicion.medicion_id == medicion.id))
@@ -111,7 +97,6 @@ def borrar_medicion_contenido(sesion: Session, medicion: Medicion):
 
 
 def borrar_ensayo_contenido(sesion: Session, ensayo: Ensayo):
-    exigir_ensayo_sin_programa(sesion, ensayo.id)
     if sesion.scalar(select(Medicion.id).where(Medicion.ensayo_id == ensayo.id, Medicion.estado == EstadoMedicion.en_curso).limit(1)):
         raise HTTPException(409, "Deten la captura antes de borrar el ensayo")
     ids_mediciones = sesion.scalars(
@@ -124,7 +109,6 @@ def borrar_ensayo_contenido(sesion: Session, ensayo: Ensayo):
         sesion.execute(delete(Medicion).where(Medicion.id.in_(ids_mediciones)))
 
     sesion.execute(delete(EventoMedicion).where(EventoMedicion.ensayo_id == ensayo.id))
-    sesion.execute(delete(ProgramaEtapas).where(ProgramaEtapas.ensayo_id == ensayo.id))
     sesion.delete(ensayo)
 
 
@@ -177,7 +161,6 @@ def actualizar_ensayo(
     usuario_actual: Usuario = Depends(obtener_usuario_actual),
 ):
     ensayo = obtener_ensayo_del_usuario(ensayo_id, usuario_actual, sesion)
-    exigir_ensayo_sin_programa(sesion, ensayo.id)
 
     medicion_activa = sesion.scalar(
         select(Medicion).where(
@@ -196,7 +179,7 @@ def actualizar_ensayo(
     ensayo.descripcion = (datos.descripcion or "").strip() or None
     guardar_evento(
         sesion,
-        f"Ensayo {ensayo.codigo} actualizado por {usuario_actual.identificador_uacloud}.",
+        f"Ensayo {ensayo.nombre} actualizado por {usuario_actual.identificador_uacloud}.",
         ensayo_id=ensayo.id,
     )
 
@@ -211,12 +194,11 @@ def borrar_ensayo_usuario(
     usuario_actual: Usuario = Depends(obtener_usuario_actual),
 ):
     ensayo = obtener_ensayo_del_usuario(ensayo_id, usuario_actual, sesion)
-    codigo = ensayo.codigo
     nombre = ensayo.nombre
     borrar_ensayo_contenido(sesion, ensayo)
     guardar_evento(
         sesion,
-        f"Ensayo {codigo} ({nombre}) borrado por {usuario_actual.identificador_uacloud}.",
+        f"Ensayo {nombre} borrado por {usuario_actual.identificador_uacloud}.",
         tipo="advertencia",
     )
     sesion.commit()
@@ -268,7 +250,6 @@ def listar_ensayos_docente(
     return [
         {
             "id": ensayo.id,
-            "codigo": ensayo.codigo,
             "nombre": ensayo.nombre,
             "objetivo": ensayo.objetivo,
             "descripcion": ensayo.descripcion,
@@ -349,66 +330,16 @@ def borrar_ensayo_docente(
     if not ensayo:
         return {"estado": "no encontrado"}
 
-    codigo_ensayo = ensayo.codigo
     nombre_ensayo = ensayo.nombre
     borrar_ensayo_contenido(sesion, ensayo)
     guardar_evento(
         sesion,
-        f"Ensayo {codigo_ensayo} ({nombre_ensayo}) borrado por docente {usuario_actual.identificador_uacloud}.",
+        f"Ensayo {nombre_ensayo} borrado por docente {usuario_actual.identificador_uacloud}.",
         tipo="advertencia",
     )
     sesion.commit()
 
     return {"estado": "ensayo borrado", "id": ensayo_id}
-
-@router.post("/ensayos/{ensayo_id}/mediciones/finalizar", response_model=MedicionRespuesta)
-def finalizar_medicion(
-    ensayo_id: int,
-    datos: MedicionFinalizar,
-    sesion: Session = Depends(obtener_sesion),
-    usuario_actual: Usuario = Depends(obtener_usuario_actual),
-):
-    # Una captura solo se confirma completa: medicion, muestras y auditoria
-    # comparten transaccion para no dejar registros finalizados vacios.
-    try:
-        obtener_ensayo_del_usuario(ensayo_id, usuario_actual, sesion)
-        exigir_nombre_medicion_disponible(sesion, ensayo_id, datos.nombre)
-        total_mediciones = sesion.scalar(
-            select(func.count(Medicion.id)).where(Medicion.ensayo_id == ensayo_id)
-        ) or 0
-
-        if total_mediciones >= configuracion.limite_mediciones_por_ensayo:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail=f"Este ensayo ya tiene el limite de {configuracion.limite_mediciones_por_ensayo} mediciones.",
-            )
-
-        medicion = Medicion(
-            ensayo_id=ensayo_id,
-            estado=EstadoMedicion.finalizada,
-            **datos.model_dump(exclude={"muestras"}),
-        )
-
-        sesion.add(medicion)
-        sesion.flush()
-        sesion.add_all(
-            MuestraMedicion(medicion_id=medicion.id, **muestra.model_dump())
-            for muestra in datos.muestras
-        )
-        guardar_evento(
-            sesion,
-            f"Medicion {medicion.nombre} finalizada y registrada por {usuario_actual.identificador_uacloud}.",
-            ensayo_id=ensayo_id,
-            medicion_id=medicion.id,
-        )
-        sesion.commit()
-    except Exception:
-        sesion.rollback()
-        raise
-
-    sesion.refresh(medicion)
-    return medicion
-
 
 @router.get("/mediciones/ultima", response_model=UltimaMedicionUsuarioRespuesta | None)
 def obtener_ultima_medicion_usuario(
@@ -521,24 +452,3 @@ def listar_eventos_medicion_docente(
         .where(EventoMedicion.medicion_id == medicion_id)
         .order_by(EventoMedicion.creado_en.asc())
     ).all()
-
-
-@router.post("/eventos")
-def registrar_evento(
-    datos: EventoCrear,
-    sesion: Session = Depends(obtener_sesion),
-    usuario_actual: Usuario = Depends(obtener_usuario_actual),
-):
-    # Un evento puede estar asociado a un ensayo, a una medicion o a ambos.
-    if datos.ensayo_id:
-        obtener_ensayo_del_usuario(datos.ensayo_id, usuario_actual, sesion)
-
-    if datos.medicion_id:
-        obtener_medicion_del_usuario(datos.medicion_id, usuario_actual, sesion)
-
-    evento = EventoMedicion(**datos.model_dump())
-    sesion.add(evento)
-    sesion.commit()
-    sesion.refresh(evento)
-
-    return {"id": evento.id, "estado": "evento registrado"}

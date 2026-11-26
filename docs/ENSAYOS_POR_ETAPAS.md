@@ -1,7 +1,11 @@
+> Documentación histórica. Desde el 23/11/2026 se usa una consigna y una duración
+> por medición. El programador y las rutas descritas aquí se han retirado. Consulta
+> [GUARDADO_MEDICIONES.md](GUARDADO_MEDICIONES.md) para el funcionamiento actual.
+
 # Ensayos por etapas
 
 Disponible en **Control → Registrar medición**, en el modo **Simulador del servidor**.
-El registro manual y el editor por etapas se reúnen en este único bloque.
+Las mediciones se registran mediante una secuencia de una o varias etapas.
 Cada ensayo tiene una configuración guardada que puede volver a ejecutarse.
 
 ## Uso
@@ -11,7 +15,7 @@ Cada ensayo tiene una configuración guardada que puede volver a ejecutarse.
    nombre del ensayo asociado. Los identificadores se mantienen internamente, sin
    mostrarse en las listas y fichas. Un formulario nuevo empieza con una etapa
    al 25 % y 20 segundos de registro; las configuraciones ya guardadas se conservan.
-   Cada etapa tiene una consigna del variador y un tiempo estable en segundos.
+   Cada etapa tiene una consigna del variador y una duración en segundos.
 3. Usa **Añadir etapa** en la última fila de la tabla; puedes eliminar u ordenar
    las etapas con sus botones. El nombre, las consignas y las duraciones se guardan
    automáticamente tras 500 ms sin editar. Los campos incompletos o fuera de límites
@@ -20,21 +24,21 @@ Cada ensayo tiene una configuración guardada que puede volver a ejecutarse.
    comprobación previa si está apagado. Al confirmar, el servidor valida el ensayo,
    el nombre y los límites antes de encender a cero y aplicar la primera etapa.
    No se recupera una consigna manual anterior. El botón verde cambia en el mismo
-   sitio a **Detener medición**, en rojo. Si el túnel ya está encendido en marcha
-   manual, se inicia la captura y se aplica la consigna de la primera etapa.
+   sitio a **Detener medición**, en rojo.
 5. La captura empieza inmediatamente al iniciar la secuencia, aunque el flujo
    todavía cambie. El servidor aplica cada consigna y guarda también las transiciones.
-   El tiempo indicado en la tabla cuenta desde que se cumple el criterio de estabilidad.
+   La duración cuenta desde que se aplica la consigna, incluyendo la transición.
+   Al cumplirse el tiempo se pasa a la siguiente etapa, aunque el flujo siga cambiando.
 6. Consulta la medición en **Registro**. Lleva el nombre indicado y reúne
    las muestras de todas sus etapas. Los eventos de la medición marcan el inicio
    y el final de cada etapa, con su consigna y tiempo de registro.
 
-En Control, la consigna se configura en la tabla de etapas. El bloque de registro
-no repite las lecturas del Dashboard ni incluye una gráfica en directo. El informe
-de la última medición se mantiene debajo, junto a Seguridad y Diagnóstico.
+En Control, la consigna se configura en la tabla de etapas. Encima del registro
+se muestran la consigna aplicada y la velocidad actual. El informe de la última
+medición se mantiene debajo, junto a Seguridad y Diagnóstico.
 La orden `POST /api/tunel/programa/iniciar`
-acepta `encender: true` tras la comprobación previa; por defecto es `false` para
-conservar el comportamiento de clientes anteriores. Un reintento con la misma
+acepta `encender: true` tras la comprobación previa; sin esa confirmación no
+enciende un túnel apagado. Un reintento con la misma
 `clave` no enciende de nuevo ni duplica la medición. Si falla el inicio de la captura,
 se apaga el túnel.
 
@@ -54,13 +58,12 @@ botones de conexión, encendido ni ajuste manual de consigna.
 - Al completar todas las etapas, el túnel se apaga. La conexión continúa reservada
   hasta pulsar **Desconectar**.
 - Durante la secuencia se bloquean la edición y el cambio de ensayo.
-  La API también rechaza órdenes manuales de consigna durante el registro.
+  Las consignas se aplican exclusivamente desde las etapas del programa.
   El docente mantiene su desconexión forzada.
 - Si el servidor se reinicia, el programa queda **Interrumpido** y no se reanuda
   automáticamente. Las muestras ya confirmadas permanecen en la base de datos.
-- Si pierde estabilidad, sigue guardando y vuelve a esperar un tramo estable completo.
-  Se conservan los tramos estables anteriores. Cada etapa tiene un límite total de
-  su duración solicitada más 120 segundos; superarlo interrumpe el programa.
+- La estabilidad es un dato de cada muestra. No pausa ni reinicia el contador
+  de la etapa y no condiciona su finalización.
 - Un fallo de almacenamiento o de captura detiene el programa. Se conservan las
   muestras confirmadas, incluso si se interrumpe durante la primera transición.
 
@@ -72,7 +75,7 @@ botones de conexión, encendido ni ajuste manual de consigna.
 - El botón de inicio exige configuración guardada, ensayo seleccionado, control
   del túnel y ausencia de bloqueo de seguridad. Espera a que el guardado automático
   termine; un fallo de guardado muestra el error y permite reintentar. La interfaz
-  inicia desde el estado preparado o desde una marcha manual ya encendida.
+  solicita el encendido tras la comprobación previa.
   Se bloquea mientras hay otra medición o una operación pendiente. Los nombres de
   medición deben ser únicos dentro del ensayo; un nombre repetido impide iniciar.
 - El guardado mantiene las ediciones nuevas mientras termina una petición anterior.
@@ -123,7 +126,7 @@ npm run build
 ```
 
 Las pruebas específicas cubren ejecución sin navegador, una medición con muestras de todas las etapas,
-propiedad, bloqueo de acciones manuales, cancelación, desconexión docente,
+propiedad, bloqueo de edición durante la captura, cancelación, desconexión docente,
 reinicio, fallos de escritura, límites y reintentos de órdenes.
 La prueba automatizada ejecuta dos etapas sin navegador y comprueba que ambas
 quedan en una sola medición, con muestras de las dos consignas y eventos de fase.
@@ -134,55 +137,54 @@ Desde la migración `c901bd278f04`, cada medición nueva guarda una copia del pr
 ejecutado con las consignas, duraciones previstas, intervalos de registro y estado
 de cada etapa. Editar el borrador del programa no altera esa copia.
 
-En el informe de Control, Registro y Docente aparece **Resultados por etapa**.
-En las capturas continuas (programa versión 2), la tabla se llama **Tramos estables por etapa**.
-Incluye solo las muestras estables: velocidad media, mínimo, máximo y desviación estándar
-muestral (sin resultado cuando hay menos de dos valores válidos). El selector permite
-mostrar las gráficas y muestras de una etapa concreta. Los instantes siguen referidos
-al inicio de la medición completa.
+Desde el 23/11/2026, las mediciones nuevas guardan el programa con `version: 3`.
+Cada etapa registra el inicio de su consigna y su final, sin esperas ni intervalos
+estables adicionales. La duración solicitada corresponde al tiempo desde el cambio
+de consigna. No se modifican las mediciones anteriores ni las tablas de la base de datos.
 
-Las gráficas y el selector de etapa conservan toda la evolución, incluidas las
-transiciones. Los resúmenes de la gráfica corresponden a esa selección completa;
-las estadísticas de la tabla de etapas corresponden únicamente a sus tramos estables.
-Una interrupción deja la etapa activa como parcial y las siguientes como no ejecutadas.
+En Control, Registro y Docente, **Resultados por etapa** resume todas las muestras
+de cada etapa: media, mínimo, máximo y desviación muestral (requiere dos valores
+válidos). Incluye la transición. La columna **Duración / prevista** compara el
+intervalo registrado con el solicitado. El selector de etapa permite consultar
+esas mismas muestras en la gráfica y en la tabla.
 
-La migración `d730ab816f25` añade `consigna_objetivo` y `flujo_estable` a cada muestra.
-Los registros anteriores conservan esos campos a `null`: no se les atribuye una
-estabilidad que no se registró. La copia del programa versión 2 conserva el criterio
-de estabilidad, el momento de cambio de consigna y los intervalos estables.
-Los archivos exportados usan formato 1.2; siguen admitiéndose archivos 1.0 y 1.1.
+El capturador toma la muestra antes de cambiar la consigna. Por eso una lectura
+exactamente en el límite pertenece a la etapa que termina, sin duplicarse en la
+siguiente. Una cancelación deja la etapa activa como parcial y las pendientes sin
+ejecutar. Si un ciclo se retrasa, se registra el tiempo real y la siguiente etapa
+cuenta su duración completa desde la aplicación de su propia consigna.
 
-La migración `e841bc927036` conserva microsegundos en los instantes de captura,
-inicio y fin de medición y comienzo de fase en MySQL. Así no se redondean muestras
-al otro lado de un cambio de etapa. No recupera la precisión perdida en registros
-antiguos. Cada muestra aporta su propia marca de estabilidad; los intervalos del
-programador se utilizan para contar el tiempo estable, sin descartar la lectura
-que detectó la estabilidad justo antes de abrir el intervalo.
+Se mantiene la lectura de programas antiguos:
 
-La estabilidad actual es la del simulador: diferencia respecto a la velocidad
-objetivo dentro de la tolerancia durante el tiempo configurado en `shared/tunel.json`.
-No acredita estabilidad experimental ni turbulencia real. El intervalo de captura
-predeterminado es un segundo; no es adquisición de alta frecuencia. XLB es independiente.
-El tiempo de una etapa completada puede variar hasta el siguiente ciclo de adquisición.
+- Versión 1: intervalos de registro separados.
+- Versión 2: captura continua con transiciones; **Tramos estables por etapa**
+  conserva las estadísticas de muestras estables y los intervalos originales.
+- Versión 3: captura continua por duración; las estadísticas incluyen toda la etapa.
 
-Las mediciones antiguas se siguen abriendo, pero no se les atribuyen intervalos que
-no fueron guardados. Los eventos se conservan en los datos, aunque no se muestran
-en el informe.
+Las migraciones anteriores añadieron el programa, la consigna objetivo, la marca
+`flujo_estable` y la precisión temporal. Los datos ausentes en registros antiguos
+siguen ausentes; no se reconstruyen. La estabilidad sigue siendo la del simulador,
+según la tolerancia y el tiempo configurados en `shared/tunel.json`. Puede mostrarse
+en las gráficas, pero ya no interviene en la ejecución de las etapas. No acredita
+estabilidad experimental ni turbulencia real. XLB es independiente.
 
-## Comparación e intercambio de mediciones
+Las nuevas ejecuciones pasan directamente a `registrando`. Se reconoce el antiguo
+estado `estabilizando` únicamente para recuperar ejecuciones interrumpidas al
+reiniciar. La versión 3 no necesita otra migración: utiliza el JSON del programa
+ya existente. Después de actualizar el código se debe reiniciar el backend.
 
-En **Registro**, abre un informe y pulsa **Añadir al comparador**. Puedes incluir hasta
-cuatro mediciones terminadas, de distintos ensayos o de archivos importados. La selección
-se conserva mientras permanezcas en Registro; quitar una curva no borra la medición.
-El comparador ofrece velocidad, caudal, consigna, presión dinámica y temperatura sobre
-una escala común, tomando el inicio de cada medición como origen temporal.
+## Consulta e intercambio de mediciones
 
-Los cálculos utilizan las muestras originales. Las gráficas conservan los huecos y
-reducen el número de puntos dibujados en capturas largas manteniendo los extremos.
+En **Registro**, selecciona una medición guardada o importada para abrir su informe.
+Puedes consultar velocidad, caudal, consigna, presión dinámica y temperatura, además
+del desglose por etapas y las muestras originales.
+
+Los cálculos y las gráficas utilizan las muestras originales y conservan los huecos.
 La tabla se pagina en bloques de 100 muestras; la exportación conserva todas.
 
-El formato JSON 1.2 conserva origen, estado, calibración, fechas, programa y datos técnicos.
-Sigue leyendo 1.0 y 1.1. Un origen antiguo no documentado se muestra como desconocido y un
+El formato JSON 1.3 conserva origen, estado, calibración, fechas, programa y datos técnicos.
+Identifica el ensayo por su ID interno; se pueden seguir importando los archivos anteriores.
+Admite programas 1, 2 y 3, y sigue leyendo archivos 1.0 y 1.1. Un origen antiguo no documentado se muestra como desconocido y un
 valor ausente no se sustituye por cero. Límites de importación: 32 MiB y 100.000 muestras
 por archivo, 20 archivos y 250.000 muestras en total dentro del visor.
 

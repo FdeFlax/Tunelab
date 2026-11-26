@@ -5,7 +5,7 @@ import { crearEnsayoDesdeApi, crearMedicionDesdeApi } from "../src/servicios/med
 test('la carga inicial y Registro representan igual una medición sin muestras', () => {
   const medicion = { id: 4, nombre: 'Captura', velocidad_media: 3, velocidad_minima: 2,
     velocidad_maxima: 5, temperatura_media: 20, potencia_media: 0 };
-  const ensayo = crearEnsayoDesdeApi({ id: 2, codigo: 'A-002', nombre: 'Prueba' }, [medicion]);
+  const ensayo = crearEnsayoDesdeApi({ id: 2, nombre: 'Prueba' }, [medicion]);
   assert.equal(ensayo.id, 'api-ensayo-2');
   assert.equal(ensayo.apiId, 2);
   assert.equal(ensayo.estado, 'Con mediciones');

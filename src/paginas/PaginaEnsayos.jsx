@@ -6,8 +6,6 @@ import {
   asegurarUsuarioApi,
   actualizarEnsayoApi,
   crearEnsayoApi,
-  obtenerIdEnsayoApi,
-  vincularEnsayoApi,
 } from "../servicios/api/registroApi";
 
 const LIMITES_CAMPOS_ENSAYO = {
@@ -78,7 +76,6 @@ function FormularioCrearEnsayo({ formulario, onChange, onSubmit, guardando, bloq
     <form className="ens2panel ens2panelalta" onSubmit={onSubmit}>
       <header className="ens2panelcabecera ens2formulariocabecera">
         <h3>Crear nuevo ensayo</h3>
-        <p>Define los datos del ensayo antes de empezar a medir.</p>
       </header>
       <CamposEnsayo formulario={formulario} onChange={onChange} />
 
@@ -100,9 +97,8 @@ function PaginaEnsayos({ usuarioActual, onAbrirControl, onCrearEnsayo }) {
   const { estadoTunel, accionesTunel } = useTunel();
   const ensayoActivo = obtenerEnsayoActivo(estadoTunel);
   const ensayos = estadoTunel.ensayos || [];
-  const edicionBloqueada = Boolean(estadoTunel.medActiva || estadoTunel.programa?.activo);
+  const edicionBloqueada = Boolean(estadoTunel.medActiva);
 
-  const [busquedaEnsayos, setBusquedaEnsayos] = useState("");
   const [formCrear, setFormCrear] = useState({ ...FORMULARIO_VACIO });
   const [formEditar, setFormEditar] = useBorradorSincronizado(
     ensayoActivo?.id,
@@ -112,10 +108,6 @@ function PaginaEnsayos({ usuarioActual, onAbrirControl, onCrearEnsayo }) {
   const [guardandoEditar, setGuardandoEditar] = useState(false);
   const [errorCrear, setErrorCrear] = useState("");
   const [errorEditar, setErrorEditar] = useState("");
-  const ensayosFiltrados = ensayos.filter((ensayo) =>
-    [ensayo.nombre, ensayo.objetivo, ensayo.fecha, ensayo.hora]
-      .some((valor) => String(valor || "").toLowerCase().includes(busquedaEnsayos.trim().toLowerCase()))
-  );
 
   function cambiarFormularioCrear(evento) {
     cambiarCampo(evento, setFormCrear);
@@ -155,23 +147,14 @@ function PaginaEnsayos({ usuarioActual, onAbrirControl, onCrearEnsayo }) {
         return;
       }
 
-      const usuarioApi = await asegurarUsuarioApi(usuarioActual);
+      await asegurarUsuarioApi(usuarioActual);
       const ensayoApi = await crearEnsayoApi({
-        usuarioId: usuarioApi.id,
-        codigo: null,
         nombre: formCrear.nombre.trim(),
         objetivo: formCrear.objetivo.trim(),
         descripcion: formCrear.descripcion.trim(),
       });
 
-      const ensayoPreparado = await accionesTunel.crearEnsayo({
-        codigo: ensayoApi.codigo,
-        nombre: ensayoApi.nombre,
-        objetivo: ensayoApi.objetivo || "",
-        descripcion: ensayoApi.descripcion || "",
-      });
-
-      vincularEnsayoApi(ensayoPreparado.codigo, ensayoApi);
+      accionesTunel.crearEnsayo(ensayoApi);
       setFormCrear({ ...FORMULARIO_VACIO });
       onCrearEnsayo?.();
     } catch (error) {
@@ -190,7 +173,7 @@ function PaginaEnsayos({ usuarioActual, onAbrirControl, onCrearEnsayo }) {
     }
 
     if (edicionBloqueada) {
-      setErrorEditar("Finaliza la medición o el programa por etapas antes de editar el ensayo.");
+      setErrorEditar("Finaliza la medición antes de editar el ensayo.");
       return;
     }
 
@@ -202,14 +185,13 @@ function PaginaEnsayos({ usuarioActual, onAbrirControl, onCrearEnsayo }) {
         return;
       }
 
-      const idEnsayoApi = obtenerIdEnsayoApi(ensayoActivo.codigo) || ensayoActivo.id;
       const datosEditados = {
         nombre: formEditar.nombre.trim(),
         objetivo: formEditar.objetivo.trim(),
         descripcion: formEditar.descripcion.trim(),
       };
 
-      const ensayoApi = await actualizarEnsayoApi(idEnsayoApi, datosEditados);
+      const ensayoApi = await actualizarEnsayoApi(ensayoActivo.apiId, datosEditados);
 
       accionesTunel.actualizarEnsayo(ensayoActivo.id, {
         nombre: ensayoApi.nombre,
@@ -244,7 +226,6 @@ function PaginaEnsayos({ usuarioActual, onAbrirControl, onCrearEnsayo }) {
         <section className="ens2panel ens2panelfichaunica">
           <header className="ens2panelcabecera ens2formulariocabecera">
             <h3>Editar ensayo activo</h3>
-            <p>Revisa y actualiza la información del ensayo seleccionado.</p>
           </header>
 
           {ensayoActivo ? (
@@ -261,7 +242,7 @@ function PaginaEnsayos({ usuarioActual, onAbrirControl, onCrearEnsayo }) {
               </div>
 
               <form className="ens2editarform" onSubmit={guardarCambiosEnsayo}>
-                {edicionBloqueada ? <p className="ens2error">Finaliza la medición o el programa por etapas antes de editar o cambiar el ensayo.</p> : null}
+                {edicionBloqueada ? <p className="ens2error">Finaliza la medición antes de editar o cambiar el ensayo.</p> : null}
                 {!edicionBloqueada && errorEditar ? <p className="ens2error">{errorEditar}</p> : null}
                 <CamposEnsayo
                   formulario={formEditar}
@@ -294,79 +275,62 @@ function PaginaEnsayos({ usuarioActual, onAbrirControl, onCrearEnsayo }) {
 
       <section className="ens2panel ens2panelhistorial ens2historialancho">
         <header className="ens2panelcabecera ens2historialcabecera">
-          <div className="ens2historialtitulo">
-            <h3>Ensayos creados</h3>
-            <p>Selecciona uno para editarlo o abrirlo en Control.</p>
-          </div>
-          <input
-            className="ens2busqueda"
-            type="search"
-            aria-label="Buscar ensayos creados"
-            value={busquedaEnsayos}
-            onChange={(evento) => setBusquedaEnsayos(evento.target.value)}
-            placeholder="Buscar ensayos..."
-          />
+          <h3>Ensayos creados</h3>
           <strong className="ens2contadorlista">
-            {busquedaEnsayos.trim() ? `${ensayosFiltrados.length} de ${ensayos.length}` : `${ensayos.length} total`}
+            {ensayos.length} total
           </strong>
         </header>
 
         {ensayos.length ? (
-          ensayosFiltrados.length ? (
-            <div className="ens2tablaenvoltorio">
-              <table className="ens2tablaensayos">
-                <thead>
-                  <tr>
-                    <th scope="col">Nombre</th>
-                    <th scope="col">Objetivo</th>
-                    <th scope="col">Fecha de creación</th>
-                    <th scope="col">Mediciones</th>
-                    <th scope="col">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {ensayosFiltrados.map((ensayo) => {
-                    const activo = ensayoActivo?.id === ensayo.id;
-                    return (
-                      <tr className={activo ? "ens2filaseleccionada" : ""} key={ensayo.id}>
-                        <td className="ens2tablanombre">{ensayo.nombre}</td>
-                        <td className="ens2tablaobjetivo">{ensayo.objetivo || "—"}</td>
-                        <td>{ensayo.fecha}{ensayo.hora ? ` · ${ensayo.hora}` : ""}</td>
-                        <td className="ens2tablamediciones">{ensayo.mediciones?.length || 0}</td>
-                        <td>
-                          <div className="ens2tablaacciones">
-                            <button
-                              type="button"
-                              className="ens2boton ens2botonsecundario"
-                              onClick={() => activarEnsayo(ensayo)}
-                              disabled={activo || edicionBloqueada}
-                            >
-                              {activo ? "Seleccionado" : "Seleccionar"}
-                            </button>
-                            <button
-                              type="button"
-                              className="ens2boton ens2botonprimario"
-                              disabled={edicionBloqueada && !activo}
-                              onClick={() => {
-                                activarEnsayo(ensayo);
-                                abrirControl();
-                              }}
-                            >
-                              Ir a control
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <article className="ens2vacio ens2busquedavacia">
-              <p>No hay ensayos que coincidan con «{busquedaEnsayos}».</p>
-            </article>
-          )
+          <div className="ens2tablaenvoltorio">
+            <table className="ens2tablaensayos">
+              <thead>
+                <tr>
+                  <th scope="col">Nombre</th>
+                  <th scope="col">Objetivo</th>
+                  <th scope="col">Fecha de creación</th>
+                  <th scope="col">Mediciones</th>
+                  <th scope="col">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {ensayos.map((ensayo) => {
+                  const activo = ensayoActivo?.id === ensayo.id;
+                  return (
+                    <tr className={activo ? "ens2filaseleccionada" : ""} key={ensayo.id}>
+                      <td className="ens2tablanombre">{ensayo.nombre}</td>
+                      <td className="ens2tablaobjetivo">{ensayo.objetivo || "—"}</td>
+                      <td>{ensayo.fecha}{ensayo.hora ? ` · ${ensayo.hora}` : ""}</td>
+                      <td className="ens2tablamediciones">{ensayo.mediciones?.length || 0}</td>
+                      <td>
+                        <div className="ens2tablaacciones">
+                          <button
+                            type="button"
+                            className="ens2boton ens2botonsecundario"
+                            onClick={() => activarEnsayo(ensayo)}
+                            disabled={activo || edicionBloqueada}
+                          >
+                            {activo ? "Seleccionado" : "Seleccionar"}
+                          </button>
+                          <button
+                            type="button"
+                            className="ens2boton ens2botonprimario"
+                            disabled={edicionBloqueada && !activo}
+                            onClick={() => {
+                              activarEnsayo(ensayo);
+                              abrirControl();
+                            }}
+                          >
+                            Ir a control
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         ) : (
           <article className="ens2vacio">
             <p>Todavia no hay ensayos creados.</p>
